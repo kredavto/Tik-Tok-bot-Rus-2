@@ -1,0 +1,413 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from datetime import UTC, date, datetime, timedelta
+from uuid import UUID
+
+from sqlalchemy import Select, func, select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from app.core.config import settings
+from app.core.plans import PLANS, PlanCode, get_plan
+from app.core.upload_status import UploadStatus
+from app.db.models import (
+    Base,
+    DailyUsage,
+    Payment,
+    Plan,
+    Subscription,
+    SystemSetting,
+    TikTokAccount,
+    AdminAction,
+    UploadJob,
+    UploadJobEvent,
+    User,
+    WebhookEvent,
+)
+from app.security.crypto import encrypt_secret
+
+engine = create_async_engine(settings.database_url)
+SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
+
+
+async def init_db() -> None:
+    async with session_scope() as session:
+        await seed_plans(session)
+
+
+@asynccontextmanager
+async def session_scope() -> AsyncIterator[AsyncSession]:
+    async with SessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+
+
+async def seed_plans(session: AsyncSession) -> None:
+    for plan in PLANS.values():
+        existing = await session.get(Plan, plan.code.value)
+        duration_days = None if plan.code == PlanCode.FREE else 30
+        if existing:
+            existing.title = plan.title
+            existing.price_rub = plan.price_rub
+            existing.daily_limit = plan.daily_limit
+            existing.duration_days = duration_days
+            existing.is_active = True
+            continue
+        session.add(
+            Plan(
+                id=plan.code.value,
+                title=plan.title,
+                price_rub=plan.price_rub,
+                daily_limit=plan.daily_limit,
+                duration_days=duration_days,
+            )
+        )
+
+
+async def get_or_create_user(
+    session: AsyncSession,
+    telegram_id: int,
+    username: str | None,
+) -> User:
+    user = await session.scalar(select(User).where(User.telegram_id == telegram_id))
+    if user:
+        if user.username != username:
+            user.username = username
+        return user
+
+    user = User(telegram_id=telegram_id, username=username)
+    session.add(user)
+    await session.flush()
+    await create_free_subscription(session, user.id)
+    return user
+
+
+async def create_free_subscription(session: AsyncSession, user_id: UUID) -> Subscription:
+    subscription = Subscription(
+        user_id=user_id,
+        plan_id=PlanCode.FREE.value,
+        status="active",
+        starts_at=datetime.now(UTC),
+        ends_at=None,
+    )
+    session.add(subscription)
+    await session.flush()
+    return subscription
+
+
+async def get_active_subscription(session: AsyncSession, user_id: UUID) -> Subscription | None:
+    now = datetime.now(UTC)
+    statement = (
+        select(Subscription)
+        .where(
+            Subscription.user_id == user_id,
+            Subscription.status == "active",
+            (Subscription.ends_at.is_(None)) | (Subscription.ends_at >= now),
+        )
+        .order_by(Subscription.ends_at.desc().nulls_last(), Subscription.created_at.desc())
+    )
+    return await session.scalar(statement)
+
+
+async def active_plan_code(session: AsyncSession, user: User) -> str:
+    subscription = await get_active_subscription(session, user.id)
+    if not subscription:
+        await create_free_subscription(session, user.id)
+        return PlanCode.FREE.value
+    return subscription.plan_id
+
+
+async def get_daily_usage(session: AsyncSession, user_id: UUID, usage_date: date) -> DailyUsage:
+    usage = await session.scalar(
+        select(DailyUsage)
+        .where(DailyUsage.user_id == user_id, DailyUsage.usage_date == usage_date)
+        .with_for_update()
+    )
+    if usage:
+        return usage
+    usage = DailyUsage(user_id=user_id, usage_date=usage_date, upload_count=0)
+    session.add(usage)
+    await session.flush()
+    return usage
+
+
+async def can_upload_today(session: AsyncSession, user: User) -> tuple[bool, int, int]:
+    plan = get_plan(await active_plan_code(session, user))
+    usage = await get_daily_usage(session, user.id, datetime.now(UTC).date())
+    return usage.upload_count < plan.daily_limit, usage.upload_count, plan.daily_limit
+
+
+async def consume_daily_upload(session: AsyncSession, user: User) -> tuple[bool, int, int]:
+    plan = get_plan(await active_plan_code(session, user))
+    usage = await get_daily_usage(session, user.id, datetime.now(UTC).date())
+    if usage.upload_count >= plan.daily_limit:
+        return False, usage.upload_count, plan.daily_limit
+    usage.upload_count += 1
+    return True, usage.upload_count, plan.daily_limit
+
+
+async def accept_agreement(session: AsyncSession, user: User) -> None:
+    user.agreement_accepted_at = datetime.now(UTC)
+
+
+async def has_tiktok_account(session: AsyncSession, user_id: UUID) -> bool:
+    account_id = await session.scalar(select(TikTokAccount.id).where(TikTokAccount.user_id == user_id))
+    return account_id is not None
+
+
+async def get_primary_tiktok_account(session: AsyncSession, user_id: UUID) -> TikTokAccount | None:
+    return await session.scalar(
+        select(TikTokAccount).where(TikTokAccount.user_id == user_id).order_by(TikTokAccount.created_at.desc())
+    )
+
+
+async def upsert_tiktok_account(
+    session: AsyncSession,
+    user_id: UUID,
+    open_id: str,
+    display_name: str | None,
+    access_token: str,
+    refresh_token: str | None,
+    expires_in: int | None,
+    scopes: str | None,
+) -> TikTokAccount:
+    account = await session.scalar(
+        select(TikTokAccount).where(TikTokAccount.user_id == user_id, TikTokAccount.open_id == open_id)
+    )
+    expires_at = datetime.now(UTC) + timedelta(seconds=expires_in or 0) if expires_in else None
+    if not account:
+        account = TikTokAccount(
+            user_id=user_id,
+            open_id=open_id,
+            display_name=display_name,
+            access_token_encrypted=encrypt_secret(access_token),
+            refresh_token_encrypted=encrypt_secret(refresh_token) if refresh_token else None,
+            token_expires_at=expires_at,
+            scopes=scopes,
+        )
+        session.add(account)
+    else:
+        account.display_name = display_name
+        account.access_token_encrypted = encrypt_secret(access_token)
+        account.refresh_token_encrypted = encrypt_secret(refresh_token) if refresh_token else None
+        account.token_expires_at = expires_at
+        account.scopes = scopes
+    await session.flush()
+    return account
+
+
+async def revoke_tiktok_accounts(session: AsyncSession, user_id: UUID) -> int:
+    accounts = (await session.scalars(select(TikTokAccount).where(TikTokAccount.user_id == user_id))).all()
+    for account in accounts:
+        await session.delete(account)
+    return len(accounts)
+
+
+async def anonymize_user(session: AsyncSession, user_id: UUID) -> bool:
+    user = await session.get(User, user_id)
+    if not user:
+        return False
+    await revoke_tiktok_accounts(session, user_id)
+    user.telegram_id = -abs(user.id.int % 9_000_000_000)
+    user.username = None
+    user.role = "USER"
+    user.is_admin = False
+    user.is_blocked = True
+    user.agreement_accepted_at = None
+    return True
+
+
+async def create_upload_job(
+    session: AsyncSession,
+    user_id: UUID,
+    telegram_file_id: str,
+    local_path: str,
+    caption: str | None,
+) -> UploadJob:
+    job = UploadJob(
+        user_id=user_id,
+        telegram_file_id=telegram_file_id,
+        local_path=local_path,
+        caption=caption,
+        status=UploadStatus.NEW.value,
+    )
+    session.add(job)
+    await session.flush()
+    await record_upload_job_event(session, job, UploadStatus.NEW, "Upload job created")
+    return job
+
+
+async def transition_upload_job(
+    session: AsyncSession,
+    upload_job: UploadJob,
+    status: UploadStatus,
+    message: str | None = None,
+) -> None:
+    upload_job.status = status.value
+    if status == UploadStatus.FAILED and message:
+        upload_job.error_message = message
+    await record_upload_job_event(session, upload_job, status, message)
+
+
+async def record_upload_job_event(
+    session: AsyncSession,
+    upload_job: UploadJob,
+    status: UploadStatus,
+    message: str | None = None,
+) -> UploadJobEvent:
+    event = UploadJobEvent(
+        upload_job_id=upload_job.id,
+        user_id=upload_job.user_id,
+        status=status.value,
+        message=message,
+    )
+    session.add(event)
+    await session.flush()
+    return event
+
+
+async def list_recent_upload_jobs(
+    session: AsyncSession,
+    user_id: UUID,
+    limit: int = 10,
+) -> list[UploadJob]:
+    statement = (
+        select(UploadJob)
+        .where(UploadJob.user_id == user_id)
+        .order_by(UploadJob.created_at.desc())
+        .limit(limit)
+    )
+    return list((await session.scalars(statement)).all())
+
+
+async def create_paid_subscription(
+    session: AsyncSession,
+    user_id: UUID,
+    plan_code: str,
+) -> Subscription:
+    now = datetime.now(UTC)
+    await expire_active_paid_subscriptions(session, user_id)
+    subscription = Subscription(
+        user_id=user_id,
+        plan_id=plan_code,
+        status="active",
+        starts_at=now,
+        ends_at=now + timedelta(days=30),
+    )
+    session.add(subscription)
+    await session.flush()
+    return subscription
+
+
+async def expire_active_paid_subscriptions(session: AsyncSession, user_id: UUID) -> None:
+    statement = select(Subscription).where(
+        Subscription.user_id == user_id,
+        Subscription.status == "active",
+        Subscription.plan_id != PlanCode.FREE.value,
+    )
+    subscriptions = (await session.scalars(statement)).all()
+    for subscription in subscriptions:
+        subscription.status = "expired"
+        if not subscription.ends_at or subscription.ends_at > datetime.now(UTC):
+            subscription.ends_at = datetime.now(UTC)
+
+
+async def create_payment(session: AsyncSession, user_id: UUID, plan_code: str, amount_rub: int) -> Payment:
+    max_invoice_id = await session.scalar(select(func.max(Payment.provider_invoice_id)))
+    payment = Payment(
+        user_id=user_id,
+        plan_id=plan_code,
+        amount_rub=amount_rub,
+        provider_invoice_id=int(max_invoice_id or 1000) + 1,
+    )
+    session.add(payment)
+    await session.flush()
+    await record_webhook_event(
+        session,
+        provider="robokassa",
+        event_type="payment_status_changed",
+        external_id=str(payment.provider_invoice_id),
+        payload={"status": "created", "plan_id": plan_code, "amount_rub": amount_rub},
+        status="processed",
+    )
+    return payment
+
+
+async def mark_payment_paid(
+    session: AsyncSession,
+    inv_id: int,
+    out_sum: str,
+    raw_payload: dict | None = None,
+) -> Payment | None:
+    payment = await session.scalar(select(Payment).where(Payment.provider_invoice_id == inv_id))
+    if not payment:
+        return None
+    if payment.status == "paid":
+        await record_webhook_event(
+            session,
+            provider="robokassa",
+            event_type="payment_status_idempotent",
+            external_id=str(inv_id),
+            payload={"status": "paid"},
+            status="processed",
+        )
+        return payment
+
+    expected = f"{payment.amount_rub:.2f}"
+    normalized = f"{float(out_sum):.2f}"
+    payment.raw_payload = raw_payload
+    if normalized != expected:
+        payment.status = "amount_mismatch"
+        await record_webhook_event(
+            session,
+            provider="robokassa",
+            event_type="payment_status_changed",
+            external_id=str(inv_id),
+            payload={"status": payment.status, "expected": expected, "received": normalized},
+            status="processed",
+        )
+        return payment
+
+    subscription = await create_paid_subscription(session, payment.user_id, payment.plan_id)
+    payment.subscription_id = subscription.id
+    payment.status = "paid"
+    payment.paid_at = datetime.now(UTC)
+    await record_webhook_event(
+        session,
+        provider="robokassa",
+        event_type="payment_status_changed",
+        external_id=str(inv_id),
+        payload={"status": "paid", "subscription_id": str(subscription.id)},
+        status="processed",
+    )
+    return payment
+
+
+async def record_webhook_event(
+    session: AsyncSession,
+    provider: str,
+    event_type: str,
+    payload: dict,
+    external_id: str | None = None,
+    status: str = "received",
+) -> WebhookEvent:
+    event = WebhookEvent(
+        provider=provider,
+        event_type=event_type,
+        external_id=external_id,
+        payload=payload,
+        status=status,
+    )
+    session.add(event)
+    await session.flush()
+    return event
+
+
+async def is_intake_enabled(session: AsyncSession) -> bool:
+    setting = await session.scalar(select(SystemSetting).where(SystemSetting.key == "intake_enabled"))
+    if not setting:
+        return True
+    return setting.value.lower() not in {"0", "false", "no", "off"}
