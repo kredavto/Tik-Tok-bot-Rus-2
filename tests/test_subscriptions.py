@@ -1,8 +1,10 @@
 import random
 
 import pytest
+from sqlalchemy import func, select
 
 from app.core.plans import PlanCode
+from app.db.models import Subscription
 from app.db.session import (
     active_plan_code,
     can_upload_today,
@@ -44,4 +46,10 @@ async def test_paid_subscription_overrides_free_plan() -> None:
         await create_paid_subscription(session, user.id, PlanCode.PRO.value)
         assert await active_plan_code(session, user) == PlanCode.PRO.value
         assert await can_upload_today(session, user) == (True, 0, 5)
-
+        active_count = await session.scalar(
+            select(func.count(Subscription.id)).where(
+                Subscription.user_id == user.id,
+                Subscription.status == "active",
+            )
+        )
+        assert active_count == 1

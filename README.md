@@ -8,9 +8,9 @@ Important: this project does not implement VPN, proxy routing, device spoofing, 
 
 | Plan | Price | Daily video limit |
 | --- | ---: | ---: |
-| Free | 0 RUB | 2 |
+| FREE | 0 RUB | 2 |
 | PRO | 499 RUB | 5 |
-| Business | 999 RUB | 10 |
+| BUSINESS | 999 RUB | 10 |
 
 ## What Is Included
 
@@ -44,10 +44,11 @@ See [.env.example](.env.example).
 
 For production, configure:
 
-- `BOT_TOKEN`
-- `ROBOKASSA_LOGIN`
-- `ROBOKASSA_PASSWORD1`
-- `ROBOKASSA_PASSWORD2`
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_WEBHOOK_SECRET`
+- `ROBOKASSA_MERCHANT_LOGIN`
+- `ROBOKASSA_PASSWORD_1`
+- `ROBOKASSA_PASSWORD_2`
 - `PUBLIC_BASE_URL`
 - TikTok developer credentials after app approval
 
@@ -60,6 +61,11 @@ TikTok publishing requires:
 3. Approved `video.publish` scope.
 4. User OAuth authorization.
 5. App audit before public visibility restrictions are lifted.
+
+Before confirmation, the bot queries current creator information, requires a manual privacy
+choice, lets the user configure the interaction options TikTok currently allows, and asks for
+commercial-content disclosure. Production publication remains disabled until the TikTok app and
+`video.publish` scope are approved.
 
 Until those requirements are met, the bot stores accepted videos as queued submissions and shows the user that publishing is pending official TikTok integration.
 

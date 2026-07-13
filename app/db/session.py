@@ -2,22 +2,21 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import UTC, date, datetime, timedelta
 from uuid import UUID
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import settings
-from app.core.plans import PLANS, PlanCode, get_plan
-from app.core.upload_status import UploadStatus
+from app.core.plans import PLANS, PlanCode
+from app.core.upload_status import UploadStatus, validate_upload_transition
 from app.db.models import (
-    Base,
     DailyUsage,
     Payment,
     Plan,
     Subscription,
     SystemSetting,
     TikTokAccount,
-    AdminAction,
     UploadJob,
     UploadJobEvent,
     User,
@@ -51,10 +50,6 @@ async def seed_plans(session: AsyncSession) -> None:
         duration_days = None if plan.code == PlanCode.FREE else 30
         if existing:
             existing.title = plan.title
-            existing.price_rub = plan.price_rub
-            existing.daily_limit = plan.daily_limit
-            existing.duration_days = duration_days
-            existing.is_active = True
             continue
         session.add(
             Plan(
@@ -100,6 +95,19 @@ async def create_free_subscription(session: AsyncSession, user_id: UUID) -> Subs
 
 async def get_active_subscription(session: AsyncSession, user_id: UUID) -> Subscription | None:
     now = datetime.now(UTC)
+    expired = (
+        await session.scalars(
+            select(Subscription).where(
+                Subscription.user_id == user_id,
+                Subscription.status == "active",
+                Subscription.ends_at.is_not(None),
+                Subscription.ends_at < now,
+            )
+        )
+    ).all()
+    for subscription in expired:
+        subscription.status = "expired"
+
     statement = (
         select(Subscription)
         .where(
@@ -120,6 +128,21 @@ async def active_plan_code(session: AsyncSession, user: User) -> str:
     return subscription.plan_id
 
 
+async def get_plan_record(session: AsyncSession, plan_code: str) -> Plan:
+    plan = await session.get(Plan, plan_code)
+    if plan is None:
+        raise ValueError(f"Unknown plan: {plan_code}")
+    return plan
+
+
+def current_usage_date() -> date:
+    try:
+        timezone = ZoneInfo(settings.timezone)
+    except ZoneInfoNotFoundError as exc:
+        raise RuntimeError(f"Unknown TIMEZONE: {settings.timezone}") from exc
+    return datetime.now(timezone).date()
+
+
 async def get_daily_usage(session: AsyncSession, user_id: UUID, usage_date: date) -> DailyUsage:
     usage = await session.scalar(
         select(DailyUsage)
@@ -135,14 +158,14 @@ async def get_daily_usage(session: AsyncSession, user_id: UUID, usage_date: date
 
 
 async def can_upload_today(session: AsyncSession, user: User) -> tuple[bool, int, int]:
-    plan = get_plan(await active_plan_code(session, user))
-    usage = await get_daily_usage(session, user.id, datetime.now(UTC).date())
+    plan = await get_plan_record(session, await active_plan_code(session, user))
+    usage = await get_daily_usage(session, user.id, current_usage_date())
     return usage.upload_count < plan.daily_limit, usage.upload_count, plan.daily_limit
 
 
 async def consume_daily_upload(session: AsyncSession, user: User) -> tuple[bool, int, int]:
-    plan = get_plan(await active_plan_code(session, user))
-    usage = await get_daily_usage(session, user.id, datetime.now(UTC).date())
+    plan = await get_plan_record(session, await active_plan_code(session, user))
+    usage = await get_daily_usage(session, user.id, current_usage_date())
     if usage.upload_count >= plan.daily_limit:
         return False, usage.upload_count, plan.daily_limit
     usage.upload_count += 1
@@ -154,13 +177,17 @@ async def accept_agreement(session: AsyncSession, user: User) -> None:
 
 
 async def has_tiktok_account(session: AsyncSession, user_id: UUID) -> bool:
-    account_id = await session.scalar(select(TikTokAccount.id).where(TikTokAccount.user_id == user_id))
+    account_id = await session.scalar(
+        select(TikTokAccount.id).where(TikTokAccount.user_id == user_id)
+    )
     return account_id is not None
 
 
 async def get_primary_tiktok_account(session: AsyncSession, user_id: UUID) -> TikTokAccount | None:
     return await session.scalar(
-        select(TikTokAccount).where(TikTokAccount.user_id == user_id).order_by(TikTokAccount.created_at.desc())
+        select(TikTokAccount)
+        .where(TikTokAccount.user_id == user_id)
+        .order_by(TikTokAccount.created_at.desc())
     )
 
 
@@ -175,7 +202,9 @@ async def upsert_tiktok_account(
     scopes: str | None,
 ) -> TikTokAccount:
     account = await session.scalar(
-        select(TikTokAccount).where(TikTokAccount.user_id == user_id, TikTokAccount.open_id == open_id)
+        select(TikTokAccount).where(
+            TikTokAccount.user_id == user_id, TikTokAccount.open_id == open_id
+        )
     )
     expires_at = datetime.now(UTC) + timedelta(seconds=expires_in or 0) if expires_in else None
     if not account:
@@ -200,7 +229,9 @@ async def upsert_tiktok_account(
 
 
 async def revoke_tiktok_accounts(session: AsyncSession, user_id: UUID) -> int:
-    accounts = (await session.scalars(select(TikTokAccount).where(TikTokAccount.user_id == user_id))).all()
+    accounts = (
+        await session.scalars(select(TikTokAccount).where(TikTokAccount.user_id == user_id))
+    ).all()
     for account in accounts:
         await session.delete(account)
     return len(accounts)
@@ -223,15 +254,29 @@ async def anonymize_user(session: AsyncSession, user_id: UUID) -> bool:
 async def create_upload_job(
     session: AsyncSession,
     user_id: UUID,
+    tiktok_account_id: UUID,
     telegram_file_id: str,
     local_path: str,
     caption: str | None,
+    privacy_level: str,
+    disable_comment: bool,
+    disable_duet: bool,
+    disable_stitch: bool,
+    brand_content_toggle: bool,
+    brand_organic_toggle: bool,
 ) -> UploadJob:
     job = UploadJob(
         user_id=user_id,
+        tiktok_account_id=tiktok_account_id,
         telegram_file_id=telegram_file_id,
         local_path=local_path,
         caption=caption,
+        privacy_level=privacy_level,
+        disable_comment=disable_comment,
+        disable_duet=disable_duet,
+        disable_stitch=disable_stitch,
+        brand_content_toggle=brand_content_toggle,
+        brand_organic_toggle=brand_organic_toggle,
         status=UploadStatus.NEW.value,
     )
     session.add(job)
@@ -246,6 +291,7 @@ async def transition_upload_job(
     status: UploadStatus,
     message: str | None = None,
 ) -> None:
+    validate_upload_transition(upload_job.status, status)
     upload_job.status = status.value
     if status == UploadStatus.FAILED and message:
         upload_job.error_message = message
@@ -289,24 +335,26 @@ async def create_paid_subscription(
     plan_code: str,
 ) -> Subscription:
     now = datetime.now(UTC)
-    await expire_active_paid_subscriptions(session, user_id)
+    plan = await get_plan_record(session, plan_code)
+    if plan_code == PlanCode.FREE.value or not plan.is_active or not plan.duration_days:
+        raise ValueError(f"Plan is not available for purchase: {plan_code}")
+    await expire_active_subscriptions(session, user_id)
     subscription = Subscription(
         user_id=user_id,
         plan_id=plan_code,
         status="active",
         starts_at=now,
-        ends_at=now + timedelta(days=30),
+        ends_at=now + timedelta(days=plan.duration_days),
     )
     session.add(subscription)
     await session.flush()
     return subscription
 
 
-async def expire_active_paid_subscriptions(session: AsyncSession, user_id: UUID) -> None:
+async def expire_active_subscriptions(session: AsyncSession, user_id: UUID) -> None:
     statement = select(Subscription).where(
         Subscription.user_id == user_id,
         Subscription.status == "active",
-        Subscription.plan_id != PlanCode.FREE.value,
     )
     subscriptions = (await session.scalars(statement)).all()
     for subscription in subscriptions:
@@ -315,13 +363,14 @@ async def expire_active_paid_subscriptions(session: AsyncSession, user_id: UUID)
             subscription.ends_at = datetime.now(UTC)
 
 
-async def create_payment(session: AsyncSession, user_id: UUID, plan_code: str, amount_rub: int) -> Payment:
-    max_invoice_id = await session.scalar(select(func.max(Payment.provider_invoice_id)))
+async def create_payment(session: AsyncSession, user_id: UUID, plan_code: str) -> Payment:
+    plan = await get_plan_record(session, plan_code)
+    if plan_code == PlanCode.FREE.value or not plan.is_active or plan.price_rub <= 0:
+        raise ValueError(f"Plan is not available for purchase: {plan_code}")
     payment = Payment(
         user_id=user_id,
         plan_id=plan_code,
-        amount_rub=amount_rub,
-        provider_invoice_id=int(max_invoice_id or 1000) + 1,
+        amount_rub=plan.price_rub,
     )
     session.add(payment)
     await session.flush()
@@ -330,7 +379,7 @@ async def create_payment(session: AsyncSession, user_id: UUID, plan_code: str, a
         provider="robokassa",
         event_type="payment_status_changed",
         external_id=str(payment.provider_invoice_id),
-        payload={"status": "created", "plan_id": plan_code, "amount_rub": amount_rub},
+        payload={"status": "created", "plan_id": plan_code, "amount_rub": plan.price_rub},
         status="processed",
     )
     return payment
@@ -407,7 +456,9 @@ async def record_webhook_event(
 
 
 async def is_intake_enabled(session: AsyncSession) -> bool:
-    setting = await session.scalar(select(SystemSetting).where(SystemSetting.key == "intake_enabled"))
+    setting = await session.scalar(
+        select(SystemSetting).where(SystemSetting.key == "intake_enabled")
+    )
     if not setting:
         return True
     return setting.value.lower() not in {"0", "false", "no", "off"}

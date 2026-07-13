@@ -34,6 +34,14 @@ async def pop_oauth_state(state: str) -> str | None:
         await redis.aclose()
 
 
+async def oauth_state_exists(state: str) -> bool:
+    redis = get_redis()
+    try:
+        return bool(await redis.exists(f"oauth_state:{state}"))
+    finally:
+        await redis.aclose()
+
+
 async def enqueue_upload(upload_id: str, user_id: str) -> None:
     from app.workers.tasks import process_upload
 
@@ -48,7 +56,7 @@ async def enqueue_upload(upload_id: str, user_id: str) -> None:
 @asynccontextmanager
 async def user_limit_lock(user_id: str) -> AsyncIterator[None]:
     redis = get_redis()
-    lock = redis.lock(f"lock:daily_limit:{user_id}", timeout=30, blocking_timeout=10)
+    lock = redis.lock(f"lock:daily_limit:{user_id}", timeout=900, blocking_timeout=30)
     try:
         async with lock:
             yield

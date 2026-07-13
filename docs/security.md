@@ -13,7 +13,8 @@ Confidential data handling rules are defined in [Confidential Data Policy](confi
 - TikTok OAuth tokens are encrypted before database storage.
 - Internal business IDs use UUID where the domain does not require a stable public code.
 - Robokassa ResultURL signatures are verified before activation.
-- TikTok webhook signatures are checked when `TIKTOK_WEBHOOK_SECRET` is configured.
+- TikTok webhook signatures are always checked with `TIKTOK_CLIENT_SECRET`, the raw request body,
+  and a five-minute timestamp tolerance.
 - API rate limiting uses Redis.
 - Logs are JSON and must not include tokens, passwords, or Robokassa secrets.
 - Uploaded files must follow [File Storage Policy](file-storage-policy.md).

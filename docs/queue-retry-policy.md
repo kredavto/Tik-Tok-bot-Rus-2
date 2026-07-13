@@ -27,11 +27,14 @@ The worker layer handles:
 
 Automatic retry is allowed for:
 
-- Temporary network failures.
-- Temporary TikTok service errors.
+- Deterministic byte-range chunk uploads rejected with a temporary TikTok 5xx response.
+- Publication status checks that have not yet reached a terminal TikTok status.
 - Temporary Telegram notification failures.
 - Temporary Redis or database connectivity issues when retrying is safe.
-- Worker interruption before a terminal state is saved.
+
+The complete publication actor is not automatically replayed after an ambiguous failure because
+the official API may already have accepted the publication. Such jobs are marked failed for
+operator review. A full retry requires evidence that TikTok did not accept the earlier request.
 
 Retry classification must follow [Error Codes and Exception Handling](error-handling.md).
 

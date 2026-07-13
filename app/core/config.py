@@ -1,4 +1,6 @@
 from pathlib import Path
+from typing import Literal
+from urllib.parse import urlparse
 
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -13,10 +15,18 @@ class Settings(BaseSettings):
     app_port: int = Field(8080, alias="APP_PORT")
     api_workers: int = Field(1, alias="API_WORKERS")
     public_base_url: str = Field("http://localhost:8080", alias="PUBLIC_BASE_URL")
-    timezone: str = Field("UTC", alias="TIMEZONE")
+    timezone: str = Field("Europe/Moscow", alias="TIMEZONE")
 
     bot_token: str = Field("", validation_alias=AliasChoices("TELEGRAM_BOT_TOKEN", "BOT_TOKEN"))
     telegram_webhook_secret: str = Field("", alias="TELEGRAM_WEBHOOK_SECRET")
+    telegram_delivery_mode: Literal["polling", "webhook"] = Field(
+        "polling",
+        alias="TELEGRAM_DELIVERY_MODE",
+    )
+    telegram_webhook_path: str = Field(
+        "/api/v1/webhooks/telegram",
+        alias="TELEGRAM_WEBHOOK_PATH",
+    )
     admin_telegram_ids: str = Field(
         "",
         validation_alias=AliasChoices("TELEGRAM_ADMIN_IDS", "ADMIN_TELEGRAM_IDS"),
@@ -72,10 +82,41 @@ class Settings(BaseSettings):
     audit_log_retention_days: int = Field(365, alias="AUDIT_LOG_RETENTION_DAYS")
 
 
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]
 
 
 def require_settings(*names: str) -> None:
     missing = [name for name in names if not getattr(settings, name)]
     if missing:
         raise RuntimeError(f"Missing required configuration: {', '.join(missing)}")
+
+
+def validate_runtime_settings() -> None:
+    require_settings("database_url", "redis_url", "public_base_url")
+
+    if not settings.telegram_webhook_path.startswith("/"):
+        raise RuntimeError("TELEGRAM_WEBHOOK_PATH must start with '/'")
+
+    if settings.telegram_delivery_mode == "webhook":
+        require_settings("bot_token", "telegram_webhook_secret")
+        public_url = urlparse(settings.public_base_url)
+        if public_url.scheme != "https" or not public_url.netloc:
+            raise RuntimeError("Webhook mode requires an HTTPS PUBLIC_BASE_URL")
+
+    if settings.tiktok_publish_enabled:
+        require_settings(
+            "tiktok_client_key",
+            "tiktok_client_secret",
+            "tiktok_redirect_uri",
+            "token_encryption_key",
+        )
+
+    if not settings.robokassa_test_mode:
+        require_settings(
+            "robokassa_login",
+            "robokassa_password1",
+            "robokassa_password2",
+            "robokassa_result_url",
+            "robokassa_success_url",
+            "robokassa_fail_url",
+        )

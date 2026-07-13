@@ -12,7 +12,7 @@ def _catalog(locale: str = "ru") -> dict[str, str]:
 
 def text(key: str, locale: str = "ru", **kwargs: Any) -> str:
     template = _catalog(locale)[key]
-    return template.format(**kwargs)
+    return template.format(**kwargs) if kwargs else template
 
 
 WELCOME = text("welcome")
@@ -34,3 +34,8 @@ SETTINGS = text("settings")
 TIKTOK_REVOKED = text("tiktok_revoked")
 CANCELLED = text("cancelled")
 INTAKE_DISABLED = text("intake_disabled")
+ASK_PRIVACY = text("ask_privacy")
+ASK_INTERACTIONS = text("ask_interactions")
+ASK_COMMERCIAL = text("ask_commercial")
+CREATOR_INFO_ERROR = text("creator_info_error")
+CREATOR_DURATION_EXCEEDED = text("creator_duration_exceeded")

@@ -63,7 +63,14 @@ The FastAPI service exposes Robokassa result, success, and fail endpoints.
 
 ## Telegram Webhook
 
-The current bot service uses long polling. If webhook mode is introduced later, expose it through FastAPI/Nginx and document the endpoint before enabling it in production.
+Development can use `TELEGRAM_DELIVERY_MODE=polling`. Production uses
+`TELEGRAM_DELIVERY_MODE=webhook`; the bot service registers
+`https://<domain>/api/v1/webhooks/telegram`, while FastAPI verifies
+`X-Telegram-Bot-Api-Secret-Token` and dispatches the update through aiogram. FSM data is stored in
+Redis so multiple API instances share state.
+
+Never configure a bot token that has appeared in chat, logs, source files, or Git. Revoke it in
+BotFather and place the replacement only in the server-side `.env`.
 
 ## Environments
 

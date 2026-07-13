@@ -30,10 +30,12 @@ Public endpoint requirements are documented in [Public REST API](public-rest-api
 ## TikTok OAuth Start
 
 ```http
-GET /api/v1/oauth/tiktok/start?telegram_id=123456&username=creator
+GET /api/v1/oauth/tiktok/start?state=<one-time-state-created-by-bot>
 ```
 
-Returns a redirect to official TikTok OAuth.
+The Telegram bot creates the short-lived state and sends this URL to the user. The endpoint
+rejects missing, unknown, and expired states, then redirects to official TikTok OAuth. It never
+accepts a Telegram user identifier from the public request.
 
 ## Robokassa Result
 
@@ -92,7 +94,9 @@ Telegram webhook requests can use:
 X-Telegram-Bot-Api-Secret-Token: <TELEGRAM_WEBHOOK_SECRET>
 ```
 
-TikTok webhook requests must include `X-TikTok-Signature` when `TIKTOK_WEBHOOK_SECRET` is configured.
+TikTok webhook requests must include `TikTok-Signature` in the official `t=<timestamp>,s=<hmac>`
+format. The API validates HMAC-SHA256 over `<timestamp>.<raw_body>` with
+`TIKTOK_CLIENT_SECRET` and rejects timestamps outside the five-minute replay window.
 
 TikTok OAuth, webhook, and developer portal checks are documented in [TikTok Developer Configuration](tiktok-developer-configuration.md).
 
@@ -101,7 +105,7 @@ TikTok OAuth, webhook, and developer portal checks are documented in [TikTok Dev
 Start TikTok OAuth:
 
 ```bash
-curl "https://your-domain.example/api/v1/oauth/tiktok/start?telegram_id=123456"
+curl "https://your-domain.example/api/v1/oauth/tiktok/start?state=$OAUTH_STATE"
 ```
 
 List upload jobs:

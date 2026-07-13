@@ -70,10 +70,10 @@ async def require_admin(
         admin_id = admin.id
 
     async with session_scope() as session:
-        admin = await session.get(User, admin_id)
-        if not admin:
+        loaded_admin = await session.get(User, admin_id)
+        if not loaded_admin:
             raise HTTPException(status_code=401, detail="Admin was not found")
-        return admin
+        return loaded_admin
 
 
 def require_permission(permission: Permission) -> Callable:
@@ -112,7 +112,9 @@ async def log_admin_action(
 async def dashboard(admin: User = Depends(require_permission(Permission.VIEW_STATS))) -> dict:
     async with session_scope() as session:
         users_total = await session.scalar(select(func.count(User.id)))
-        payments_paid = await session.scalar(select(func.coalesce(func.sum(Payment.amount_rub), 0)).where(Payment.status == "paid"))
+        payments_paid = await session.scalar(
+            select(func.coalesce(func.sum(Payment.amount_rub), 0)).where(Payment.status == "paid")
+        )
         queued = await session.scalar(
             select(func.count(UploadJob.id)).where(
                 UploadJob.status.in_(
@@ -143,10 +145,20 @@ async def analytics(admin: User = Depends(require_permission(Permission.VIEW_STA
     since_24h = datetime.now(UTC) - timedelta(days=1)
     async with session_scope() as session:
         users_total = await session.scalar(select(func.count(User.id)))
-        new_users = await session.scalar(select(func.count(User.id)).where(User.created_at >= since_24h))
-        uploads_today = await session.scalar(select(func.count(UploadJob.id)).where(func.date(UploadJob.created_at) == today.isoformat()))
-        revenue = await session.scalar(select(func.coalesce(func.sum(Payment.amount_rub), 0)).where(Payment.status == "paid"))
-        tiktok_errors = await session.scalar(select(func.count(UploadJob.id)).where(UploadJob.error_message.ilike("%TikTok%")))
+        new_users = await session.scalar(
+            select(func.count(User.id)).where(User.created_at >= since_24h)
+        )
+        uploads_today = await session.scalar(
+            select(func.count(UploadJob.id)).where(
+                func.date(UploadJob.created_at) == today.isoformat()
+            )
+        )
+        revenue = await session.scalar(
+            select(func.coalesce(func.sum(Payment.amount_rub), 0)).where(Payment.status == "paid")
+        )
+        tiktok_errors = await session.scalar(
+            select(func.count(UploadJob.id)).where(UploadJob.error_message.ilike("%TikTok%"))
+        )
         plan_rows = (
             await session.execute(
                 select(Subscription.plan_id, func.count(Subscription.id))
@@ -279,7 +291,9 @@ async def update_plan(
             raise HTTPException(status_code=404, detail="Plan not found")
         for key, value in payload.model_dump(exclude_none=True).items():
             setattr(plan, key, value)
-        await log_admin_action(session, admin, "update_plan", "plan", plan_id, payload.model_dump(exclude_none=True))
+        await log_admin_action(
+            session, admin, "update_plan", "plan", plan_id, payload.model_dump(exclude_none=True)
+        )
     return {"status": "updated"}
 
 
@@ -322,7 +336,9 @@ async def upload_jobs(
     admin: User = Depends(require_permission(Permission.VIEW_UPLOAD_JOBS)),
 ) -> dict:
     async with session_scope() as session:
-        statement = select(UploadJob).order_by(UploadJob.created_at.desc()).limit(limit).offset(offset)
+        statement = (
+            select(UploadJob).order_by(UploadJob.created_at.desc()).limit(limit).offset(offset)
+        )
         count_statement = select(func.count(UploadJob.id))
         if status:
             statement = statement.where(UploadJob.status == status)
@@ -347,10 +363,15 @@ async def upload_jobs(
 
 
 @router.get("/settings")
-async def system_settings(admin: User = Depends(require_permission(Permission.MANAGE_SETTINGS))) -> list[dict]:
+async def system_settings(
+    admin: User = Depends(require_permission(Permission.MANAGE_SETTINGS)),
+) -> list[dict]:
     async with session_scope() as session:
         rows = (await session.scalars(select(SystemSetting).order_by(SystemSetting.key))).all()
-    return [{"key": row.key, "value": row.value, "updated_at": row.updated_at.isoformat()} for row in rows]
+    return [
+        {"key": row.key, "value": row.value, "updated_at": row.updated_at.isoformat()}
+        for row in rows
+    ]
 
 
 @router.put("/settings/{key}")

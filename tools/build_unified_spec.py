@@ -43,7 +43,7 @@ OUTPUT_DIR = DOCS / "final"
 PROJECT_TITLE = "Tik_Tok_Loader"
 DOC_TITLE_RU = "Единая техническая спецификация"
 DOC_TITLE_EN = "Unified Technical Specification"
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 REPO = "kredavto/Tik-Tok-bot-Rus-2"
 
 
@@ -296,6 +296,9 @@ def add_header_footer(doc: Document) -> None:
         header.style = doc.styles["Header"]
         header.alignment = WD_ALIGN_PARAGRAPH.RIGHT
         footer = section.footer.paragraphs[0]
+        # Newly created sections share the same footer part by default. Clear it before
+        # writing so the page field is not appended once for every section.
+        footer.text = ""
         footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
         footer.add_run("Страница ")
         add_field(footer, "PAGE", "1")

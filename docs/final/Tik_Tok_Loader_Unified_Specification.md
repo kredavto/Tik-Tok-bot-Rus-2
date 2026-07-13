@@ -2,9 +2,9 @@
 
 **Unified Technical Specification**
 
-- **Версия:** 0.1.0
+- **Версия:** 0.2.0
 - **Репозиторий:** `kredavto/Tik-Tok-bot-Rus-2`
-- **Дата сборки:** 2026-07-12
+- **Дата сборки:** 2026-07-13
 - **Статус:** проектная спецификация для реализации
 
 > Публикация TikTok в проекте проектируется только через официальный TikTok Content Posting API и OAuth 2.0. Неофициальные API, автоматизация интерфейса и методы обхода ограничений не входят в допустимую архитектуру.
@@ -1196,8 +1196,10 @@ TikTok webhook configuration must:
 
 - Use HTTPS.
 - Match the production public domain.
-- Include `TIKTOK_WEBHOOK_SECRET` when signature verification is enabled.
-- Verify inbound webhook signatures.
+- Signatures use the TikTok app `TIKTOK_CLIENT_SECRET`; no separate webhook secret is accepted by
+  the official verification algorithm.
+- Verify the `TikTok-Signature` timestamp and HMAC against the unmodified request body.
+- Reject webhook timestamps older than five minutes to limit replay attacks.
 - Process events idempotently.
 - Log delivery, validation, and processing errors without exposing secrets.
 
@@ -1208,16 +1210,31 @@ Before every production release:
 1. Confirm TikTok Developer Portal app status.
 2. Confirm production Redirect URI.
 3. Confirm approved scopes.
-4. Confirm webhook URL and secret.
+4. Confirm webhook URL and `TIKTOK_CLIENT_SECRET` signature verification.
 5. Run a test OAuth authorization with a test TikTok account.
 6. Confirm encrypted token storage.
 7. Confirm refresh flow behavior.
 8. Confirm official Content Posting API behavior in staging or controlled production test.
 9. Confirm no bypass, browser automation, or unofficial API behavior exists.
 
+## 19.5. Required Direct Post UX
+
+Before every publication the bot must query `/v2/post/publish/creator_info/query/` and:
+
+1. Display the TikTok creator nickname.
+2. Require a manual choice from the returned privacy options, with no default.
+3. Enforce the creator-specific maximum video duration.
+4. Let the user explicitly enable Comment, Duet, and Stitch only when TikTok allows them.
+5. Collect commercial-content disclosure and prevent branded content with `SELF_ONLY` visibility.
+6. Obtain explicit publication consent before any media is transferred.
+7. Poll `/v2/post/publish/status/fetch/` or process final Content Posting webhooks.
+
+Unaudited TikTok clients remain restricted to private posts and other platform limits. The system
+must report those restrictions and must not attempt to bypass them.
+
 TikTok account persistence rules are documented in [TikTok Accounts Entity](tiktok-accounts-entity.md).
 
-## 19.5. Change Control
+## 19.6. Change Control
 
 Changes to TikTok Developer settings must include:
 
@@ -1229,7 +1246,7 @@ Changes to TikTok Developer settings must include:
 - Verification result.
 - Rollback plan when applicable.
 
-## 19.6. Compliance Rule
+## 19.7. Compliance Rule
 
 If TikTok rejects authorization, scope, publication, region, account, policy, or webhook processing, the application must report the restriction and must not attempt circumvention.
 
@@ -1318,10 +1335,12 @@ Public endpoint requirements are documented in [Public REST API](public-rest-api
 ## 21.2. TikTok OAuth Start
 
 ```http
-GET /api/v1/oauth/tiktok/start?telegram_id=123456&username=creator
+GET /api/v1/oauth/tiktok/start?state=<one-time-state-created-by-bot>
 ```
 
-Returns a redirect to official TikTok OAuth.
+The Telegram bot creates the short-lived state and sends this URL to the user. The endpoint
+rejects missing, unknown, and expired states, then redirects to official TikTok OAuth. It never
+accepts a Telegram user identifier from the public request.
 
 ## 21.3. Robokassa Result
 
@@ -1380,7 +1399,9 @@ Telegram webhook requests can use:
 X-Telegram-Bot-Api-Secret-Token: <TELEGRAM_WEBHOOK_SECRET>
 ```
 
-TikTok webhook requests must include `X-TikTok-Signature` when `TIKTOK_WEBHOOK_SECRET` is configured.
+TikTok webhook requests must include `TikTok-Signature` in the official `t=<timestamp>,s=<hmac>`
+format. The API validates HMAC-SHA256 over `<timestamp>.<raw_body>` with
+`TIKTOK_CLIENT_SECRET` and rejects timestamps outside the five-minute replay window.
 
 TikTok OAuth, webhook, and developer portal checks are documented in [TikTok Developer Configuration](tiktok-developer-configuration.md).
 
@@ -1389,7 +1410,7 @@ TikTok OAuth, webhook, and developer portal checks are documented in [TikTok Dev
 Start TikTok OAuth:
 
 ```bash
-curl "https://your-domain.example/api/v1/oauth/tiktok/start?telegram_id=123456"
+curl "https://your-domain.example/api/v1/oauth/tiktok/start?state=$OAUTH_STATE"
 ```
 
 List upload jobs:
@@ -1596,6 +1617,9 @@ Robokassa ResultURL may return plain text `OK{InvId}` when required by Robokassa
 | POST | `/api/v1/payments/robokassa/result` | Process Robokassa ResultURL |
 
 Additional service endpoints, such as Telegram webhook and metrics, are documented in [API Documentation](api.md).
+
+The OAuth start endpoint accepts only a short-lived random `state` previously created by the
+Telegram bot. Public callers cannot select a Telegram user identifier or create an account link.
 
 ## 24.3. Compatibility Requirements
 
@@ -1885,7 +1909,8 @@ Confidential data handling rules are defined in [Confidential Data Policy](confi
 - TikTok OAuth tokens are encrypted before database storage.
 - Internal business IDs use UUID where the domain does not require a stable public code.
 - Robokassa ResultURL signatures are verified before activation.
-- TikTok webhook signatures are checked when `TIKTOK_WEBHOOK_SECRET` is configured.
+- TikTok webhook signatures are always checked with `TIKTOK_CLIENT_SECRET`, the raw request body,
+  and a five-minute timestamp tolerance.
 - API rate limiting uses Redis.
 - Logs are JSON and must not include tokens, passwords, or Robokassa secrets.
 - Uploaded files must follow [File Storage Policy](file-storage-policy.md).
@@ -2191,7 +2216,14 @@ Database: `DATABASE_URL`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`.
 
 Redis: `REDIS_URL`.
 
-TikTok API: `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `TIKTOK_REDIRECT_URI`, `TIKTOK_WEBHOOK_SECRET`.
+TikTok API: `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `TIKTOK_REDIRECT_URI`.
+
+Telegram delivery: `TELEGRAM_DELIVERY_MODE` is `polling` for local development and `webhook` for
+production. Webhook mode also requires `TELEGRAM_WEBHOOK_SECRET`,
+`TELEGRAM_WEBHOOK_PATH`, and an HTTPS `PUBLIC_BASE_URL`.
+
+`TIKTOK_WEBHOOK_SECRET` is retained only as a deprecated compatibility variable. Official TikTok
+webhook verification uses `TIKTOK_CLIENT_SECRET`.
 
 TikTok Developer Portal setup and pre-release checks are described in [TikTok Developer Configuration](tiktok-developer-configuration.md).
 
@@ -2337,7 +2369,14 @@ The FastAPI service exposes Robokassa result, success, and fail endpoints.
 
 ## 34.5. Telegram Webhook
 
-The current bot service uses long polling. If webhook mode is introduced later, expose it through FastAPI/Nginx and document the endpoint before enabling it in production.
+Development can use `TELEGRAM_DELIVERY_MODE=polling`. Production uses
+`TELEGRAM_DELIVERY_MODE=webhook`; the bot service registers
+`https://<domain>/api/v1/webhooks/telegram`, while FastAPI verifies
+`X-Telegram-Bot-Api-Secret-Token` and dispatches the update through aiogram. FSM data is stored in
+Redis so multiple API instances share state.
+
+Never configure a bot token that has appeared in chat, logs, source files, or Git. Revoke it in
+BotFather and place the replacement only in the server-side `.env`.
 
 ## 34.6. Environments
 
@@ -3257,11 +3296,14 @@ The worker layer handles:
 
 Automatic retry is allowed for:
 
-- Temporary network failures.
-- Temporary TikTok service errors.
+- Deterministic byte-range chunk uploads rejected with a temporary TikTok 5xx response.
+- Publication status checks that have not yet reached a terminal TikTok status.
 - Temporary Telegram notification failures.
 - Temporary Redis or database connectivity issues when retrying is safe.
-- Worker interruption before a terminal state is saved.
+
+The complete publication actor is not automatically replayed after an ambiguous failure because
+the official API may already have accepted the publication. Such jobs are marked failed for
+operator review. A full retry requires evidence that TikTok did not accept the earlier request.
 
 Retry classification must follow [Error Codes and Exception Handling](error-handling.md).
 

@@ -35,11 +35,15 @@ async def inspect_video(path: str) -> VideoInspection:
 
     duration = _extract_duration(metadata)
     if duration and duration > settings.max_video_duration_sec:
-        return VideoInspection(False, False, video_path, duration_sec=duration, error="duration_too_long")
+        return VideoInspection(
+            False, False, video_path, duration_sec=duration, error="duration_too_long"
+        )
 
     codec = _extract_video_codec(metadata)
     needs_transcode = video_path.suffix.lower() == ".webm"
-    return VideoInspection(True, needs_transcode, video_path, duration_sec=duration, codec_name=codec)
+    return VideoInspection(
+        True, needs_transcode, video_path, duration_sec=duration, codec_name=codec
+    )
 
 
 async def prepare_video_for_tiktok(path: str) -> Path:

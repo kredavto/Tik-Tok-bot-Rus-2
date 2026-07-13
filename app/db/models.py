@@ -1,7 +1,18 @@
 from datetime import UTC, date, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import BigInteger, Boolean, Date, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -24,9 +35,13 @@ class User(Base):
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     role: Mapped[str] = mapped_column(String(32), default="USER", index=True)
     is_blocked: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
-    agreement_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    agreement_accepted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
 
     subscriptions: Mapped[list["Subscription"]] = relationship(back_populates="user")
     tiktok_accounts: Mapped[list["TikTokAccount"]] = relationship(back_populates="user")
@@ -43,10 +58,14 @@ class TikTokAccount(Base):
     display_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     access_token_encrypted: Mapped[str] = mapped_column(Text)
     refresh_token_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
-    token_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    token_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     scopes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
 
     user: Mapped[User] = relationship(back_populates="tiktok_accounts")
 
@@ -72,7 +91,9 @@ class Subscription(Base):
     plan_id: Mapped[str] = mapped_column(ForeignKey("plans.id"), index=True)
     status: Mapped[str] = mapped_column(String(32), default="active", index=True)
     starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
-    ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    ends_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
     user: Mapped[User] = relationship(back_populates="subscriptions")
@@ -81,6 +102,12 @@ class Subscription(Base):
 
     __table_args__ = (
         Index("ix_subscriptions_user_status_ends", "user_id", "status", "ends_at"),
+        Index(
+            "uq_subscriptions_one_active_per_user",
+            "user_id",
+            unique=True,
+            postgresql_where=text("status = 'active'"),
+        ),
     )
 
 
@@ -89,12 +116,19 @@ class Payment(Base):
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
-    subscription_id: Mapped[UUID | None] = mapped_column(ForeignKey("subscriptions.id"), nullable=True)
+    subscription_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("subscriptions.id"), nullable=True
+    )
     plan_id: Mapped[str] = mapped_column(ForeignKey("plans.id"), index=True)
     amount_rub: Mapped[int] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(32), default="created", index=True)
     provider: Mapped[str] = mapped_column(String(32), default="robokassa")
-    provider_invoice_id: Mapped[int] = mapped_column(Integer, unique=True, index=True)
+    provider_invoice_id: Mapped[int] = mapped_column(
+        Integer,
+        server_default=text("nextval('payment_inv_id_seq')"),
+        unique=True,
+        index=True,
+    )
     raw_payload: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -113,15 +147,27 @@ class UploadJob(Base):
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
-    tiktok_account_id: Mapped[UUID | None] = mapped_column(ForeignKey("tiktok_accounts.id"), nullable=True)
+    tiktok_account_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("tiktok_accounts.id"), nullable=True
+    )
     telegram_file_id: Mapped[str] = mapped_column(String(255))
     local_path: Mapped[str] = mapped_column(Text)
     caption: Mapped[str | None] = mapped_column(Text, nullable=True)
+    privacy_level: Mapped[str] = mapped_column(String(64), default="SELF_ONLY")
+    disable_comment: Mapped[bool] = mapped_column(Boolean, default=True)
+    disable_duet: Mapped[bool] = mapped_column(Boolean, default=True)
+    disable_stitch: Mapped[bool] = mapped_column(Boolean, default=True)
+    brand_content_toggle: Mapped[bool] = mapped_column(Boolean, default=False)
+    brand_organic_toggle: Mapped[bool] = mapped_column(Boolean, default=False)
     status: Mapped[str] = mapped_column(String(32), default="NEW", index=True)
     tiktok_publish_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, index=True
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
 
     user: Mapped[User] = relationship(back_populates="upload_jobs")
     events: Mapped[list["UploadJobEvent"]] = relationship(back_populates="upload_job")
@@ -140,7 +186,9 @@ class UploadJobEvent(Base):
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
     status: Mapped[str] = mapped_column(String(32), index=True)
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, index=True
+    )
 
     upload_job: Mapped[UploadJob] = relationship(back_populates="events")
 
@@ -157,7 +205,9 @@ class DailyUsage(Base):
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
     usage_date: Mapped[date] = mapped_column(Date, index=True)
     upload_count: Mapped[int] = mapped_column(Integer, default=0)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
 
     __table_args__ = (Index("ix_daily_usage_user_date", "user_id", "usage_date", unique=True),)
 
@@ -193,4 +243,6 @@ class SystemSetting(Base):
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     key: Mapped[str] = mapped_column(String(128), unique=True, index=True)
     value: Mapped[str] = mapped_column(Text)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )

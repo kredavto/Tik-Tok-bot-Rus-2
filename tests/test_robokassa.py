@@ -21,7 +21,7 @@ async def test_robokassa_order_is_created_with_unique_invoice() -> None:
     await init_db()
     async with session_scope() as session:
         user = await get_or_create_user(session, 777000111, "robokassa_user")
-        payment = await create_payment(session, user.id, PlanCode.PRO.value, 499)
+        payment = await create_payment(session, user.id, PlanCode.PRO.value)
 
     assert payment.provider_invoice_id >= 1001
     assert payment.status == "created"

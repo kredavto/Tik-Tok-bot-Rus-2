@@ -1,34 +1,72 @@
-import hashlib
 import hmac
+import json
+import logging
 import time
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from aiogram import Bot
+from aiogram import Bot, Dispatcher
+from aiogram.types import Update
 from fastapi import FastAPI, Form, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, PlainTextResponse, RedirectResponse, Response
+from pydantic import ValidationError
 from sqlalchemy import func, select, text
 
-from app.core.config import require_settings, settings
+from app.api.admin import router as admin_router
+from app.bot.application import create_dispatcher
+from app.bot.messages import text as bot_text
+from app.core.config import settings, validate_runtime_settings
 from app.core.logging import configure_logging
-from app.core.redis import create_oauth_state, get_redis, pop_oauth_state
+from app.core.redis import get_redis, oauth_state_exists, pop_oauth_state
 from app.core.upload_status import UploadStatus
-from app.db.models import Payment, Subscription, UploadJob, User
+from app.db.models import Payment, Subscription, TikTokAccount, UploadJob, User, WebhookEvent
 from app.db.session import (
     engine,
-    get_or_create_user,
     init_db,
     mark_payment_paid,
     record_webhook_event,
     session_scope,
+    transition_upload_job,
     upsert_tiktok_account,
 )
 from app.services.robokassa import validate_result_signature
-from app.services.tiktok import TikTokApiError, TikTokClient, build_oauth_url
-from app.api.admin import router as admin_router
-from app.bot.messages import text as bot_text
+from app.services.tiktok import (
+    TikTokApiError,
+    TikTokClient,
+    build_oauth_url,
+    validate_webhook_signature,
+)
+from app.workers.tasks import notify_upload_status
 
 configure_logging()
-app = FastAPI(title="Tik_Tok_Loader API")
+logger = logging.getLogger(__name__)
+
+telegram_bot: Bot | None = None
+telegram_dispatcher: Dispatcher | None = None
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    global telegram_bot, telegram_dispatcher
+    validate_runtime_settings()
+    await init_db()
+    if settings.telegram_delivery_mode == "webhook":
+        telegram_bot = Bot(token=settings.bot_token)
+        telegram_dispatcher = create_dispatcher()
+    try:
+        yield
+    finally:
+        if telegram_dispatcher:
+            await telegram_dispatcher.storage.close()
+        if telegram_bot:
+            await telegram_bot.session.close()
+        telegram_dispatcher = None
+        telegram_bot = None
+
+
+app = FastAPI(title="Tik_Tok_Loader API", lifespan=lifespan)
 app.include_router(admin_router)
 
 METRICS = {
@@ -89,12 +127,6 @@ async def rate_limit_middleware(request: Request, call_next):
     return await call_next(request)
 
 
-@app.on_event("startup")
-async def startup() -> None:
-    require_settings("database_url", "redis_url", "public_base_url")
-    await init_db()
-
-
 @app.get("/api/v1/health")
 @app.get("/health")
 async def health() -> dict[str, str]:
@@ -135,7 +167,9 @@ async def _collect_dynamic_metrics() -> dict[str, int]:
         publication_errors = await session.scalar(
             select(func.count(UploadJob.id)).where(UploadJob.status == UploadStatus.FAILED.value)
         )
-        payments_paid = await session.scalar(select(func.count(Payment.id)).where(Payment.status == "paid"))
+        payments_paid = await session.scalar(
+            select(func.count(Payment.id)).where(Payment.status == "paid")
+        )
         queue_size = await session.scalar(
             select(func.count(UploadJob.id)).where(
                 UploadJob.status.in_(
@@ -172,12 +206,10 @@ async def _collect_dynamic_metrics() -> dict[str, int]:
 @app.get("/api/v1/oauth/tiktok/start")
 @app.get("/oauth/tiktok/start")
 async def oauth_tiktok_start(
-    telegram_id: int = Query(...),
-    username: str | None = Query(default=None),
+    state: str = Query(..., min_length=32, max_length=128),
 ) -> RedirectResponse:
-    async with session_scope() as session:
-        user = await get_or_create_user(session, telegram_id, username)
-        state = await create_oauth_state(str(user.id))
+    if not await oauth_state_exists(state):
+        raise HTTPException(status_code=400, detail="Invalid or expired OAuth state")
     return RedirectResponse(build_oauth_url(state))
 
 
@@ -206,7 +238,12 @@ async def tiktok_callback(
     except TikTokApiError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    telegram_id: int | None = None
     async with session_scope() as session:
+        user = await session.get(User, UUID(user_id))
+        if user is None:
+            raise HTTPException(status_code=400, detail="OAuth user no longer exists")
+        telegram_id = user.telegram_id
         await record_webhook_event(
             session,
             provider="tiktok",
@@ -226,28 +263,78 @@ async def tiktok_callback(
             scopes=token.scope,
         )
 
+    if telegram_id and settings.bot_token:
+        bot = Bot(token=settings.bot_token)
+        try:
+            await bot.send_message(telegram_id, bot_text("tiktok_connected"))
+        except Exception:
+            logger.exception("Could not send TikTok connection notification")
+        finally:
+            await bot.session.close()
+
     return {"status": "connected", "message": "TikTok account connected. Return to Telegram bot."}
 
 
-@app.post("/api/v1/webhooks/telegram")
+@app.post(settings.telegram_webhook_path)
 @app.post("/webhooks/telegram")
 async def telegram_webhook(request: Request) -> dict[str, str]:
-    if settings.telegram_webhook_secret:
-        token = request.headers.get("X-Telegram-Bot-Api-Secret-Token", "")
-        if not hmac.compare_digest(token, settings.telegram_webhook_secret):
-            raise HTTPException(status_code=401, detail="Invalid Telegram webhook secret")
+    if settings.telegram_delivery_mode != "webhook" or not telegram_bot or not telegram_dispatcher:
+        raise HTTPException(status_code=503, detail="Telegram webhook delivery is not enabled")
+
+    token = request.headers.get("X-Telegram-Bot-Api-Secret-Token", "")
+    if not hmac.compare_digest(token, settings.telegram_webhook_secret):
+        raise HTTPException(status_code=401, detail="Invalid Telegram webhook secret")
 
     payload = await request.json()
+    external_id = str(payload.get("update_id", ""))
+    if not external_id:
+        raise HTTPException(status_code=400, detail="Missing Telegram update_id")
+
     async with session_scope() as session:
-        await record_webhook_event(
-            session,
-            provider="telegram",
-            event_type="update",
-            external_id=str(payload.get("update_id", "")),
-            payload=payload,
-            status="received",
+        event = await session.scalar(
+            select(WebhookEvent).where(
+                WebhookEvent.provider == "telegram",
+                WebhookEvent.event_type == "update",
+                WebhookEvent.external_id == external_id,
+            )
         )
+        if event and event.status == "processed":
+            return {"status": "ok"}
+        if event:
+            event.payload = payload
+            event.status = "received"
+        else:
+            event = await record_webhook_event(
+                session,
+                provider="telegram",
+                event_type="update",
+                external_id=external_id,
+                payload=payload,
+                status="received",
+            )
+        event_id = event.id
+
+    try:
+        update = Update.model_validate(payload, context={"bot": telegram_bot})
+        await telegram_dispatcher.feed_update(telegram_bot, update)
+    except ValidationError as exc:
+        await _mark_telegram_event(event_id, "rejected")
+        raise HTTPException(status_code=400, detail="Invalid Telegram update") from exc
+    except Exception as exc:
+        await _mark_telegram_event(event_id, "failed")
+        logger.exception("Telegram update processing failed", extra={"update_id": external_id})
+        raise HTTPException(status_code=500, detail="Telegram update processing failed") from exc
+
+    await _mark_telegram_event(event_id, "processed")
     return {"status": "ok"}
+
+
+async def _mark_telegram_event(event_id: UUID, status: str) -> None:
+    async with session_scope() as session:
+        event = await session.get(WebhookEvent, event_id)
+        if event:
+            event.status = status
+            event.processed_at = datetime.now(UTC) if status == "processed" else None
 
 
 @app.post("/api/v1/webhooks/tiktok")
@@ -255,26 +342,94 @@ async def telegram_webhook(request: Request) -> dict[str, str]:
 async def tiktok_webhook(request: Request) -> dict[str, str]:
     METRICS["tiktok_webhooks_total"] += 1
     raw_body = await request.body()
-    if settings.tiktok_webhook_secret:
-        signature = request.headers.get("X-TikTok-Signature", "")
-        expected = hmac.new(
-            settings.tiktok_webhook_secret.encode("utf-8"),
-            raw_body,
-            hashlib.sha256,
-        ).hexdigest()
-        if not hmac.compare_digest(signature, expected):
-            raise HTTPException(status_code=401, detail="Invalid TikTok webhook signature")
+    signature = request.headers.get("TikTok-Signature", "")
+    if not validate_webhook_signature(raw_body, signature):
+        raise HTTPException(status_code=401, detail="Invalid TikTok webhook signature")
 
     payload = await request.json()
+    if payload.get("client_key") and payload["client_key"] != settings.tiktok_client_key:
+        raise HTTPException(status_code=401, detail="Invalid TikTok client key")
+
+    content = payload.get("content") or {}
+    if isinstance(content, str):
+        try:
+            content = json.loads(content)
+        except json.JSONDecodeError as exc:
+            raise HTTPException(status_code=400, detail="Invalid TikTok webhook content") from exc
+    if not isinstance(content, dict):
+        raise HTTPException(status_code=400, detail="Invalid TikTok webhook content")
+
+    event_type = str(payload.get("event", "unknown"))
+    publish_id = str(content.get("publish_id") or payload.get("publish_id") or "")
+    external_id = publish_id or ":".join(
+        [
+            event_type,
+            str(payload.get("create_time", "")),
+            str(payload.get("user_openid", "")),
+        ]
+    )
     async with session_scope() as session:
-        await record_webhook_event(
+        existing = await session.scalar(
+            select(WebhookEvent).where(
+                WebhookEvent.provider == "tiktok",
+                WebhookEvent.event_type == event_type,
+                WebhookEvent.external_id == external_id,
+                WebhookEvent.status == "processed",
+            )
+        )
+        if existing:
+            return {"status": "ok"}
+
+        event = await record_webhook_event(
             session,
             provider="tiktok",
-            event_type=str(payload.get("event", "unknown")),
-            external_id=str(payload.get("event_id") or payload.get("publish_id") or ""),
+            event_type=event_type,
+            external_id=external_id,
             payload=payload,
             status="received",
         )
+
+        upload = (
+            await session.scalar(select(UploadJob).where(UploadJob.tiktok_publish_id == publish_id))
+            if publish_id
+            else None
+        )
+        if upload and upload.status == UploadStatus.PROCESSING.value:
+            if event_type in {"post.publish.complete", "video.publish.completed"}:
+                await transition_upload_job(
+                    session,
+                    upload,
+                    UploadStatus.PUBLISHED,
+                    "TikTok publication completed by webhook",
+                )
+                user = await session.get(User, upload.user_id)
+                if user:
+                    notify_upload_status.send(user.telegram_id, UploadStatus.PUBLISHED.value)
+            elif event_type in {"post.publish.failed", "video.upload.failed"}:
+                reason = str(content.get("reason") or "unknown")
+                await transition_upload_job(
+                    session,
+                    upload,
+                    UploadStatus.FAILED,
+                    f"TikTok processing failed: {reason}",
+                )
+                user = await session.get(User, upload.user_id)
+                if user:
+                    notify_upload_status.send(user.telegram_id, UploadStatus.FAILED.value)
+
+        if event_type == "authorization.removed":
+            open_id = str(payload.get("user_openid") or "")
+            account = await session.scalar(
+                select(TikTokAccount).where(TikTokAccount.open_id == open_id)
+            )
+            if account:
+                user = await session.get(User, account.user_id)
+                await session.delete(account)
+                if user:
+                    notify_upload_status.send(user.telegram_id, "TIKTOK_REVOKED")
+
+        event.status = "processed"
+        event.processed_at = datetime.now(UTC)
     return {"status": "ok"}
 
 

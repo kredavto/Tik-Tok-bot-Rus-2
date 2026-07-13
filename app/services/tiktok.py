@@ -1,8 +1,12 @@
+import asyncio
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from hashlib import sha256
+import hmac
 from pathlib import Path
 from urllib.parse import urlencode
 
+import aiofiles  # type: ignore[import-untyped]
 import aiohttp
 
 from app.core.config import settings
@@ -37,6 +41,33 @@ class TikTokUserInfo:
 class TikTokPostResult:
     publish_id: str
     status: str
+
+
+@dataclass(frozen=True)
+class TikTokCreatorInfo:
+    username: str
+    nickname: str
+    privacy_level_options: tuple[str, ...]
+    comment_disabled: bool
+    duet_disabled: bool
+    stitch_disabled: bool
+    max_video_post_duration_sec: int
+
+
+@dataclass(frozen=True)
+class TikTokPostStatus:
+    status: str
+    fail_reason: str | None = None
+
+
+@dataclass(frozen=True)
+class TikTokPostOptions:
+    privacy_level: str
+    disable_comment: bool
+    disable_duet: bool
+    disable_stitch: bool
+    brand_content_toggle: bool = False
+    brand_organic_toggle: bool = False
 
 
 def build_oauth_url(state: str) -> str:
@@ -105,47 +136,95 @@ class TikTokClient:
         user = data["data"]["user"]
         return TikTokUserInfo(open_id=user["open_id"], display_name=user.get("display_name"))
 
-    async def publish_video(self, video_path: Path, title: str) -> TikTokPostResult:
+    async def query_creator_info(self) -> TikTokCreatorInfo:
+        data = await self._post("/post/publish/creator_info/query/", {})
+        creator = data["data"]
+        return TikTokCreatorInfo(
+            username=str(creator.get("creator_username", "")),
+            nickname=str(creator.get("creator_nickname", "")),
+            privacy_level_options=tuple(creator.get("privacy_level_options") or ()),
+            comment_disabled=bool(creator.get("comment_disabled", False)),
+            duet_disabled=bool(creator.get("duet_disabled", False)),
+            stitch_disabled=bool(creator.get("stitch_disabled", False)),
+            max_video_post_duration_sec=int(creator.get("max_video_post_duration_sec") or 0),
+        )
+
+    async def publish_video(
+        self,
+        video_path: Path,
+        title: str,
+        options: TikTokPostOptions,
+    ) -> TikTokPostResult:
         if not settings.tiktok_publish_enabled:
-            raise TikTokPublishingDisabled("TikTok publishing is disabled until official API approval.")
+            raise TikTokPublishingDisabled(
+                "TikTok publishing is disabled until official API approval."
+            )
         if not self.access_token:
             raise TikTokApiError("auth_required", "TikTok access token is required.")
+        if options.brand_content_toggle and options.privacy_level == "SELF_ONLY":
+            raise TikTokApiError(
+                "invalid_post_options",
+                "Branded content cannot use the SELF_ONLY privacy level.",
+            )
 
         size = video_path.stat().st_size
+        chunk_size, total_chunk_count = _chunk_plan(size)
         init_payload = {
             "post_info": {
-                "title": title[:2200],
-                "privacy_level": "SELF_ONLY",
-                "disable_duet": False,
-                "disable_comment": False,
-                "disable_stitch": False,
+                "title": _truncate_utf16(title, 2200),
+                "privacy_level": options.privacy_level,
+                "disable_duet": options.disable_duet,
+                "disable_comment": options.disable_comment,
+                "disable_stitch": options.disable_stitch,
+                "brand_content_toggle": options.brand_content_toggle,
+                "brand_organic_toggle": options.brand_organic_toggle,
             },
             "source_info": {
                 "source": "FILE_UPLOAD",
                 "video_size": size,
-                "chunk_size": size,
-                "total_chunk_count": 1,
+                "chunk_size": chunk_size,
+                "total_chunk_count": total_chunk_count,
             },
         }
         data = await self._post("/post/publish/video/init/", init_payload)
         upload_url = data["data"]["upload_url"]
         publish_id = data["data"]["publish_id"]
 
-        async with aiohttp.ClientSession() as session:
-            with video_path.open("rb") as video_file:
-                async with session.put(
-                    upload_url,
-                    data=video_file,
-                    headers={"Content-Range": f"bytes 0-{size - 1}/{size}"},
-                ) as response:
-                    if response.status >= 400:
-                        raise TikTokApiError("upload_failed", await response.text())
+        content_type = {
+            ".mov": "video/quicktime",
+            ".webm": "video/webm",
+        }.get(video_path.suffix.lower(), "video/mp4")
+        async with (
+            aiohttp.ClientSession() as session,
+            aiofiles.open(video_path, "rb") as video_file,
+        ):
+            offset = 0
+            for chunk_index in range(total_chunk_count):
+                is_last = chunk_index == total_chunk_count - 1
+                bytes_to_read = size - offset if is_last else chunk_size
+                chunk = await video_file.read(bytes_to_read)
+                if not chunk:
+                    raise TikTokApiError("upload_failed", "Video chunk could not be read.")
+                last_byte = offset + len(chunk) - 1
+                await _upload_chunk(
+                    session=session,
+                    upload_url=upload_url,
+                    chunk=chunk,
+                    content_type=content_type,
+                    content_range=f"bytes {offset}-{last_byte}/{size}",
+                    expected_status=201 if is_last else 206,
+                )
+                offset = last_byte + 1
 
         return TikTokPostResult(publish_id=publish_id, status="processing")
 
-    async def get_post_status(self, publish_id: str) -> str:
+    async def get_post_status(self, publish_id: str) -> TikTokPostStatus:
         data = await self._post("/post/publish/status/fetch/", {"publish_id": publish_id})
-        return data["data"].get("status", "unknown")
+        status = data["data"]
+        return TikTokPostStatus(
+            status=str(status.get("status", "UNKNOWN")),
+            fail_reason=status.get("fail_reason"),
+        )
 
     async def _get(self, path: str) -> dict:
         headers = {"Authorization": f"Bearer {self.access_token}"}
@@ -173,3 +252,82 @@ class TikTokClient:
 
 def token_is_expired(expires_at: datetime | None) -> bool:
     return bool(expires_at and expires_at <= datetime.now(UTC))
+
+
+def _chunk_plan(size: int) -> tuple[int, int]:
+    if size <= 0:
+        raise ValueError("Video file is empty.")
+    if size <= 64_000_000:
+        return size, 1
+    chunk_size = 10_000_000
+    return chunk_size, (size + chunk_size - 1) // chunk_size
+
+
+async def _upload_chunk(
+    *,
+    session: aiohttp.ClientSession,
+    upload_url: str,
+    chunk: bytes,
+    content_type: str,
+    content_range: str,
+    expected_status: int,
+) -> None:
+    for attempt in range(3):
+        async with session.put(
+            upload_url,
+            data=chunk,
+            headers={
+                "Content-Type": content_type,
+                "Content-Length": str(len(chunk)),
+                "Content-Range": content_range,
+            },
+        ) as response:
+            if response.status == expected_status:
+                return
+            body = await response.text()
+            if response.status < 500 or attempt == 2:
+                raise TikTokApiError("upload_failed", body)
+        await asyncio.sleep(2**attempt)
+
+
+def _truncate_utf16(value: str, max_units: int) -> str:
+    encoded = value.encode("utf-16-le")
+    if len(encoded) <= max_units * 2:
+        return value
+    truncated = encoded[: max_units * 2]
+    while truncated:
+        try:
+            return truncated.decode("utf-16-le")
+        except UnicodeDecodeError:
+            truncated = truncated[:-2]
+    return ""
+
+
+def validate_webhook_signature(
+    raw_body: bytes,
+    signature_header: str,
+    *,
+    now: int | None = None,
+    tolerance_seconds: int = 300,
+) -> bool:
+    values: dict[str, str] = {}
+    for part in signature_header.split(","):
+        key, separator, value = part.strip().partition("=")
+        if separator:
+            values[key] = value
+
+    timestamp = values.get("t")
+    signature = values.get("s")
+    if not timestamp or not signature or not timestamp.isdigit():
+        return False
+
+    current_time = int(datetime.now(UTC).timestamp()) if now is None else now
+    if abs(current_time - int(timestamp)) > tolerance_seconds:
+        return False
+
+    secret = settings.tiktok_client_secret
+    if not secret:
+        return False
+    signed_payload = timestamp.encode("ascii") + b"." + raw_body
+    expected = hmac.new(secret.encode("utf-8"), signed_payload, sha256).hexdigest()
+    return hmac.compare_digest(expected, signature)

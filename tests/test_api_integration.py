@@ -15,4 +15,3 @@ async def test_health_and_metrics_endpoints() -> None:
     assert health.json() == {"status": "ok"}
     assert metrics.status_code == 200
     assert "tiktok_loader_http_requests_total" in metrics.text
-

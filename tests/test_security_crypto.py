@@ -12,4 +12,3 @@ def test_encrypts_and_decrypts_token(monkeypatch) -> None:
 
     assert encrypted != "access-token"
     assert decrypt_secret(encrypted) == "access-token"
-

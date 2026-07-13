@@ -4,6 +4,37 @@ All notable changes to Tik_Tok_Loader are documented here.
 
 The project follows Semantic Versioning.
 
+## [Unreleased]
+
+### Added
+
+- Production Telegram webhook dispatch through FastAPI with Redis-backed aiogram FSM.
+- TikTok creator-info flow with manual privacy, interaction, and commercial-content choices.
+- Official TikTok Content Posting status polling and final webhook handling.
+- Chunked TikTok file upload for videos larger than 64 MB.
+- PostgreSQL migrations for Robokassa invoice sequencing, active-subscription integrity, and
+  TikTok post options.
+- Regression tests for TikTok signatures, replay protection, chunk planning, creator info,
+  webhook configuration, localization, and bot keyboards.
+
+### Changed
+
+- Daily limits now use `Europe/Moscow` by default.
+- Runtime plan prices, limits, activation flags, and durations are read from PostgreSQL without
+  being overwritten at startup.
+- Paid subscription activation expires the previous active subscription transactionally.
+- TikTok webhook verification now follows the official `TikTok-Signature` timestamped HMAC format.
+- Added the explicit SQLAlchemy `greenlet` runtime dependency.
+- TikTok OAuth start now accepts only a short-lived state created by the Telegram bot.
+- Full upload jobs are no longer retried after an ambiguous failure; deterministic byte-range
+  chunk uploads retry server errors with bounded exponential backoff.
+
+### Security
+
+- Local Word files containing Telegram API tokens are excluded from Git.
+- Production webhook mode fails startup without HTTPS and a Telegram webhook secret.
+- Public requests can no longer choose a Telegram user identifier during TikTok OAuth linking.
+
 ## [0.1.0] - 2026-07-12
 
 ### Added

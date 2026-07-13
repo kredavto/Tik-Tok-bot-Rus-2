@@ -16,7 +16,14 @@ Database: `DATABASE_URL`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`.
 
 Redis: `REDIS_URL`.
 
-TikTok API: `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `TIKTOK_REDIRECT_URI`, `TIKTOK_WEBHOOK_SECRET`.
+TikTok API: `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `TIKTOK_REDIRECT_URI`.
+
+Telegram delivery: `TELEGRAM_DELIVERY_MODE` is `polling` for local development and `webhook` for
+production. Webhook mode also requires `TELEGRAM_WEBHOOK_SECRET`,
+`TELEGRAM_WEBHOOK_PATH`, and an HTTPS `PUBLIC_BASE_URL`.
+
+`TIKTOK_WEBHOOK_SECRET` is retained only as a deprecated compatibility variable. Official TikTok
+webhook verification uses `TIKTOK_CLIENT_SECRET`.
 
 TikTok Developer Portal setup and pre-release checks are described in [TikTok Developer Configuration](tiktok-developer-configuration.md).
 
