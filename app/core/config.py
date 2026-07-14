@@ -85,6 +85,7 @@ class Settings(BaseSettings):
     subscription_sweep_seconds: int = Field(60, ge=10, alias="SUBSCRIPTION_SWEEP_SECONDS")
     token_refresh_sweep_seconds: int = Field(900, ge=60, alias="TOKEN_REFRESH_SWEEP_SECONDS")
     retention_sweep_seconds: int = Field(3600, ge=300, alias="RETENTION_SWEEP_SECONDS")
+    status_reconcile_seconds: int = Field(300, ge=60, alias="STATUS_RECONCILE_SECONDS")
     token_refresh_lead_seconds: int = Field(3600, ge=300, alias="TOKEN_REFRESH_LEAD_SECONDS")
     maintenance_batch_size: int = Field(100, ge=1, le=1000, alias="MAINTENANCE_BATCH_SIZE")
     video_retention_hours: int = Field(24, alias="VIDEO_RETENTION_HOURS")

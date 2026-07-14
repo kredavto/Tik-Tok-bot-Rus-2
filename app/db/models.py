@@ -236,10 +236,20 @@ class WebhookEvent(Base):
     provider: Mapped[str] = mapped_column(String(64), index=True)
     event_type: Mapped[str] = mapped_column(String(128), index=True)
     external_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    deduplication_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
     payload: Mapped[dict] = mapped_column(JSONB)
     status: Mapped[str] = mapped_column(String(32), default="received", index=True)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index(
+            "uq_webhook_events_deduplication_key",
+            "deduplication_key",
+            unique=True,
+        ),
+    )
 
 
 class AdminAction(Base):

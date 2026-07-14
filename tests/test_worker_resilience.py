@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, call
 
 import pytest
 
@@ -50,12 +50,14 @@ async def test_tiktok_acceptance_is_committed_before_local_side_effects(
     upload = SimpleNamespace(tiktok_publish_id=None)
     user = SimpleNamespace()
     transition = AsyncMock()
-    monkeypatch.setattr(tasks, "consume_daily_upload", AsyncMock(return_value=(True, 1, 2)))
+    record_accepted = AsyncMock(return_value=3)
+    monkeypatch.setattr(tasks, "record_accepted_upload", record_accepted)
     monkeypatch.setattr(tasks, "transition_upload_job", transition)
 
     await tasks._persist_tiktok_acceptance(session, upload, user, "publish-id")
 
     assert upload.tiktok_publish_id == "publish-id"
+    record_accepted.assert_awaited_once_with(session, user)
     transition.assert_awaited_once_with(
         session,
         upload,
@@ -66,23 +68,26 @@ async def test_tiktok_acceptance_is_committed_before_local_side_effects(
 
 
 @pytest.mark.asyncio
-async def test_tiktok_acceptance_is_not_committed_when_quota_cannot_be_consumed(
+async def test_tiktok_acceptance_is_recorded_after_plan_limit_changes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     session = AsyncMock()
     upload = SimpleNamespace(tiktok_publish_id=None)
-    monkeypatch.setattr(tasks, "consume_daily_upload", AsyncMock(return_value=(False, 2, 2)))
+    record_accepted = AsyncMock(return_value=3)
+    transition = AsyncMock()
+    monkeypatch.setattr(tasks, "record_accepted_upload", record_accepted)
+    monkeypatch.setattr(tasks, "transition_upload_job", transition)
 
-    with pytest.raises(RuntimeError, match="Daily usage changed"):
-        await tasks._persist_tiktok_acceptance(
-            session,
-            upload,
-            SimpleNamespace(),
-            "publish-id",
-        )
+    await tasks._persist_tiktok_acceptance(
+        session,
+        upload,
+        SimpleNamespace(),
+        "publish-id",
+    )
 
-    assert upload.tiktok_publish_id is None
-    session.commit.assert_not_awaited()
+    assert upload.tiktok_publish_id == "publish-id"
+    record_accepted.assert_awaited_once()
+    session.commit.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -109,3 +114,27 @@ async def test_local_failures_do_not_reclassify_tiktok_acceptance(
     enqueue.assert_called_once()
     notify.assert_awaited_once()
     cleanup.assert_awaited_once_with("/tmp/video.mp4")
+
+
+@pytest.mark.asyncio
+async def test_processing_reconciliation_requeues_accepted_uploads(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rows = [("upload-1", "user-1"), ("upload-2", "user-2")]
+    session = SimpleNamespace(execute=AsyncMock(return_value=SimpleNamespace(all=lambda: rows)))
+
+    @asynccontextmanager
+    async def fake_session_scope() -> AsyncIterator[object]:
+        yield session
+
+    enqueue = MagicMock()
+    monkeypatch.setattr(tasks, "session_scope", fake_session_scope)
+    monkeypatch.setattr(tasks.check_publish_status, "send", enqueue)
+
+    count = await tasks._reconcile_processing_uploads()
+
+    assert count == 2
+    assert enqueue.call_args_list == [
+        call("upload-1", "user-1", 0),
+        call("upload-2", "user-2", 0),
+    ]

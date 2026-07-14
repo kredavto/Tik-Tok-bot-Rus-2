@@ -2392,7 +2392,7 @@ Robokassa: `ROBOKASSA_MERCHANT_LOGIN`, `ROBOKASSA_PASSWORD_1`, `ROBOKASSA_PASSWO
 Security: `TOKEN_ENCRYPTION_KEY`, `ADMIN_API_TOKEN`, `ADMIN_CSRF_TOKEN`.
 
 Scheduler: `SCHEDULER_TICK_SECONDS`, `SUBSCRIPTION_SWEEP_SECONDS`,
-`TOKEN_REFRESH_SWEEP_SECONDS`, `RETENTION_SWEEP_SECONDS`,
+`TOKEN_REFRESH_SWEEP_SECONDS`, `RETENTION_SWEEP_SECONDS`, `STATUS_RECONCILE_SECONDS`,
 `TOKEN_REFRESH_LEAD_SECONDS`, and `MAINTENANCE_BATCH_SIZE`.
 
 The scheduler uses Redis leases so multiple instances do not enqueue the same periodic task in
@@ -5512,4 +5512,3 @@ Before production changes:
 ## 72.4. Resilience Criteria
 
 The system must preserve user history, payment records, subscriptions, upload metadata, and audit trails during temporary external failures and controlled restarts.
-

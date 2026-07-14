@@ -198,6 +198,13 @@ async def consume_daily_upload(session: AsyncSession, user: User) -> tuple[bool,
     return True, usage.upload_count, plan.daily_limit
 
 
+async def record_accepted_upload(session: AsyncSession, user: User) -> int:
+    """Record a publication that TikTok has already accepted."""
+    usage = await get_daily_usage(session, user.id, current_usage_date())
+    usage.upload_count += 1
+    return usage.upload_count
+
+
 async def accept_agreement(session: AsyncSession, user: User) -> None:
     user.agreement_accepted_at = datetime.now(UTC)
 
@@ -591,6 +598,52 @@ async def record_webhook_event(
     )
     session.add(event)
     await session.flush()
+    return event
+
+
+async def claim_webhook_event(
+    session: AsyncSession,
+    provider: str,
+    event_type: str,
+    external_id: str,
+    payload: dict,
+    *,
+    lease_seconds: int = 900,
+) -> WebhookEvent | None:
+    """Atomically claim one externally identifiable webhook delivery."""
+    now = datetime.now(UTC)
+    deduplication_key = f"{provider}:{event_type}:{external_id}"
+    event_id = await session.scalar(
+        pg_insert(WebhookEvent)
+        .values(
+            provider=provider,
+            event_type=event_type,
+            external_id=external_id,
+            deduplication_key=deduplication_key,
+            payload=payload,
+            status="processing",
+            locked_until=now + timedelta(seconds=lease_seconds),
+        )
+        .on_conflict_do_nothing(index_elements=[WebhookEvent.deduplication_key])
+        .returning(WebhookEvent.id)
+    )
+    if event_id is not None:
+        return await session.get(WebhookEvent, event_id)
+
+    event = await session.scalar(
+        select(WebhookEvent)
+        .where(WebhookEvent.deduplication_key == deduplication_key)
+        .with_for_update()
+    )
+    if event is None or event.status == "processed":
+        return None
+    if event.locked_until is not None and event.locked_until > now:
+        return None
+
+    event.payload = payload
+    event.status = "processing"
+    event.processed_at = None
+    event.locked_until = now + timedelta(seconds=lease_seconds)
     return event
 
 

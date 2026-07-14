@@ -1,5 +1,6 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
+from starlette.requests import Request
 
 from app.api import main as api_main
 
@@ -119,3 +120,42 @@ def test_openapi_contains_required_public_contracts() -> None:
     }
 
     assert required_paths <= schema["paths"].keys()
+
+
+def test_rate_limit_uses_forwarded_client_from_private_proxy() -> None:
+    request = Request(
+        {
+            "type": "http",
+            "method": "GET",
+            "path": "/api/v1/ready",
+            "headers": [(b"x-real-ip", b"203.0.113.10")],
+            "client": ("172.19.0.5", 42000),
+            "server": ("api", 8080),
+            "scheme": "http",
+            "query_string": b"",
+        }
+    )
+
+    assert api_main._rate_limit_identity(request) == "203.0.113.10"
+
+
+def test_rate_limit_ignores_forwarded_client_from_public_peer() -> None:
+    request = Request(
+        {
+            "type": "http",
+            "method": "GET",
+            "path": "/api/v1/ready",
+            "headers": [(b"x-real-ip", b"1.1.1.1")],
+            "client": ("8.8.8.8", 42000),
+            "server": ("api", 8080),
+            "scheme": "http",
+            "query_string": b"",
+        }
+    )
+
+    assert api_main._rate_limit_identity(request) == "8.8.8.8"
+
+
+def test_robokassa_payment_method_alias_is_not_treated_as_currency() -> None:
+    assert api_main._robokassa_output_currency_is_valid({"IncCurrLabel": "BankCard"})
+    assert not api_main._robokassa_output_currency_is_valid({"OutCurrLabel": "USD"})

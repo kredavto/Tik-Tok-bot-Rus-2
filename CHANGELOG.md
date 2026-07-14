@@ -8,6 +8,9 @@ The project follows Semantic Versioning.
 
 ### Fixed
 
+- Make inbound webhook claims atomic across API workers, separate reverse-proxied clients for
+  rate limiting, accept Robokassa payment-method aliases, preserve accepted TikTok publications
+  when quota state changes, and periodically reconcile posts still processing at TikTok.
 - Persist TikTok acceptance, publication status, and daily quota before local cache,
   notification, queue, or file-cleanup side effects, preventing accepted posts from being
   reclassified as failed when infrastructure is temporarily unavailable.

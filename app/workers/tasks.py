@@ -33,10 +33,10 @@ from app.db.models import (
 )
 from app.db.session import (
     can_upload_today,
-    consume_daily_upload,
     expire_due_paid_subscriptions,
     list_tiktok_accounts_due_for_refresh,
     mark_subscription_expiration_notified,
+    record_accepted_upload,
     session_scope,
     transition_upload_job,
     upsert_tiktok_account,
@@ -86,6 +86,11 @@ def expire_subscriptions() -> None:
 @dramatiq.actor(max_retries=0)
 def refresh_expiring_tiktok_tokens() -> None:
     asyncio.run(_refresh_expiring_tiktok_tokens())
+
+
+@dramatiq.actor(max_retries=1)
+def reconcile_processing_uploads() -> None:
+    asyncio.run(_reconcile_processing_uploads())
 
 
 @dramatiq.actor(max_retries=3)
@@ -309,9 +314,7 @@ async def _persist_tiktok_acceptance(
     user: User,
     publish_id: str,
 ) -> None:
-    consumed, _, _ = await consume_daily_upload(session, user)
-    if not consumed:
-        raise RuntimeError("Daily usage changed while the user upload lock was held.")
+    await record_accepted_upload(session, user)
     upload.tiktok_publish_id = publish_id
     await transition_upload_job(
         session,
@@ -322,6 +325,25 @@ async def _persist_tiktok_acceptance(
     # TikTok has already accepted the upload. Persist that fact before any local
     # notification, cache, queue, or file-cleanup operation can fail.
     await session.commit()
+
+
+async def _reconcile_processing_uploads() -> int:
+    async with session_scope() as session:
+        jobs = (
+            await session.execute(
+                select(UploadJob.id, UploadJob.user_id)
+                .where(
+                    UploadJob.status == UploadStatus.PROCESSING.value,
+                    UploadJob.tiktok_publish_id.is_not(None),
+                )
+                .order_by(UploadJob.updated_at)
+                .limit(settings.maintenance_batch_size)
+            )
+        ).all()
+
+    for upload_id, user_id in jobs:
+        check_publish_status.send(str(upload_id), str(user_id), 0)
+    return len(jobs)
 
 
 async def _finish_accepted_upload(

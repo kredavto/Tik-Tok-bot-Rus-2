@@ -1,9 +1,10 @@
 import hmac
+import ipaddress
 import json
 import logging
 from pathlib import Path
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Mapping
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
@@ -26,6 +27,7 @@ from app.core.redis import get_redis, oauth_state_exists, pop_oauth_state
 from app.core.upload_status import UploadStatus
 from app.db.models import Payment, Subscription, TikTokAccount, UploadJob, User, WebhookEvent
 from app.db.session import (
+    claim_webhook_event,
     engine,
     init_db,
     mark_payment_paid,
@@ -163,7 +165,7 @@ async def rate_limit_middleware(request: Request, call_next):
     if request.url.path in {"/health", "/ready", "/metrics"}:
         return await call_next(request)
 
-    client = request.client.host if request.client else "unknown"
+    client = _rate_limit_identity(request)
     bucket = int(time.time() // 60)
     key = f"rate:{client}:{bucket}"
     redis = get_redis()
@@ -176,6 +178,24 @@ async def rate_limit_middleware(request: Request, call_next):
     finally:
         await redis.aclose()
     return await call_next(request)
+
+
+def _rate_limit_identity(request: Request) -> str:
+    peer = request.client.host if request.client else "unknown"
+    try:
+        peer_address = ipaddress.ip_address(peer)
+    except ValueError:
+        return peer
+    if not (peer_address.is_private or peer_address.is_loopback):
+        return peer
+
+    candidate = request.headers.get("X-Real-IP", "").strip()
+    if not candidate:
+        return peer
+    try:
+        return str(ipaddress.ip_address(candidate))
+    except ValueError:
+        return peer
 
 
 @app.get("/api/v1/health")
@@ -342,27 +362,15 @@ async def telegram_webhook(request: Request) -> dict[str, str]:
         raise HTTPException(status_code=400, detail="Missing Telegram update_id")
 
     async with session_scope() as session:
-        event = await session.scalar(
-            select(WebhookEvent).where(
-                WebhookEvent.provider == "telegram",
-                WebhookEvent.event_type == "update",
-                WebhookEvent.external_id == external_id,
-            )
+        event = await claim_webhook_event(
+            session,
+            provider="telegram",
+            event_type="update",
+            external_id=external_id,
+            payload=payload,
         )
-        if event and event.status == "processed":
+        if event is None:
             return {"status": "ok"}
-        if event:
-            event.payload = payload
-            event.status = "received"
-        else:
-            event = await record_webhook_event(
-                session,
-                provider="telegram",
-                event_type="update",
-                external_id=external_id,
-                payload=payload,
-                status="received",
-            )
         event_id = event.id
 
     try:
@@ -386,6 +394,7 @@ async def _mark_telegram_event(event_id: UUID, status: str) -> None:
         if event:
             event.status = status
             event.processed_at = datetime.now(UTC) if status == "processed" else None
+            event.locked_until = None
 
 
 @app.post("/api/v1/webhooks/tiktok")
@@ -420,25 +429,15 @@ async def tiktok_webhook(request: Request) -> dict[str, str]:
         ]
     )
     async with session_scope() as session:
-        existing = await session.scalar(
-            select(WebhookEvent).where(
-                WebhookEvent.provider == "tiktok",
-                WebhookEvent.event_type == event_type,
-                WebhookEvent.external_id == external_id,
-                WebhookEvent.status == "processed",
-            )
-        )
-        if existing:
-            return {"status": "ok"}
-
-        event = await record_webhook_event(
+        event = await claim_webhook_event(
             session,
             provider="tiktok",
             event_type=event_type,
             external_id=external_id,
             payload=payload,
-            status="received",
         )
+        if event is None:
+            return {"status": "ok"}
 
         upload = (
             await session.scalar(select(UploadJob).where(UploadJob.tiktok_publish_id == publish_id))
@@ -481,6 +480,7 @@ async def tiktok_webhook(request: Request) -> dict[str, str]:
 
         event.status = "processed"
         event.processed_at = datetime.now(UTC)
+        event.locked_until = None
     return {"status": "ok"}
 
 
@@ -494,14 +494,6 @@ async def robokassa_result(
 ) -> str:
     METRICS["robokassa_results_total"] += 1
     payload = dict(await request.form())
-    async with session_scope() as session:
-        await record_webhook_event(
-            session,
-            provider="robokassa",
-            event_type="payment_result",
-            external_id=inv_id,
-            payload=payload,
-        )
     if not validate_result_signature(out_sum, inv_id, signature_value):
         async with session_scope() as session:
             await record_webhook_event(
@@ -514,11 +506,25 @@ async def robokassa_result(
             )
         raise HTTPException(status_code=400, detail="Invalid Robokassa signature")
 
-    currency = payload.get("Currency") or payload.get("IncCurrLabel") or "RUB"
-    if currency not in ("RUB", ""):
+    if not _robokassa_output_currency_is_valid(payload):
         raise HTTPException(status_code=400, detail="Invalid payment currency")
 
     async with session_scope() as session:
+        event = await claim_webhook_event(
+            session,
+            provider="robokassa",
+            event_type="payment_result",
+            external_id=inv_id,
+            payload=payload,
+        )
+        if event is None:
+            payment = await session.scalar(
+                select(Payment).where(Payment.provider_invoice_id == int(inv_id))
+            )
+            if payment and payment.status == "paid":
+                return f"OK{inv_id}"
+            raise HTTPException(status_code=503, detail="Payment notification is being processed")
+
         confirmation = await mark_payment_paid(
             session,
             int(inv_id),
@@ -527,12 +533,19 @@ async def robokassa_result(
         )
         payment = confirmation.payment
         user = await session.get(User, payment.user_id) if payment else None
+        event.status = "processed" if payment and payment.status == "paid" else "rejected"
+        event.processed_at = datetime.now(UTC)
+        event.locked_until = None
 
     if not payment or payment.status != "paid":
         raise HTTPException(status_code=400, detail="Payment was not accepted")
     if user and confirmation.activated:
         await _notify_payment_success(user.telegram_id, payment.plan_id)
     return f"OK{inv_id}"
+
+
+def _robokassa_output_currency_is_valid(payload: Mapping[str, object]) -> bool:
+    return payload.get("OutCurrLabel", "") in ("RUB", "")
 
 
 @app.get("/api/v1/payments/robokassa/success")

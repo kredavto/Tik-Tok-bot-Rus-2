@@ -13,6 +13,7 @@ from app.core.redis import get_redis
 from app.workers.tasks import (
     cleanup_retention,
     expire_subscriptions,
+    reconcile_processing_uploads,
     refresh_expiring_tiktok_tokens,
 )
 
@@ -43,6 +44,11 @@ def periodic_dispatches() -> tuple[PeriodicDispatch, ...]:
             "cleanup_retention",
             settings.retention_sweep_seconds,
             cleanup_retention.send,
+        ),
+        PeriodicDispatch(
+            "reconcile_processing_uploads",
+            settings.status_reconcile_seconds,
+            reconcile_processing_uploads.send,
         ),
     )
 
