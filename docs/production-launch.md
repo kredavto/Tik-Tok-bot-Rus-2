@@ -21,7 +21,7 @@ Environment and secret readiness must follow [Environment Configuration and Secr
 ## First Startup
 
 ```bash
-python3 tools/validate_deploy_env.py --env-file .env --environment production
+ENV_FILE=.env bash deploy/preflight.sh production
 ENV_FILE=.env bash deploy/deploy.sh production vX.Y.Z
 docker compose ps
 ```
@@ -29,7 +29,16 @@ docker compose ps
 Follow [CI/CD and Deployment Automation](ci-cd-deployment.md) for first-certificate bootstrap,
 verified backup creation, and deployment behavior.
 
+Production is allowed only after the complete [Staging Acceptance Runbook](staging-acceptance-runbook.md)
+has passed for the same release commit. A Telegram token previously disclosed in chat, source,
+logs, or Git must be revoked in BotFather; only its replacement may be placed in the production
+`.env`.
+
 ## Smoke Test
+
+The deployment script automatically verifies versioned health/readiness/metrics endpoints,
+OpenAPI callback contracts, admin security headers, and the Telegram webhook registered at the
+public HTTPS URL. Then perform these provider-backed scenarios:
 
 1. Register a new Telegram user with `/start`.
 2. Accept the user agreement.
@@ -42,6 +51,7 @@ verified backup creation, and deployment behavior.
 9. Upload one test video.
 10. Confirm validation, preparation, queueing, worker processing, and TikTok API submission.
 11. Confirm admin metrics and logs are visible.
+12. Restore the release backup into a disposable database and compare critical record counts.
 
 ## Success Criteria
 

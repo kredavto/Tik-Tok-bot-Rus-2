@@ -30,7 +30,32 @@ wait_for() {
   die "smoke check failed after $RETRIES attempts: $path"
 }
 
-wait_for /health '"status":"ok"'
-wait_for /ready '"status":"ready"'
-wait_for /metrics 'tiktok_loader_http_requests_total'
+wait_for_header() {
+  local path="$1"
+  local expected="$2"
+  local attempt headers
+  for ((attempt = 1; attempt <= RETRIES; attempt++)); do
+    if headers="$(curl "${CURL_ARGS[@]}" --dump-header - --output /dev/null "$BASE_URL$path" 2>/dev/null)" \
+      && grep -Fiq "$expected" <<<"$headers"; then
+      log "security header check passed: $path"
+      return 0
+    fi
+    sleep "$DELAY"
+  done
+  die "security header check failed after $RETRIES attempts: $path"
+}
+
+wait_for /api/v1/health '"status":"ok"'
+wait_for /api/v1/ready '"status":"ready"'
+wait_for /api/v1/metrics 'tiktok_loader_http_requests_total'
+wait_for /openapi.json '"/api/v1/webhooks/telegram"'
+wait_for /openapi.json '"/api/v1/payments/robokassa/result"'
+wait_for_header /admin-ui/ 'content-security-policy:'
+
+if [[ "$(env_value TELEGRAM_DELIVERY_MODE)" == "webhook" \
+  && "${SMOKE_VERIFY_TELEGRAM_WEBHOOK:-true}" == "true" ]]; then
+  compose run --rm --no-deps bot python -m app.bot.webhook verify
+  log "Telegram webhook verification passed"
+fi
+
 log "deployment smoke test passed"

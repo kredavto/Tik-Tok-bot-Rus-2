@@ -8,6 +8,11 @@ The project follows Semantic Versioning.
 
 ### Added
 
+- Production/staging preflight covering exact callback contracts, TLS lifetime and key matching,
+  Docker/Compose readiness, clean tracked state, and minimum free disk space.
+- Explicit Telegram webhook configure/verify/delete command, drift monitor, and deployment smoke
+  verification that preserves pending updates.
+- Staging acceptance runbook with provider-backed scenarios and sanitized release evidence.
 - Comprehensive FSM, video-validation, API-contract, worker-lock, queue-lease, payment,
   subscription, quota-concurrency, and upload-lifecycle tests.
 - CI coverage gate with XML output, OpenAPI contract validation, and application compile check.
@@ -42,6 +47,10 @@ The project follows Semantic Versioning.
 
 ### Changed
 
+- Public deployment smoke checks now cover versioned health, readiness and metrics endpoints,
+  required OpenAPI callback paths, admin security headers, and Telegram webhook state.
+- Environment templates now use canonical versioned callbacks and include webhook monitoring and
+  TikTok webhook compatibility variables.
 - Telegram user registration and daily usage initialization now use PostgreSQL upserts to preserve
   uniqueness under concurrent requests.
 - Robokassa ResultURL processing now locks payment and user rows, rejects malformed amounts with a

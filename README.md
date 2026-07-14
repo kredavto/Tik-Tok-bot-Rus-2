@@ -127,6 +127,7 @@ the UI.
 - [GitHub Workflow](docs/github-workflow.md)
 - [SOP Checklists](docs/sop-checklists.md)
 - [Production Launch](docs/production-launch.md)
+- [Staging Acceptance Runbook](docs/staging-acceptance-runbook.md)
 - [Post-Launch Maintenance and Versioning](docs/post-launch-maintenance.md)
 - [Dependencies and Third-Party Services](docs/dependencies-and-integrations.md)
 - [License and Third-Party Component Management](docs/license-third-party-management.md)

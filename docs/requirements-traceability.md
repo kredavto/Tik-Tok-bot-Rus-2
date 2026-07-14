@@ -22,7 +22,8 @@ Each functional requirement must have a stable identifier and a visible link to 
 | `TD-001` | Technical debt | Development | Release readiness review | [Technical Debt](technical-debt-management.md) | Process defined |
 | `DEP-001` | Licenses and components | Dependencies | Dependency and release review | [Licenses](license-third-party-management.md) | Process defined |
 | `API-001` | API compatibility | REST / OpenAPI | OpenAPI checker and API tests | [API Versioning](api-versioning-compatibility.md) | Implemented |
-| `ROAD-001` | Implementation roadmap | Delivery | Roadmap control points | [Roadmap](implementation-roadmap.md) | Stages 1-9 done; stage 10 pending |
+| `ROAD-001` | Implementation roadmap | Delivery | Preflight, smoke, and roadmap control points | [Roadmap](implementation-roadmap.md), [Staging Runbook](staging-acceptance-runbook.md) | Stage 10 automation done; external acceptance pending |
+| `OPS-001` | Controlled production launch | Operations | Deploy validator and webhook-management tests | [Production Launch](production-launch.md), [Staging Runbook](staging-acceptance-runbook.md) | Implemented; provider evidence pending |
 
 ## Maintenance Rules
 

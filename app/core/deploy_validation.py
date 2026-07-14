@@ -93,7 +93,13 @@ def validate_environment(values: dict[str, str], environment: str) -> Validation
     public_url = require("PUBLIC_BASE_URL")
     if public_url and not valid_https_url(public_url):
         errors.append("PUBLIC_BASE_URL: HTTPS URL is required")
-    public_host = urlparse(public_url).hostname if public_url else None
+    parsed_public_url = urlparse(public_url) if public_url else None
+    public_host = parsed_public_url.hostname if parsed_public_url else None
+    if parsed_public_url and parsed_public_url.path not in {"", "/"}:
+        errors.append("PUBLIC_BASE_URL: base URL must not contain a path")
+
+    def expected_public_url(path: str) -> str:
+        return f"{public_url.rstrip('/')}{path}" if public_url else ""
 
     domain = require("DOMAIN")
     if domain and public_host and domain != public_host:
@@ -109,6 +115,15 @@ def validate_environment(values: dict[str, str], environment: str) -> Validation
     if bot_token and not re.fullmatch(r"\d{8,12}:[A-Za-z0-9_-]{30,}", bot_token):
         errors.append("TELEGRAM_BOT_TOKEN: invalid token format")
     require("TELEGRAM_WEBHOOK_SECRET", secret=True, minimum=32)
+    webhook_path = values.get("TELEGRAM_WEBHOOK_PATH", "")
+    if webhook_path != "/api/v1/webhooks/telegram":
+        errors.append("TELEGRAM_WEBHOOK_PATH: must be /api/v1/webhooks/telegram")
+    try:
+        webhook_check_seconds = int(values.get("TELEGRAM_WEBHOOK_CHECK_SECONDS", "300"))
+    except ValueError:
+        webhook_check_seconds = 0
+    if webhook_check_seconds < 30:
+        errors.append("TELEGRAM_WEBHOOK_CHECK_SECONDS: must be at least 30")
     admin_ids = require("TELEGRAM_ADMIN_IDS")
     if admin_ids and not all(item.strip().isdigit() for item in admin_ids.split(",")):
         errors.append("TELEGRAM_ADMIN_IDS: expected comma-separated numeric IDs")
@@ -137,12 +152,17 @@ def validate_environment(values: dict[str, str], environment: str) -> Validation
     require("ROBOKASSA_MERCHANT_LOGIN")
     require("ROBOKASSA_PASSWORD_1", secret=True, minimum=16)
     require("ROBOKASSA_PASSWORD_2", secret=True, minimum=16)
-    for key in ("ROBOKASSA_RESULT_URL", "ROBOKASSA_SUCCESS_URL", "ROBOKASSA_FAIL_URL"):
+    robokassa_paths = {
+        "ROBOKASSA_RESULT_URL": "/api/v1/payments/robokassa/result",
+        "ROBOKASSA_SUCCESS_URL": "/api/v1/payments/robokassa/success",
+        "ROBOKASSA_FAIL_URL": "/api/v1/payments/robokassa/fail",
+    }
+    for key, path in robokassa_paths.items():
         url = require(key)
         if url and not valid_https_url(url):
             errors.append(f"{key}: HTTPS URL is required")
-        elif url and public_host and urlparse(url).hostname != public_host:
-            errors.append(f"{key}: host must match PUBLIC_BASE_URL")
+        elif url and url != expected_public_url(path):
+            errors.append(f"{key}: must be {expected_public_url(path)}")
     if environment == "production" and is_true(values.get("ROBOKASSA_TEST_MODE", "true")):
         errors.append("ROBOKASSA_TEST_MODE: production requires false")
 
@@ -153,8 +173,11 @@ def validate_environment(values: dict[str, str], environment: str) -> Validation
         redirect_uri = require("TIKTOK_REDIRECT_URI")
         if redirect_uri and not valid_https_url(redirect_uri):
             errors.append("TIKTOK_REDIRECT_URI: HTTPS URL is required")
-        elif redirect_uri and public_host and urlparse(redirect_uri).hostname != public_host:
-            errors.append("TIKTOK_REDIRECT_URI: host must match PUBLIC_BASE_URL")
+        elif redirect_uri and redirect_uri != expected_public_url("/api/v1/oauth/tiktok/callback"):
+            errors.append(
+                "TIKTOK_REDIRECT_URI: must be "
+                f"{expected_public_url('/api/v1/oauth/tiktok/callback')}"
+            )
 
     populated_secrets = [
         values[key] for key in SECRET_KEYS if values.get(key) and not is_placeholder(values[key])

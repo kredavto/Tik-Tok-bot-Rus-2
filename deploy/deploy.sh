@@ -10,11 +10,7 @@ GIT_REF="${2:-}"
   || die "usage: deploy/deploy.sh <staging|production> <git-ref>"
 [[ -n "$GIT_REF" ]] || die "a release branch, tag, or commit is required"
 
-require_command docker
-require_command git
-validate_deploy_environment "$ENVIRONMENT"
-validate_tls_files
-require_clean_tracked_worktree
+bash deploy/preflight.sh "$ENVIRONMENT"
 
 mkdir -p "$STATE_DIR"
 PREVIOUS_SHA="$(git rev-parse HEAD)"
@@ -35,6 +31,8 @@ compose up --no-deps migrate
 log "starting services"
 compose up -d --remove-orphans
 
+log "configuring and verifying Telegram webhook"
+compose run --rm --no-deps bot python -m app.bot.webhook configure
 bash deploy/smoke_test.sh
 printf '%s\n' "$TARGET_SHA" >"$STATE_DIR/current_revision"
 log "deployment complete: $TARGET_SHA (previous: $PREVIOUS_SHA)"

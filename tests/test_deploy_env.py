@@ -17,6 +17,8 @@ def valid_environment() -> dict[str, str]:
         "TELEGRAM_DELIVERY_MODE": "webhook",
         "TELEGRAM_BOT_TOKEN": "12345678" + ":" + "A" * 35,
         "TELEGRAM_WEBHOOK_SECRET": "telegram-" + "a" * 32,
+        "TELEGRAM_WEBHOOK_PATH": "/api/v1/webhooks/telegram",
+        "TELEGRAM_WEBHOOK_CHECK_SECONDS": "300",
         "TELEGRAM_ADMIN_IDS": "123456789,987654321",
         "DATABASE_URL": "postgresql+asyncpg://app:password@postgres:5432/loader",
         "POSTGRES_DB": "loader",
@@ -80,6 +82,32 @@ def test_production_rejects_robokassa_test_mode() -> None:
     result = validate_environment(values, "production")
 
     assert "ROBOKASSA_TEST_MODE: production requires false" in result.errors
+
+
+def test_callback_paths_must_match_the_public_contract() -> None:
+    values = valid_environment()
+    values["ROBOKASSA_RESULT_URL"] = "https://loader.example.net/result"
+
+    result = validate_environment(values, "production")
+
+    assert any(error.startswith("ROBOKASSA_RESULT_URL: must be") for error in result.errors)
+
+
+def test_tiktok_callback_must_match_when_publishing_is_enabled() -> None:
+    values = valid_environment()
+    values.update(
+        {
+            "TIKTOK_PUBLISH_ENABLED": "true",
+            "TIKTOK_CLIENT_KEY": "client-key",  # pragma: allowlist secret
+            "TIKTOK_CLIENT_SECRET": "tiktok-client-" + "g" * 20,  # pragma: allowlist secret
+            "TIKTOK_WEBHOOK_SECRET": "tiktok-webhook-" + "h" * 20,  # pragma: allowlist secret
+            "TIKTOK_REDIRECT_URI": "https://loader.example.net/wrong-callback",
+        }
+    )
+
+    result = validate_environment(values, "production")
+
+    assert any(error.startswith("TIKTOK_REDIRECT_URI: must be") for error in result.errors)
 
 
 def test_env_parser_rejects_duplicate_variables(tmp_path: Path) -> None:

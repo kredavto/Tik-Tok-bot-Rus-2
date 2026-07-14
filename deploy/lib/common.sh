@@ -61,12 +61,47 @@ validate_tls_files() {
   local template cert_dir
   template="$(env_value NGINX_TEMPLATE)"
   [[ "$template" == "https.conf.template" ]] || return 0
+  cert_dir="$(tls_cert_dir)"
+  require_file "$cert_dir/fullchain.pem"
+  require_file "$cert_dir/privkey.pem"
+}
+
+tls_cert_dir() {
+  local cert_dir
   cert_dir="$(env_value TLS_CERT_DIR)"
   if [[ "$cert_dir" != /* ]]; then
     cert_dir="$PROJECT_ROOT/${cert_dir#./}"
   fi
-  require_file "$cert_dir/fullchain.pem"
-  require_file "$cert_dir/privkey.pem"
+  printf '%s\n' "$cert_dir"
+}
+
+validate_tls_certificate() {
+  local template cert_dir cert_file key_file domain minimum_seconds cert_fingerprint key_fingerprint
+  template="$(env_value NGINX_TEMPLATE)"
+  [[ "$template" == "https.conf.template" ]] || return 0
+
+  require_command openssl
+  validate_tls_files
+  cert_dir="$(tls_cert_dir)"
+  cert_file="$cert_dir/fullchain.pem"
+  key_file="$cert_dir/privkey.pem"
+  domain="$(env_value DOMAIN)"
+  minimum_seconds="${TLS_MIN_VALIDITY_SECONDS:-1209600}"
+  [[ "$minimum_seconds" =~ ^[0-9]+$ ]] \
+    || die "TLS_MIN_VALIDITY_SECONDS must be a non-negative integer"
+
+  openssl x509 -in "$cert_file" -noout -checkend "$minimum_seconds" >/dev/null \
+    || die "TLS certificate expires in less than $minimum_seconds seconds"
+  openssl x509 -in "$cert_file" -noout -checkhost "$domain" >/dev/null \
+    || die "TLS certificate does not cover DOMAIN"
+
+  cert_fingerprint="$({ openssl x509 -in "$cert_file" -pubkey -noout \
+    | openssl pkey -pubin -outform DER 2>/dev/null \
+    | openssl dgst -sha256; } 2>/dev/null)"
+  key_fingerprint="$({ openssl pkey -in "$key_file" -pubout -outform DER 2>/dev/null \
+    | openssl dgst -sha256; } 2>/dev/null)"
+  [[ -n "$cert_fingerprint" && "$cert_fingerprint" == "$key_fingerprint" ]] \
+    || die "TLS certificate and private key do not match"
 }
 
 require_clean_tracked_worktree() {

@@ -40,13 +40,15 @@ CI output before using the project in staging or production.
 Run the configuration gate before a release:
 
 ```bash
-python3 tools/validate_deploy_env.py --env-file .env --environment staging
-python3 tools/validate_deploy_env.py --env-file .env --environment production
+ENV_FILE=.env bash deploy/preflight.sh staging
+ENV_FILE=.env bash deploy/preflight.sh production
 ```
 
-The gate validates environment identity, HTTPS callbacks, domain consistency, webhook mode,
-secret length and uniqueness, Fernet key format, Robokassa mode, and required TikTok credentials
-when publication is enabled. It never prints secret values.
+The gate validates environment identity, exact HTTPS callback contracts, domain consistency,
+webhook mode, secret length and uniqueness, Fernet key format, Robokassa mode, and required TikTok
+credentials when publication is enabled. It also validates certificate lifetime, hostname and
+private-key matching, the Docker daemon, the Compose model, and available disk space. It never
+prints secret values.
 
 ## TLS Bootstrap
 
@@ -79,7 +81,7 @@ ENV_FILE=.env bash deploy/deploy.sh production v0.2.0
 
 The script:
 
-- validates `.env` and TLS files;
+- runs the full environment, TLS, Docker, Compose, and disk preflight;
 - rejects tracked local changes;
 - creates and verifies a PostgreSQL backup;
 - records the previous Git revision under ignored `.deploy/`;
@@ -87,8 +89,10 @@ The script:
 - builds images with refreshed base layers;
 - applies Alembic migrations;
 - requires the one-shot `migrate` service to complete before application services start;
-- starts Compose services; and
-- checks `/health`, `/ready`, and `/metrics` through the public URL.
+- starts Compose services;
+- configures and verifies the Telegram webhook without dropping pending updates; and
+- checks versioned health/readiness/metrics, OpenAPI callbacks, admin security headers, and the
+  Telegram webhook through the public URL.
 
 The deployment operator must still configure Telegram, TikTok, and Robokassa dashboards and run
 the acceptance scenarios. Termius is an SSH client for these server-side commands; it does not
@@ -96,6 +100,8 @@ change the deployment procedure.
 
 The full automated test-layer map and external acceptance boundary are documented in
 [Test Strategy and Quality Gates](test-strategy.md).
+The provider-backed rehearsal and evidence format are defined in
+[Staging Acceptance Runbook](staging-acceptance-runbook.md).
 
 ## Backup and Restore
 

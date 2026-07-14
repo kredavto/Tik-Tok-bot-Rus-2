@@ -27,6 +27,11 @@ class Settings(BaseSettings):
         "/api/v1/webhooks/telegram",
         alias="TELEGRAM_WEBHOOK_PATH",
     )
+    telegram_webhook_check_seconds: int = Field(
+        300,
+        ge=30,
+        alias="TELEGRAM_WEBHOOK_CHECK_SECONDS",
+    )
     admin_telegram_ids: str = Field(
         "",
         validation_alias=AliasChoices("TELEGRAM_ADMIN_IDS", "ADMIN_TELEGRAM_IDS"),

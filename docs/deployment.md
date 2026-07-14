@@ -34,7 +34,7 @@ For staging and production, use the checked automation instead of running these 
 individually:
 
 ```bash
-python3 tools/validate_deploy_env.py --env-file .env --environment production
+ENV_FILE=.env bash deploy/preflight.sh production
 ENV_FILE=.env bash deploy/deploy.sh production vX.Y.Z
 ```
 
@@ -81,19 +81,27 @@ Use Docker Compose for the first deployment. If systemd is required, copy
 
 Configure these in the Robokassa dashboard after the HTTP webhook service is added:
 
-- Result URL: `https://your-domain.example/payments/robokassa/result`
-- Success URL: `https://your-domain.example/payments/robokassa/success`
-- Fail URL: `https://your-domain.example/payments/robokassa/fail`
+- Result URL: `https://your-domain.example/api/v1/payments/robokassa/result`
+- Success URL: `https://your-domain.example/api/v1/payments/robokassa/success`
+- Fail URL: `https://your-domain.example/api/v1/payments/robokassa/fail`
 
 The FastAPI service exposes Robokassa result, success, and fail endpoints.
 
 ## Telegram Webhook
 
 Development can use `TELEGRAM_DELIVERY_MODE=polling`. Production uses
-`TELEGRAM_DELIVERY_MODE=webhook`; the bot service registers
-`https://<domain>/api/v1/webhooks/telegram`, while FastAPI verifies
+`TELEGRAM_DELIVERY_MODE=webhook`; the deployment command registers and verifies
+`https://<domain>/api/v1/webhooks/telegram`, FastAPI verifies
 `X-Telegram-Bot-Api-Secret-Token` and dispatches the update through aiogram. FSM data is stored in
-Redis so multiple API instances share state.
+Redis so multiple API instances share state. The bot service monitors the registered URL for
+configuration drift without changing it automatically.
+
+Manage the webhook explicitly inside the container when diagnosing a deployment:
+
+```bash
+docker compose run --rm --no-deps bot python -m app.bot.webhook verify
+docker compose run --rm --no-deps bot python -m app.bot.webhook configure
+```
 
 Never configure a bot token that has appeared in chat, logs, source files, or Git. Revoke it in
 BotFather and place the replacement only in the server-side `.env`.
