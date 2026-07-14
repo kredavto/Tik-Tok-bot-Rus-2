@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from sqlalchemy import UniqueConstraint
 
 from app.core.release_candidate import (
     REQUIRED_QUALITY_GATES,
@@ -12,6 +13,7 @@ from app.core.release_candidate import (
     serialize_manifest,
     validate_semver,
 )
+from app.db.models import Payment, SystemSetting, User
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -54,6 +56,32 @@ def test_current_migration_tree_has_one_head() -> None:
 
     assert heads == ["0006_admin_console"]
     assert count == 6
+
+
+@pytest.mark.parametrize(
+    ("model", "column_name", "index_name"),
+    [
+        (User, "telegram_id", "ix_users_telegram_id"),
+        (Payment, "provider_invoice_id", "ix_payments_provider_invoice_id"),
+        (SystemSetting, "key", "ix_system_settings_key"),
+    ],
+)
+def test_unique_lookup_columns_match_migration_constraints(
+    model: type[User] | type[Payment] | type[SystemSetting],
+    column_name: str,
+    index_name: str,
+) -> None:
+    table = model.__table__
+    unique_columns = {
+        tuple(column.name for column in constraint.columns)
+        for constraint in table.constraints
+        if isinstance(constraint, UniqueConstraint)
+    }
+    index = next(item for item in table.indexes if item.name == index_name)
+
+    assert (column_name,) in unique_columns
+    assert tuple(column.name for column in index.columns) == (column_name,)
+    assert index.unique is False
 
 
 def test_manifest_is_deterministic_and_contains_no_file_contents() -> None:

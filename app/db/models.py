@@ -30,7 +30,7 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, index=True)
+    telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True)
     username: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     role: Mapped[str] = mapped_column(String(32), default="USER", index=True)
@@ -47,6 +47,8 @@ class User(Base):
     tiktok_accounts: Mapped[list["TikTokAccount"]] = relationship(back_populates="user")
     payments: Mapped[list["Payment"]] = relationship(back_populates="user")
     upload_jobs: Mapped[list["UploadJob"]] = relationship(back_populates="user")
+
+    __table_args__ = (Index("ix_users_telegram_id", "telegram_id"),)
 
 
 class TikTokAccount(Base):
@@ -142,7 +144,6 @@ class Payment(Base):
         Integer,
         server_default=text("nextval('payment_inv_id_seq')"),
         unique=True,
-        index=True,
     )
     raw_payload: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
@@ -152,6 +153,7 @@ class Payment(Base):
     subscription: Mapped[Subscription | None] = relationship(back_populates="payments")
 
     __table_args__ = (
+        Index("ix_payments_provider_invoice_id", "provider_invoice_id"),
         Index("ix_payments_status_created", "status", "created_at"),
         Index("ix_payments_user_created", "user_id", "created_at"),
     )
@@ -257,7 +259,7 @@ class SystemSetting(Base):
     __tablename__ = "system_settings"
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
-    key: Mapped[str] = mapped_column(String(128), unique=True, index=True)
+    key: Mapped[str] = mapped_column(String(128), unique=True)
     value: Mapped[str] = mapped_column(Text)
     value_type: Mapped[str] = mapped_column(String(16), default="string")
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -268,3 +270,5 @@ class SystemSetting(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, onupdate=utc_now
     )
+
+    __table_args__ = (Index("ix_system_settings_key", "key"),)
