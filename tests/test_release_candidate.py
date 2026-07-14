@@ -68,8 +68,8 @@ def test_source_tree_digest_is_order_independent(tmp_path: Path) -> None:
 def test_current_migration_tree_has_one_head() -> None:
     heads, count = alembic_heads(ROOT)
 
-    assert heads == ["0006_admin_console"]
-    assert count == 6
+    assert heads == ["0007_webhook_delivery_integrity"]
+    assert count == 7
 
 
 @pytest.mark.parametrize(
@@ -123,7 +123,7 @@ def test_manifest_is_deterministic_and_contains_no_file_contents() -> None:
     assert first == second
     assert first["version"] == "0.2.0-rc.1"
     assert first["release_channel"] == "candidate"
-    assert first["database"]["alembic_heads"] == ["0006_admin_console"]
+    assert first["database"]["alembic_heads"] == ["0007_webhook_delivery_integrity"]
     assert first["required_quality_gates"] == list(REQUIRED_QUALITY_GATES)
     assert "replace_me" not in serialized
     assert "TELEGRAM_BOT_TOKEN=" not in serialized
