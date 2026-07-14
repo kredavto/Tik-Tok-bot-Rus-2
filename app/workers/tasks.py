@@ -9,7 +9,9 @@ from aiogram import Bot
 import aiohttp
 import dramatiq
 from dramatiq.brokers.redis import RedisBroker
+from redis.asyncio import Redis
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.messages import text as bot_text
 from app.core.config import settings
@@ -104,6 +106,7 @@ async def _process_upload_locked(upload_id: str, user_id: str, started: float) -
     redis = get_redis()
     bot = Bot(token=settings.bot_token) if settings.bot_token else None
     telegram_id: int | None = None
+    accepted_by_tiktok = False
     try:
         await redis.setex(f"upload:{upload_id}:status", 86400, UploadStatus.VALIDATING.value)
         async with session_scope() as session:
@@ -240,19 +243,16 @@ async def _process_upload_locked(upload_id: str, user_id: str, started: float) -
                         brand_organic_toggle=upload.brand_organic_toggle,
                     ),
                 )
-                consumed, used, limit = await consume_daily_upload(session, user)
-                if not consumed:
-                    raise RuntimeError("Daily usage changed while the user upload lock was held.")
-            upload.tiktok_publish_id = result.publish_id
-            await transition_upload_job(
-                session, upload, UploadStatus.PROCESSING, "TikTok is processing publication"
-            )
-            await redis.setex(f"upload:{upload_id}:status", 86400, upload.status)
-            await _notify(bot, user.telegram_id, bot_text("publish_success"))
-            await cleanup_temp_file(upload.local_path)
-            check_publish_status.send_with_options(
-                args=(upload_id, user_id, 0),
-                delay=30_000,
+                await _persist_tiktok_acceptance(session, upload, user, result.publish_id)
+                accepted_by_tiktok = True
+
+            await _finish_accepted_upload(
+                redis=redis,
+                bot=bot,
+                upload_id=upload_id,
+                user_id=user_id,
+                telegram_id=user.telegram_id,
+                local_path=upload.local_path,
             )
     except TikTokPublishingDisabled:
         await _mark_upload_failed(
@@ -279,14 +279,17 @@ async def _process_upload_locked(upload_id: str, user_id: str, started: float) -
         )
     except Exception:
         logger.exception("Upload processing failed", extra={"upload_id": upload_id})
-        await _mark_upload_failed(upload_id, "Temporary upload processing error.")
-        await redis.setex(f"upload:{upload_id}:status", 86400, UploadStatus.FAILED.value)
-        if telegram_id:
-            await _notify(
-                bot,
-                telegram_id,
-                bot_text("publish_error", reason="временная ошибка обработки"),
-            )
+        if accepted_by_tiktok:
+            await _set_upload_cache_status(redis, upload_id, UploadStatus.PROCESSING)
+        else:
+            await _mark_upload_failed(upload_id, "Temporary upload processing error.")
+            await _set_upload_cache_status(redis, upload_id, UploadStatus.FAILED)
+            if telegram_id:
+                await _notify(
+                    bot,
+                    telegram_id,
+                    bot_text("publish_error", reason="временная ошибка обработки"),
+                )
     finally:
         logger.info(
             "Upload processing finished",
@@ -298,6 +301,68 @@ async def _process_upload_locked(upload_id: str, user_id: str, started: float) -
         await redis.aclose()
         if bot:
             await bot.session.close()
+
+
+async def _persist_tiktok_acceptance(
+    session: AsyncSession,
+    upload: UploadJob,
+    user: User,
+    publish_id: str,
+) -> None:
+    consumed, _, _ = await consume_daily_upload(session, user)
+    if not consumed:
+        raise RuntimeError("Daily usage changed while the user upload lock was held.")
+    upload.tiktok_publish_id = publish_id
+    await transition_upload_job(
+        session,
+        upload,
+        UploadStatus.PROCESSING,
+        "TikTok is processing publication",
+    )
+    # TikTok has already accepted the upload. Persist that fact before any local
+    # notification, cache, queue, or file-cleanup operation can fail.
+    await session.commit()
+
+
+async def _finish_accepted_upload(
+    *,
+    redis: Redis,
+    bot: Bot | None,
+    upload_id: str,
+    user_id: str,
+    telegram_id: int,
+    local_path: str,
+) -> None:
+    try:
+        check_publish_status.send_with_options(
+            args=(upload_id, user_id, 0),
+            delay=30_000,
+        )
+    except Exception:
+        logger.exception(
+            "Could not enqueue TikTok status check",
+            extra={"upload_id": upload_id},
+        )
+
+    await _set_upload_cache_status(redis, upload_id, UploadStatus.PROCESSING)
+    await _notify(bot, telegram_id, bot_text("publish_success"))
+    try:
+        await cleanup_temp_file(local_path)
+    except Exception:
+        logger.exception(
+            "Could not remove accepted upload file",
+            extra={"upload_id": upload_id},
+        )
+
+
+async def _set_upload_cache_status(redis: Redis, upload_id: str, status: UploadStatus) -> None:
+    try:
+        await redis.setex(f"upload:{upload_id}:status", 86400, status.value)
+    except Exception:
+        logger.exception(
+            "Could not update cached upload status",
+            extra={"upload_id": upload_id, "status": status.value},
+        )
 
 
 async def _mark_upload_failed(upload_id: str, error_message: str) -> None:

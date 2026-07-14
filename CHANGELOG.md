@@ -6,6 +6,12 @@ The project follows Semantic Versioning.
 
 ## [Unreleased]
 
+### Fixed
+
+- Persist TikTok acceptance, publication status, and daily quota before local cache,
+  notification, queue, or file-cleanup side effects, preventing accepted posts from being
+  reclassified as failed when infrastructure is temporarily unavailable.
+
 ## [0.2.0-rc.1] - 2026-07-14
 
 ### Added
