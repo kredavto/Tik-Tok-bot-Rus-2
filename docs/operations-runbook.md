@@ -46,10 +46,9 @@ Before update:
 
 During update:
 
-1. Pull the release tag.
-2. Rebuild containers.
-3. Apply Alembic migrations.
-4. Restart services.
+1. Run `ENV_FILE=.env bash deploy/deploy.sh <environment> <release-tag>`.
+2. Preserve `.deploy/previous_revision` with the release record.
+3. Do not run an automatic Alembic downgrade during application rollback.
 
 After update:
 
@@ -71,3 +70,6 @@ Use [Incident Management](incident-management.md) to classify P1-P4 incidents, r
 Standard preflight, post-update, and diagnostic checklists are in [SOP Checklists](sop-checklists.md).
 
 Tracing, event correlation, and log search requirements are described in [Observability and Diagnostics](observability-diagnostics.md).
+
+Executable release, backup, restore, rollback, and smoke-test procedures are described in
+[CI/CD and Deployment Automation](ci-cd-deployment.md).

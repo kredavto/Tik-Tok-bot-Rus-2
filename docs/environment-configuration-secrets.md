@@ -56,6 +56,15 @@ Before every release, verify:
 - Callback URLs match the target environment.
 - Any configuration changes are documented.
 
+Run the target-specific gate before staging or production deployment:
+
+```bash
+python3 tools/validate_deploy_env.py --env-file .env --environment production
+```
+
+The validator reports variable names and validation rules only; it never prints configured secret
+values.
+
 ## Incident Rule
 
 If a secret may be compromised, treat it as a security incident, rotate the affected secret, review logs and audit records, and document the response through [Security Logging and Audit](security-logging-audit.md) and [Incident Response and Disaster Recovery](incident-response.md).

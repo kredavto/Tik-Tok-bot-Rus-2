@@ -21,12 +21,13 @@ Environment and secret readiness must follow [Environment Configuration and Secr
 ## First Startup
 
 ```bash
-docker compose up -d
+python3 tools/validate_deploy_env.py --env-file .env --environment production
+ENV_FILE=.env bash deploy/deploy.sh production vX.Y.Z
 docker compose ps
-curl https://your-domain.example/health
-curl https://your-domain.example/ready
-curl https://your-domain.example/metrics
 ```
+
+Follow [CI/CD and Deployment Automation](ci-cd-deployment.md) for first-certificate bootstrap,
+verified backup creation, and deployment behavior.
 
 ## Smoke Test
 

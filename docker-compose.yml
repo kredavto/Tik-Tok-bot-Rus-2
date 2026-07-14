@@ -1,3 +1,19 @@
+x-app-service: &app-service
+  build: .
+  image: ${APP_IMAGE:-tik-tok-loader}:${APP_VERSION:-dev}
+  restart: unless-stopped
+  env_file:
+    - .env
+  init: true
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  networks:
+    - internal
+
 services:
   postgres:
     image: postgres:16
@@ -29,27 +45,31 @@ services:
       timeout: 5s
       retries: 5
 
+  migrate:
+    <<: *app-service
+    restart: "no"
+    command: alembic upgrade head
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   api:
-    build: .
-    restart: unless-stopped
-    env_file:
-      - .env
+    <<: *app-service
     command: >
-      sh -c "alembic upgrade head &&
       uvicorn app.api.main:app --host ${APP_HOST:-0.0.0.0}
-      --port ${APP_PORT:-8080} --workers ${API_WORKERS:-1}"
+      --port ${APP_PORT:-8080} --workers ${API_WORKERS:-1}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     expose:
       - "${APP_PORT:-8080}"
     volumes:
       - ./data:/app/data
       - ./backups:/app/backups
-    networks:
-      - internal
     healthcheck:
       test:
         [
@@ -61,27 +81,21 @@ services:
       retries: 3
 
   bot:
-    build: .
-    restart: unless-stopped
-    env_file:
-      - .env
+    <<: *app-service
     command: python -m app.bot.main
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     volumes:
       - ./data:/app/data
       - ./backups:/app/backups
-    networks:
-      - internal
 
   worker:
-    build: .
-    restart: unless-stopped
-    env_file:
-      - .env
+    <<: *app-service
     command: >
       sh -c "dramatiq app.workers.tasks
       --processes ${DRAMATIQ_PROCESSES:-1}
@@ -91,27 +105,24 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     volumes:
       - ./data:/app/data
       - ./backups:/app/backups
-    networks:
-      - internal
 
   scheduler:
-    build: .
-    restart: unless-stopped
-    env_file:
-      - .env
+    <<: *app-service
     command: python -m app.workers.scheduler
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       worker:
         condition: service_started
-    networks:
-      - internal
     healthcheck:
       test: ["CMD", "python", "-m", "app.workers.scheduler", "--healthcheck"]
       interval: 30s
@@ -128,9 +139,13 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      APP_PORT: ${APP_PORT:-8080}
+      DOMAIN: ${DOMAIN:-localhost}
     volumes:
-      - ./deploy/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./deploy/nginx/certs:/etc/nginx/certs:ro
+      - ./deploy/nginx/templates/${NGINX_TEMPLATE:-http.conf.template}:/etc/nginx/templates/default.conf.template:ro
+      - ${TLS_CERT_DIR:-./deploy/nginx/certs}:/etc/nginx/certs:ro
+      - ./deploy/nginx/acme:/var/www/certbot:ro
     networks:
       - internal
       - public

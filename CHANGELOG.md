@@ -8,6 +8,13 @@ The project follows Semantic Versioning.
 
 ### Added
 
+- Three-job GitHub Actions pipeline for quality/security, database integration, and container
+  runtime checks.
+- Target-aware deployment environment validator with secret-safe diagnostics.
+- Verified PostgreSQL backup, confirmed restore, application rollback, and public smoke-test
+  scripts.
+- Nginx HTTP/HTTPS templates with TLS hardening, ACME bootstrap path, and production headers.
+- CI/CD and deployment automation guide with Termius-compatible server commands.
 - Responsive administrative console for users, tariffs, payments, publication queue, runtime
   settings, analytics, and audit history.
 - Versioned `/api/v1/admin` endpoints for user details, FREE fallback, publication error review,
@@ -30,6 +37,11 @@ The project follows Semantic Versioning.
 
 ### Changed
 
+- Application containers now run with dropped capabilities, `no-new-privileges`, init handling,
+  and isolated temporary filesystems.
+- Alembic startup now uses a one-shot Compose migration gate before API, bot, worker, and
+  scheduler services, avoiding concurrent upgrades during horizontal scaling.
+- Secret scanning now blocks new findings and always rejects Telegram tokens and private keys.
 - Daily limits now use `Europe/Moscow` by default.
 - Runtime plan prices, limits, activation flags, and durations are read from PostgreSQL without
   being overwritten at startup.

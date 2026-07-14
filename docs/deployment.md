@@ -30,6 +30,17 @@ docker compose up -d --build
 docker compose logs -f api bot worker scheduler
 ```
 
+For staging and production, use the checked automation instead of running these commands
+individually:
+
+```bash
+python3 tools/validate_deploy_env.py --env-file .env --environment production
+ENV_FILE=.env bash deploy/deploy.sh production vX.Y.Z
+```
+
+The complete certificate bootstrap, deployment, backup, restore, rollback, and CI procedure is in
+[CI/CD and Deployment Automation](ci-cd-deployment.md).
+
 Run migrations explicitly before first start or during deploy:
 
 ```bash
@@ -96,3 +107,6 @@ Use separate files outside Git for each environment:
 - `.env.production`
 
 Copy the selected file to `.env` on the server. Never commit real `.env` files.
+
+Staging and production use `NGINX_TEMPLATE=https.conf.template`, set `DOMAIN` to the
+`PUBLIC_BASE_URL` host, and provide `fullchain.pem` and `privkey.pem` under `TLS_CERT_DIR`.

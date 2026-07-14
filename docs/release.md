@@ -67,24 +67,20 @@ Implementation stage readiness must follow [Implementation Roadmap](implementati
 ## Production Update
 
 ```bash
-bash deploy/backup_postgres.sh
-git fetch --tags
-git checkout vX.Y.Z
-docker compose build
-docker compose run --rm api alembic upgrade head
-docker compose up -d
-curl https://your-domain.example/health
-curl https://your-domain.example/ready
+ENV_FILE=.env bash deploy/deploy.sh production vX.Y.Z
 ```
 
 ## Rollback
 
-1. Stop intake with `intake_enabled=false`.
-2. Check out the previous stable tag.
-3. Rebuild and restart containers.
-4. Restore the database backup if the failed release changed data incompatibly.
-5. Check health and readiness.
+1. Stop intake with `intake_enabled=false` when publication behavior is affected.
+2. Confirm the previous release is compatible with the current database schema.
+3. Run `ENV_FILE=.env bash deploy/rollback.sh production <ref> --confirm`.
+4. Restore a verified database backup only after a separate data-impact review.
+5. Check health, readiness, metrics, and key user scenarios.
 6. Re-enable intake.
+
+The automation details and database downgrade restriction are documented in
+[CI/CD and Deployment Automation](ci-cd-deployment.md).
 
 ## API Compatibility
 

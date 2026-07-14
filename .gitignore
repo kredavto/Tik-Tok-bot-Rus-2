@@ -10,6 +10,12 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 data/
+backups/
+.deploy/
+deploy/nginx/certs/*
+!deploy/nginx/certs/.gitkeep
+deploy/nginx/acme/*
+!deploy/nginx/acme/.gitkeep
 dist/
 build/
 *.egg-info/

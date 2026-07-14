@@ -38,6 +38,7 @@ Implementation progress must be checked against [Implementation Roadmap](impleme
 - Alembic migrations apply cleanly.
 - Migration compatibility checks are complete.
 - CI passes Ruff format, Ruff lint, MyPy, tests, Alembic, Docker build, and secret scan.
+- CI verifies Bash scripts with ShellCheck and confirms the application image runs as `appuser`.
 - `.env` files are not committed.
 - `.env.example` is complete and current.
 - Confidential data handling and secret rotation policy is documented.
@@ -59,6 +60,8 @@ Implementation progress must be checked against [Implementation Roadmap](impleme
 - Telegram, TikTok, and Robokassa callbacks are configured.
 - PostgreSQL backup works.
 - Restore drill has been tested on staging.
+- Backup checksum/metadata and `pg_restore --list` verification are present.
+- Automated deployment and application rollback smoke tests pass in staging.
 - Backup and restore policy is documented and current.
 - `/health`, `/ready`, and `/metrics` are monitored.
 - Security logging and audit requirements are verified.

@@ -21,10 +21,12 @@ Important: this project does not implement VPN, proxy routing, device spoofing, 
 - PostgreSQL 16 database.
 - Redis queues and cache.
 - Dedicated scheduler for subscription expiry, OAuth refresh, and retention cleanup.
+- One-shot Alembic migration gate before application services start.
 - Responsive administrative console with RBAC, analytics, audit, and safe queue controls.
 - Video intake from Telegram and local storage.
 - Official TikTok Content Posting API client scaffold.
 - Docker Compose setup for deployment on a VPS.
+- Reproducible CI, verified backup/restore, release, rollback, and HTTPS automation.
 - Systemd unit template and deployment checklist.
 
 ## Quick Start
@@ -96,6 +98,7 @@ the UI.
 - [Architecture Summary](docs/architecture-summary.md)
 - [Project Component Map](docs/component-map.md)
 - [Deployment](docs/deployment.md)
+- [CI/CD and Deployment Automation](docs/ci-cd-deployment.md)
 - [Compliance Notes](docs/compliance.md)
 - [Robokassa Setup](docs/robokassa.md)
 - [Security, Backup, and Monitoring](docs/security.md)

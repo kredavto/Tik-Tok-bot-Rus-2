@@ -43,7 +43,7 @@ OUTPUT_DIR = DOCS / "final"
 PROJECT_TITLE = "Tik_Tok_Loader"
 DOC_TITLE_RU = "Единая техническая спецификация"
 DOC_TITLE_EN = "Unified Technical Specification"
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 REPO = "kredavto/Tik-Tok-bot-Rus-2"
 
 
@@ -90,6 +90,7 @@ SOURCE_DOCS: list[SourceDoc] = [
     SourceDoc("configuration.md", "Конфигурация"),
     SourceDoc("configuration-management.md", "Конфигурация"),
     SourceDoc("deployment.md", "Эксплуатация"),
+    SourceDoc("ci-cd-deployment.md", "Эксплуатация"),
     SourceDoc("containerization.md", "Эксплуатация"),
     SourceDoc("production-launch.md", "Эксплуатация"),
     SourceDoc("operations-runbook.md", "Эксплуатация"),
