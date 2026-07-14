@@ -38,8 +38,11 @@ restore_failed() {
 trap restore_failed ERR
 
 log "recreating target database"
+# Variables expand inside the PostgreSQL container, not in the host shell.
+# shellcheck disable=SC2016
 compose exec -T postgres sh -ec \
   'dropdb --username="$POSTGRES_USER" --if-exists --force "$POSTGRES_DB" && createdb --username="$POSTGRES_USER" "$POSTGRES_DB"'
+# shellcheck disable=SC2016
 compose exec -T postgres sh -ec \
   'exec pg_restore --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" --no-owner --no-privileges --exit-on-error' \
   <"$BACKUP_PATH"

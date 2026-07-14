@@ -29,6 +29,8 @@ trap 'rm -f "$TEMP_PATH"' EXIT
 
 log "creating PostgreSQL backup"
 compose up -d postgres >/dev/null
+# Variables expand inside the PostgreSQL container, not in the host shell.
+# shellcheck disable=SC2016
 compose exec -T postgres sh -ec \
   'exec pg_dump --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" --format=custom' \
   >"$TEMP_PATH"
