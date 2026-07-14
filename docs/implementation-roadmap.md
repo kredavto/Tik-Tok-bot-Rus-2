@@ -24,6 +24,8 @@ quality gates. Stage 10 automation is implemented: strict preflight, TLS validat
 Telegram webhook management, public smoke checks, and the staging acceptance runbook are present.
 External staging acceptance and production activation remain pending until rotated credentials,
 approved provider applications, domain, HTTPS, backup destination, and server access are available.
+Release candidate `0.2.0-rc.1` adds deterministic source evidence and cannot be deployed to
+production until it is accepted in staging and promoted to a stable version.
 
 ## Control Points
 

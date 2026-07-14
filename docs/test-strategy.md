@@ -68,9 +68,14 @@ SuccessURL is informational and is never acceptance evidence.
 A release candidate requires:
 
 - Successful GitHub Actions quality, integration, migration, and container jobs.
+- A deterministic manifest whose Git SHA, source-tree hash, version, and Alembic head match the
+  candidate deployed to staging.
 - Current requirement-to-test links in the traceability matrix.
 - Staging execution of scenarios that depend on Telegram, TikTok, Robokassa, HTTPS, or recovery.
 - No unresolved critical security findings.
 - A backup and restore record before production deployment.
 
 Passing automated tests does not by itself authorize production launch.
+
+The manifest format and stable-version promotion rule are documented in
+[Release Candidate Manifest](release-candidate.md).

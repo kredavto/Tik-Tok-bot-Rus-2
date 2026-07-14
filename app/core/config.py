@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     app_env: str = Field("development", alias="APP_ENV")
-    app_version: str = Field("0.1.0", alias="APP_VERSION")
+    app_version: str = Field("0.2.0-rc.1", alias="APP_VERSION")
     app_host: str = Field("0.0.0.0", alias="APP_HOST")
     app_port: int = Field(8080, alias="APP_PORT")
     api_workers: int = Field(1, alias="API_WORKERS")

@@ -113,3 +113,22 @@ jobs:
           image="$(docker compose config --images | grep '^tik-tok-loader:' | head -n1)"
           test -n "$image"
           test "$(docker image inspect "$image" --format '{{.Config.User}}')" = "appuser"
+
+  release-candidate:
+    name: Release candidate manifest
+    runs-on: ubuntu-24.04
+    needs: [quality, integration, container]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build deterministic manifest
+        run: python tools/build_release_candidate.py
+      - name: Upload manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-candidate-manifest
+          path: dist/release/*.json
+          if-no-files-found: error
+          retention-days: 30

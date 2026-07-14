@@ -5,7 +5,7 @@ deployment procedure for Tik_Tok_Loader.
 
 ## CI Pipeline
 
-GitHub Actions runs three jobs:
+GitHub Actions runs four jobs:
 
 - `Quality and security`: Ruff formatting and linting, MyPy, OpenAPI contract validation, Python
   bytecode compilation, Bash syntax, ShellCheck, and secret scanning.
@@ -14,9 +14,13 @@ GitHub Actions runs three jobs:
   coverage output, and a 45% project coverage floor.
 - `Container build`: Docker Compose model validation, application image build, and verification
    that the runtime image uses the unprivileged `appuser` account.
+- `Release candidate manifest`: runs only after the preceding jobs, validates version consistency
+  and migration topology, hashes the tracked source tree, and uploads deterministic release
+  evidence for 30 days.
 
-The container job starts only after the quality and integration jobs pass. The workflow has
-read-only repository permissions and cancels superseded runs for the same branch or pull request.
+The container job starts only after the quality and integration jobs pass. Manifest generation
+starts only after all three preceding jobs pass. The workflow has read-only repository permissions
+and cancels superseded runs for the same branch or pull request.
 
 ## Secret Gate
 
@@ -86,6 +90,7 @@ The script:
 - creates and verifies a PostgreSQL backup;
 - records the previous Git revision under ignored `.deploy/`;
 - fetches and checks out the requested commit in detached mode;
+- verifies version consistency and writes `.deploy/release-manifest.json` before image construction;
 - builds images with refreshed base layers;
 - applies Alembic migrations;
 - requires the one-shot `migrate` service to complete before application services start;
@@ -102,6 +107,8 @@ The full automated test-layer map and external acceptance boundary are documente
 [Test Strategy and Quality Gates](test-strategy.md).
 The provider-backed rehearsal and evidence format are defined in
 [Staging Acceptance Runbook](staging-acceptance-runbook.md).
+The deterministic artifact contract is defined in
+[Release Candidate Manifest](release-candidate.md).
 
 ## Backup and Restore
 

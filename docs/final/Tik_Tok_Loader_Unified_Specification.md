@@ -2,7 +2,7 @@
 
 **Unified Technical Specification**
 
-- **Версия:** 0.7.0
+- **Версия:** 0.8.0
 - **Репозиторий:** `kredavto/Tik-Tok-bot-Rus-2`
 - **Дата сборки:** 2026-07-14
 - **Статус:** проектная спецификация для реализации
@@ -73,15 +73,16 @@
 - [60. Infrastructure Dependency Management](#60-infrastructure-dependency-management)
 - [61. License and Third-Party Component Management](#61-license-and-third-party-component-management)
 - [62. Migration and Version Compatibility Plan](#62-migration-and-version-compatibility-plan)
-- [63. Release Management](#63-release-management)
-- [64. Change Acceptance Policy](#64-change-acceptance-policy)
-- [65. QA Test Data and Acceptance Scenarios](#65-qa-test-data-and-acceptance-scenarios)
-- [66. Test Strategy and Quality Gates](#66-test-strategy-and-quality-gates)
-- [67. Acceptance Checklist](#67-acceptance-checklist)
-- [68. Requirements Traceability Matrix](#68-requirements-traceability-matrix)
-- [69. Glossary and Naming Conventions](#69-glossary-and-naming-conventions)
-- [70. Specification Index](#70-specification-index)
-- [71. Risk Management](#71-risk-management)
+- [63. Release Candidate Manifest](#63-release-candidate-manifest)
+- [64. Release Management](#64-release-management)
+- [65. Change Acceptance Policy](#65-change-acceptance-policy)
+- [66. QA Test Data and Acceptance Scenarios](#66-qa-test-data-and-acceptance-scenarios)
+- [67. Test Strategy and Quality Gates](#67-test-strategy-and-quality-gates)
+- [68. Acceptance Checklist](#68-acceptance-checklist)
+- [69. Requirements Traceability Matrix](#69-requirements-traceability-matrix)
+- [70. Glossary and Naming Conventions](#70-glossary-and-naming-conventions)
+- [71. Specification Index](#71-specification-index)
+- [72. Risk Management](#72-risk-management)
 
 ## Список сокращений и терминов
 
@@ -142,7 +143,7 @@ TikTok Developer Portal setup must follow [TikTok Developer Configuration](#20-t
 Группа спецификации: Архитектура
 
 
-Terminology and naming rules are defined in [Glossary and Naming Conventions](#69-glossary-and-naming-conventions).
+Terminology and naming rules are defined in [Glossary and Naming Conventions](#70-glossary-and-naming-conventions).
 
 The consolidated component overview is maintained in [Project Component Map](#3-project-component-map).
 
@@ -222,7 +223,7 @@ If TikTok returns an authorization, permission, regional, account, or policy res
 
 Future development must preserve architectural integrity, security, scalability, and maintainability while staying within the official TikTok API model.
 
-Future change acceptance must follow [Change Acceptance Policy](#64-change-acceptance-policy).
+Future change acceptance must follow [Change Acceptance Policy](#65-change-acceptance-policy).
 
 # 3. Project Component Map
 
@@ -402,6 +403,8 @@ quality gates. Stage 10 automation is implemented: strict preflight, TLS validat
 Telegram webhook management, public smoke checks, and the staging acceptance runbook are present.
 External staging acceptance and production activation remain pending until rotated credentials,
 approved provider applications, domain, HTTPS, backup destination, and server access are available.
+Release candidate `0.2.0-rc.1` adds deterministic source evidence and cannot be deployed to
+production until it is accepted in staging and promoted to a stable version.
 
 ## 5.3. Control Points
 
@@ -474,7 +477,7 @@ Confidential data controls are detailed in [Confidential Data Policy](#31-confid
 | Tests | Cover new behavior with unit, integration, FSM, Robokassa, TikTok mock, and queue-related tests where relevant. |
 | Alembic | Apply all schema changes through Alembic migrations. |
 
-Maintainability controls are detailed in [Development Standards](#55-development-standards), [Migration and Version Compatibility Plan](#62-migration-and-version-compatibility-plan), [OpenAPI and Contract Documentation](#27-openapi-and-contract-documentation), and [Requirements Traceability Matrix](#68-requirements-traceability-matrix).
+Maintainability controls are detailed in [Development Standards](#55-development-standards), [Migration and Version Compatibility Plan](#62-migration-and-version-compatibility-plan), [OpenAPI and Contract Documentation](#27-openapi-and-contract-documentation), and [Requirements Traceability Matrix](#69-requirements-traceability-matrix).
 
 ## 6.5. Scalability
 
@@ -495,7 +498,7 @@ A release is not production-ready until non-functional requirements are checked 
 Группа спецификации: Данные
 
 
-Canonical entity names are defined in [Glossary and Naming Conventions](#69-glossary-and-naming-conventions).
+Canonical entity names are defined in [Glossary and Naming Conventions](#70-glossary-and-naming-conventions).
 
 ## 7.1. Core Entities
 
@@ -1716,7 +1719,7 @@ Before releasing an API change:
 - Update public or administrative API documentation.
 - Add or update tests for compatibility and error behavior.
 - Document deprecation or migration steps when needed.
-- Review impact through [Change Acceptance Policy](#64-change-acceptance-policy).
+- Review impact through [Change Acceptance Policy](#65-change-acceptance-policy).
 
 # 25. Public REST API
 
@@ -1859,7 +1862,7 @@ Do not write secrets, raw tokens, passwords, or Robokassa credentials to audit d
 - Keep `/api/v1/admin` backward compatible within the same major API version.
 - Add new response fields as optional.
 - Document endpoint changes in OpenAPI and `CHANGELOG.md`.
-- Follow [Change Acceptance Policy](#64-change-acceptance-policy) before release.
+- Follow [Change Acceptance Policy](#65-change-acceptance-policy) before release.
 
 # 27. OpenAPI and Contract Documentation
 
@@ -2508,6 +2511,10 @@ ENV_FILE=.env bash deploy/preflight.sh production
 ENV_FILE=.env bash deploy/deploy.sh production vX.Y.Z
 ```
 
+The checked-out application version must equal `APP_VERSION` in `.env`. A release candidate such as
+`0.2.0-rc.1` is accepted for staging and rejected for production until promoted to a stable SemVer.
+Each deployment records a deterministic source manifest under `.deploy/release-manifest.json`.
+
 The complete certificate bootstrap, deployment, backup, restore, rollback, and CI procedure is in
 [CI/CD and Deployment Automation](#36-cicd-and-deployment-automation).
 
@@ -2599,7 +2606,7 @@ deployment procedure for Tik_Tok_Loader.
 
 ## 36.1. CI Pipeline
 
-GitHub Actions runs three jobs:
+GitHub Actions runs four jobs:
 
 - `Quality and security`: Ruff formatting and linting, MyPy, OpenAPI contract validation, Python
   bytecode compilation, Bash syntax, ShellCheck, and secret scanning.
@@ -2608,9 +2615,13 @@ GitHub Actions runs three jobs:
   coverage output, and a 45% project coverage floor.
 - `Container build`: Docker Compose model validation, application image build, and verification
    that the runtime image uses the unprivileged `appuser` account.
+- `Release candidate manifest`: runs only after the preceding jobs, validates version consistency
+  and migration topology, hashes the tracked source tree, and uploads deterministic release
+  evidence for 30 days.
 
-The container job starts only after the quality and integration jobs pass. The workflow has
-read-only repository permissions and cancels superseded runs for the same branch or pull request.
+The container job starts only after the quality and integration jobs pass. Manifest generation
+starts only after all three preceding jobs pass. The workflow has read-only repository permissions
+and cancels superseded runs for the same branch or pull request.
 
 ## 36.2. Secret Gate
 
@@ -2680,6 +2691,7 @@ The script:
 - creates and verifies a PostgreSQL backup;
 - records the previous Git revision under ignored `.deploy/`;
 - fetches and checks out the requested commit in detached mode;
+- verifies version consistency and writes `.deploy/release-manifest.json` before image construction;
 - builds images with refreshed base layers;
 - applies Alembic migrations;
 - requires the one-shot `migrate` service to complete before application services start;
@@ -2693,9 +2705,11 @@ the acceptance scenarios. Termius is an SSH client for these server-side command
 change the deployment procedure.
 
 The full automated test-layer map and external acceptance boundary are documented in
-[Test Strategy and Quality Gates](#66-test-strategy-and-quality-gates).
+[Test Strategy and Quality Gates](#67-test-strategy-and-quality-gates).
 The provider-backed rehearsal and evidence format are defined in
 [Staging Acceptance Runbook](#38-staging-acceptance-runbook).
+The deterministic artifact contract is defined in
+[Release Candidate Manifest](#63-release-candidate-manifest).
 
 ## 36.6. Backup and Restore
 
@@ -2802,6 +2816,7 @@ the application's official scopes.
 ## 38.1. Entry Criteria
 
 - The release commit passed all GitHub Actions jobs.
+- The CI run contains the `release-candidate-manifest` artifact for the same full Git SHA.
 - DNS points the staging domain to the Netherlands VPS.
 - A valid TLS certificate and matching private key are installed.
 - The Telegram token has never appeared in chat, source, logs, or Git.
@@ -2822,7 +2837,8 @@ docker compose ps
 The preflight validates the environment without printing secrets, checks certificate lifetime,
 hostname and key matching, validates the Compose model, checks Docker, and enforces a free-disk
 floor. Deployment creates a verified database backup, applies migrations, starts services,
-configures the Telegram webhook, and runs public smoke tests.
+configures the Telegram webhook, runs public smoke tests, and writes the server-side release
+manifest before image construction.
 
 The public smoke test verifies the versioned health, readiness and metrics endpoints, required
 OpenAPI paths, admin security headers, and the webhook URL returned by Telegram. It does not send
@@ -2852,6 +2868,7 @@ OAuth payloads.
 Store sanitized evidence in the release record or pull request:
 
 - release tag and full Git SHA;
+- release-candidate manifest filename and aggregate source-tree SHA-256;
 - GitHub Actions run URL;
 - preflight and smoke-test pass timestamps;
 - Docker image tag and `docker compose ps` status;
@@ -2865,7 +2882,8 @@ Store sanitized evidence in the release record or pull request:
 Staging is accepted only when all automated checks and critical manual scenarios pass, no P1/P2
 defect remains open, and the rollback target is known. Production credentials must be separate,
 Robokassa test mode must be disabled, and the production launch still requires an explicit owner
-decision.
+decision. The accepted prerelease must be promoted to a stable SemVer and pass CI again before
+production deployment.
 
 # 39. Production Launch Plan
 
@@ -3423,7 +3441,7 @@ After every P1/P2 incident:
 4. Update runbooks and deployment checks.
 5. Track follow-up actions to completion.
 
-Risk controls are summarized in [Risk Management](#71-risk-management).
+Risk controls are summarized in [Risk Management](#72-risk-management).
 
 # 46. Backup and Restore Policy
 
@@ -4149,7 +4167,7 @@ Diagnostic data must make it possible to identify failure causes quickly, analyz
 
 All development must preserve the requirements in [Architecture Summary](#2-architecture-summary) and the subsystem boundaries in [Project Component Map](#3-project-component-map).
 
-The full documentation entry point is [Specification Index](#70-specification-index).
+The full documentation entry point is [Specification Index](#71-specification-index).
 
 ## 55.1. Repository Structure
 
@@ -4174,7 +4192,7 @@ Tik-Tok-bot-Rus-2/
 - Public functions and classes should include docstrings when their behavior is not obvious from the name and type signature.
 - Business logic, API handlers, data access, security, worker code, and infrastructure code stay in separate modules.
 
-Project terminology and naming rules are documented in [Glossary and Naming Conventions](#69-glossary-and-naming-conventions).
+Project terminology and naming rules are documented in [Glossary and Naming Conventions](#70-glossary-and-naming-conventions).
 
 ## 55.3. Git Workflow
 
@@ -4203,7 +4221,7 @@ Database validation, constraints, transactions, and data consistency rules are d
 
 Entity relationships are documented in [Logical Data Model](#7-logical-data-model).
 
-Post-launch change acceptance rules are documented in [Change Acceptance Policy](#64-change-acceptance-policy).
+Post-launch change acceptance rules are documented in [Change Acceptance Policy](#65-change-acceptance-policy).
 
 Technical debt tracking and review rules are documented in [Technical Debt Management](#58-technical-debt-management).
 
@@ -4572,7 +4590,7 @@ An infrastructure update is successful only when:
 - [Dependencies and Third-Party Services](#59-dependencies-and-third-party-services)
 - [License and Third-Party Component Management](#61-license-and-third-party-component-management)
 - [Deployment](#35-deployment)
-- [Release Management](#63-release-management)
+- [Release Management](#64-release-management)
 - [Security, Backup, and Monitoring](#29-security-backup-and-monitoring)
 - [SOP Checklists](#41-sop-checklists)
 - [Capacity and Performance Management](#52-capacity-and-performance-management)
@@ -4650,7 +4668,7 @@ Before release:
 
 - [Dependencies and Third-Party Services](#59-dependencies-and-third-party-services)
 - [Infrastructure Dependency Management](#60-infrastructure-dependency-management)
-- [Release Management](#63-release-management)
+- [Release Management](#64-release-management)
 - [Technical Debt Management](#58-technical-debt-management)
 
 # 62. Migration and Version Compatibility Plan
@@ -4725,12 +4743,92 @@ After every update, monitor:
 
 Any new database entity or schema change must include an Alembic migration, data quality rules, tests, documentation, and a compatibility assessment before release.
 
-# 63. Release Management
+# 63. Release Candidate Manifest
 
 Группа спецификации: Релизы
 
 
-## 63.1. Environments
+The release candidate manifest is deterministic, secret-free evidence that identifies the exact
+source tree proposed for staging. It complements CI results and provider-backed acceptance records;
+it does not replace either of them.
+
+## 63.1. Current Candidate
+
+The current prerelease version is `0.2.0-rc.1`. The version is synchronized across
+`pyproject.toml`, `app.__version__`, the application configuration default, and all environment
+templates. `CHANGELOG.md` contains a matching release heading.
+
+Prerelease versions may be built in CI and deployed to staging. The manifest builder rejects a
+prerelease when the supplied runtime environment contains `APP_ENV=production`. Production
+promotion requires a stable version such as `0.2.0`, a matching changelog heading, a new successful
+CI run, and explicit release approval.
+
+## 63.2. Manifest Contents
+
+The JSON artifact contains:
+
+- schema version, project name, application version, and release channel;
+- target environment when a runtime `.env` is supplied;
+- full Git commit SHA and deterministic commit timestamp;
+- path, byte size, and SHA-256 digest for every tracked source file;
+- aggregate SHA-256 digest for the tracked source tree;
+- the single Alembic head and migration count;
+- the list of required quality gates; and
+- version-source identifiers and their common non-secret version value.
+
+The artifact never copies file contents, environment values other than `APP_ENV` and
+`APP_VERSION`, tokens, passwords, signatures, OAuth payloads, or payment data.
+
+## 63.3. Local Generation
+
+Generate evidence only from a clean tracked worktree:
+
+```bash
+python tools/build_release_candidate.py
+```
+
+The default output is written under ignored `dist/release/`. For a staging deployment:
+
+```bash
+python tools/build_release_candidate.py \
+  --env-file .env \
+  --output .deploy/release-manifest.json
+```
+
+`--allow-dirty` is available only for development diagnostics. A manifest created with that option
+is not release evidence because its Git SHA may not describe working-tree changes.
+
+## 63.4. CI and Deployment
+
+GitHub Actions creates `release-candidate-manifest` only after quality, PostgreSQL integration,
+migration, coverage, container-build, and non-root checks succeed. The artifact is retained for 30
+days and is attached to the exact workflow commit.
+
+The deployment script regenerates `.deploy/release-manifest.json` after checking out the requested
+commit and before building the application image. It also compares the server-side `APP_VERSION`
+with every version source. A mismatch, dirty tracked tree, invalid SemVer, multiple Alembic heads,
+or production prerelease stops deployment before image construction.
+
+## 63.5. Staging Evidence
+
+Record these values in the staging acceptance result:
+
+- manifest filename and artifact URL;
+- application version and full Git SHA;
+- aggregate source-tree SHA-256;
+- Alembic head;
+- CI workflow URL; and
+- sanitized acceptance outcomes from the staging runbook.
+
+The production approver must be able to match the promoted stable commit to the accepted release
+candidate and review every change introduced during promotion.
+
+# 64. Release Management
+
+Группа спецификации: Релизы
+
+
+## 64.1. Environments
 
 | Environment | Purpose |
 | --- | --- |
@@ -4740,7 +4838,7 @@ Any new database entity or schema change must include an Alembic migration, data
 
 Environment templates live in `deploy/env.*.example`. Real `.env.*` files are not committed.
 
-## 63.2. Release Requirements
+## 64.2. Release Requirements
 
 - CI passes.
 - Alembic migrations are tested.
@@ -4753,18 +4851,21 @@ Environment templates live in `deploy/env.*.example`. Real `.env.*` files are no
 - Production backup is created before deployment.
 - Risk impact is reviewed before production deployment.
 
-## 63.3. Release Flow
+## 64.3. Release Flow
 
-1. Create a release branch.
-2. Update version and changelog.
-3. Run CI checks.
-4. Deploy to staging.
-5. Run acceptance tests.
-6. Approve release.
-7. Back up production.
-8. Deploy to production.
-9. Check `/health`, `/ready`, `/metrics`.
-10. Monitor logs and core scenarios after release.
+1. Create a release branch and assign a SemVer prerelease such as `0.2.0-rc.1`.
+2. Synchronize version sources and update the changelog.
+3. Run CI and retain the deterministic release-candidate manifest.
+4. Deploy the candidate to staging.
+5. Run acceptance tests and attach sanitized evidence to the manifest record.
+6. Promote the accepted source to a stable version such as `0.2.0`.
+7. Run CI again and approve the stable release.
+8. Back up production.
+9. Deploy the stable version to production.
+10. Check `/health`, `/ready`, `/metrics` and monitor core scenarios.
+
+Manifest generation, prerelease restrictions, and promotion evidence are defined in
+[Release Candidate Manifest](#63-release-candidate-manifest).
 
 Post-launch release planning, routine checks, and quality gates are described in [Post-Launch Maintenance and Versioning](#43-post-launch-maintenance-and-versioning).
 
@@ -4776,13 +4877,13 @@ New functionality must satisfy [Feature Development Plan](#57-feature-developmen
 
 Database migration and version compatibility rules are documented in [Migration and Version Compatibility Plan](#62-migration-and-version-compatibility-plan).
 
-Every release candidate must satisfy [Change Acceptance Policy](#64-change-acceptance-policy).
+Every release candidate must satisfy [Change Acceptance Policy](#65-change-acceptance-policy).
 
-Acceptance testing must follow [QA Test Data and Acceptance Scenarios](#65-qa-test-data-and-acceptance-scenarios).
+Acceptance testing must follow [QA Test Data and Acceptance Scenarios](#66-qa-test-data-and-acceptance-scenarios).
 
-Requirement coverage must follow [Requirements Traceability Matrix](#68-requirements-traceability-matrix).
+Requirement coverage must follow [Requirements Traceability Matrix](#69-requirements-traceability-matrix).
 
-Documentation completeness must follow [Specification Index](#70-specification-index).
+Documentation completeness must follow [Specification Index](#71-specification-index).
 
 Environment configuration and secret readiness must follow [Environment Configuration and Secrets Control](#32-environment-configuration-and-secrets-control).
 
@@ -4794,13 +4895,15 @@ API versioning, compatibility, and deprecation checks must follow [API Versionin
 
 Implementation stage readiness must follow [Implementation Roadmap](#5-implementation-roadmap).
 
-## 63.4. Production Update
+## 64.4. Production Update
 
 ```bash
 ENV_FILE=.env bash deploy/deploy.sh production vX.Y.Z
 ```
 
-## 63.5. Rollback
+The deployment command rejects prerelease versions for `APP_ENV=production`.
+
+## 64.5. Rollback
 
 1. Stop intake with `intake_enabled=false` when publication behavior is affected.
 2. Confirm the previous release is compatible with the current database schema.
@@ -4812,16 +4915,16 @@ ENV_FILE=.env bash deploy/deploy.sh production vX.Y.Z
 The automation details and database downgrade restriction are documented in
 [CI/CD and Deployment Automation](#36-cicd-and-deployment-automation).
 
-## 63.6. API Compatibility
+## 64.6. API Compatibility
 
 Public REST methods use `/api/v1`. Backward-compatible fields can be added. Removing or changing fields requires a new major API version.
 
-# 64. Change Acceptance Policy
+# 65. Change Acceptance Policy
 
 Группа спецификации: Релизы
 
 
-## 64.1. Architectural Principles
+## 65.1. Architectural Principles
 
 All future changes must:
 
@@ -4832,7 +4935,7 @@ All future changes must:
 - Include tests and documentation for new behavior.
 - Stay within the official TikTok API model.
 
-## 64.2. Change Acceptance Flow
+## 65.2. Change Acceptance Flow
 
 Before accepting a change:
 
@@ -4846,7 +4949,7 @@ Before accepting a change:
 8. Update `CHANGELOG.md`.
 9. Confirm release readiness.
 
-Requirement links must be updated in [Requirements Traceability Matrix](#68-requirements-traceability-matrix).
+Requirement links must be updated in [Requirements Traceability Matrix](#69-requirements-traceability-matrix).
 
 API changes must also satisfy [OpenAPI and Contract Documentation](#27-openapi-and-contract-documentation).
 
@@ -4856,7 +4959,7 @@ Technical debt introduced, changed, or resolved by a change must follow [Technic
 
 New dependencies or third-party components must follow [License and Third-Party Component Management](#61-license-and-third-party-component-management).
 
-## 64.3. Minimum Quality Criteria
+## 65.3. Minimum Quality Criteria
 
 A change can be accepted only when:
 
@@ -4871,7 +4974,7 @@ A change can be accepted only when:
 - Technical debt impact is reviewed.
 - License and third-party component impact is reviewed when dependencies change.
 
-## 64.4. Regression Checks
+## 65.4. Regression Checks
 
 Key scenarios to protect:
 
@@ -4884,22 +4987,22 @@ Key scenarios to protect:
 - Admin dashboard and audit logging.
 - Health, readiness, metrics, and logs.
 
-QA data and detailed acceptance scenarios are documented in [QA Test Data and Acceptance Scenarios](#65-qa-test-data-and-acceptance-scenarios).
+QA data and detailed acceptance scenarios are documented in [QA Test Data and Acceptance Scenarios](#66-qa-test-data-and-acceptance-scenarios).
 
-## 64.5. Final Requirement
+## 65.5. Final Requirement
 
 All specification parts form one requirement set for Tik_Tok_Loader. Future changes must respect the architecture, security rules, testing process, deployment process, and operational procedures documented in this repository.
 
-The complete documentation entry point is [Specification Index](#70-specification-index).
+The complete documentation entry point is [Specification Index](#71-specification-index).
 
-# 65. QA Test Data and Acceptance Scenarios
+# 66. QA Test Data and Acceptance Scenarios
 
 Группа спецификации: Качество
 
 
-Requirement-to-test mapping is maintained in [Requirements Traceability Matrix](#68-requirements-traceability-matrix).
+Requirement-to-test mapping is maintained in [Requirements Traceability Matrix](#69-requirements-traceability-matrix).
 
-## 65.1. Test Users
+## 66.1. Test Users
 
 Prepare these accounts in staging:
 
@@ -4913,9 +5016,9 @@ Prepare these accounts in staging:
 
 Use test credentials and staging-only data. Do not use production secrets in QA environments.
 
-## 65.2. Acceptance Scenarios
+## 66.2. Acceptance Scenarios
 
-### 65.2.1. QA-REG-001: New User Registration
+### 66.2.1. QA-REG-001: New User Registration
 
 Automation: implemented in `tests/test_subscriptions.py` and `tests/test_bot_fsm.py`.
 
@@ -4926,7 +5029,7 @@ Expected result:
 - FREE plan is assigned.
 - Audit and diagnostic logs contain expected entries.
 
-### 65.2.2. QA-OAUTH-001: TikTok OAuth Connection
+### 66.2.2. QA-OAUTH-001: TikTok OAuth Connection
 
 Automation: OAuth state, URL, signature, and encrypted storage paths are covered. Final provider
 authorization remains a staging check.
@@ -4938,7 +5041,7 @@ Expected result:
 - Tokens are encrypted before storage.
 - User receives a successful connection notification.
 
-### 65.2.3. QA-UPL-001: Successful Video Publication
+### 66.2.3. QA-UPL-001: Successful Video Publication
 
 Automation: video validation, FSM options, queue locking, TikTok client mocks, and status history
 are covered. Final publication through an approved TikTok application remains a staging check.
@@ -4952,7 +5055,7 @@ Expected result:
 - User daily usage is incremented only after acceptance.
 - User receives final notification.
 
-### 65.2.4. QA-LIMIT-001: Daily Limit Exceeded
+### 66.2.4. QA-LIMIT-001: Daily Limit Exceeded
 
 Automation: implemented in `tests/test_subscriptions.py`, including concurrent first-use checks.
 
@@ -4963,7 +5066,7 @@ Expected result:
 - User receives a clear limit notification.
 - Logs include user and correlation context.
 
-### 65.2.5. QA-PAY-001: PRO Purchase Through Robokassa
+### 66.2.5. QA-PAY-001: PRO Purchase Through Robokassa
 
 Automation: signature, order creation, amount validation, and duplicate ResultURL activation are
 covered. A Robokassa test-mode round trip remains a staging check.
@@ -4976,7 +5079,7 @@ Expected result:
 - SuccessURL does not activate subscription.
 - User receives payment success notification.
 
-### 65.2.6. QA-SUB-001: Automatic Return to FREE
+### 66.2.6. QA-SUB-001: Automatic Return to FREE
 
 Automation: implemented in `tests/test_subscriptions.py`.
 
@@ -4987,7 +5090,7 @@ Expected result:
 - User history remains intact.
 - User receives expiration or plan-change notification when applicable.
 
-### 65.2.7. QA-WEBHOOK-001: Repeated Webhook
+### 66.2.7. QA-WEBHOOK-001: Repeated Webhook
 
 Automation: payment idempotency and webhook signature rejection are covered. Provider redelivery
 is also checked during staging acceptance.
@@ -4999,7 +5102,7 @@ Expected result:
 - Payment or subscription is not activated twice.
 - Webhook event history contains enough diagnostic detail.
 
-### 65.2.8. QA-QUEUE-001: Temporary Queue Failure Recovery
+### 66.2.8. QA-QUEUE-001: Temporary Queue Failure Recovery
 
 Automation: scheduler lease recovery, worker lock exclusion, and bounded TikTok chunk retries are
 covered.
@@ -5011,7 +5114,7 @@ Expected result:
 - Job status remains consistent.
 - Daily usage is not double-counted.
 
-## 65.3. Success Criteria
+## 66.3. Success Criteria
 
 All acceptance scenarios must:
 
@@ -5022,20 +5125,20 @@ All acceptance scenarios must:
 - Send correct user notifications.
 - Leave queues and counters in a consistent state.
 
-## 65.4. Release Rule
+## 66.4. Release Rule
 
 A release candidate is not ready until required QA scenarios pass in staging or an equivalent controlled environment.
 
-# 66. Test Strategy and Quality Gates
+# 67. Test Strategy and Quality Gates
 
 Группа спецификации: Качество
 
 
 This document defines the automated test layers, release evidence, and staging checks for
 Tik_Tok_Loader. Detailed business scenarios are maintained in
-[QA Test Data and Acceptance Scenarios](#65-qa-test-data-and-acceptance-scenarios).
+[QA Test Data and Acceptance Scenarios](#66-qa-test-data-and-acceptance-scenarios).
 
-## 66.1. Test Layers
+## 67.1. Test Layers
 
 | Layer | Scope | Primary Evidence |
 | --- | --- | --- |
@@ -5049,7 +5152,7 @@ Tik_Tok_Loader. Detailed business scenarios are maintained in
 | Container | Compose model, image build, and non-root runtime | GitHub Actions `Container build` job |
 | Staging acceptance | Real Telegram webhook, approved TikTok application, Robokassa test mode, HTTPS, backup and restore | Signed release checklist and staging run record |
 
-## 66.2. Local Quality Commands
+## 67.2. Local Quality Commands
 
 Run static checks and infrastructure-free tests:
 
@@ -5065,7 +5168,7 @@ pytest --cov=app --cov-report=term-missing --cov-fail-under=45
 The full `pytest` command requires PostgreSQL and may require Redis. GitHub Actions provides
 PostgreSQL 16, Redis, FFmpeg, an isolated encryption key, and a migrated disposable database.
 
-## 66.3. Coverage Policy
+## 67.3. Coverage Policy
 
 CI enforces a project-wide line coverage floor of 45%. The floor is a regression guard, not a
 completion target. New or changed business logic must include focused tests, and critical payment,
@@ -5074,7 +5177,7 @@ already passes.
 
 Coverage XML is generated in CI for later publication or quality-platform integration.
 
-## 66.4. Concurrency and Idempotency
+## 67.4. Concurrency and Idempotency
 
 Automated PostgreSQL tests verify these invariants:
 
@@ -5085,7 +5188,7 @@ Automated PostgreSQL tests verify these invariants:
 - Upload status history contains every accepted transition and terminal jobs cannot be reopened.
 - Redis leases prevent duplicate scheduler dispatch and upload worker execution.
 
-## 66.5. External-Service Boundary
+## 67.5. External-Service Boundary
 
 Unit and integration tests mock TikTok HTTP responses and validate only the official OAuth 2.0 and
 Content Posting API contract implemented by this project. They do not prove that a TikTok
@@ -5094,11 +5197,13 @@ application has been approved or that a specific account or region is eligible t
 Robokassa production activation requires a real ResultURL round trip against the configured store.
 SuccessURL is informational and is never acceptance evidence.
 
-## 66.6. Release Evidence
+## 67.6. Release Evidence
 
 A release candidate requires:
 
 - Successful GitHub Actions quality, integration, migration, and container jobs.
+- A deterministic manifest whose Git SHA, source-tree hash, version, and Alembic head match the
+  candidate deployed to staging.
 - Current requirement-to-test links in the traceability matrix.
 - Staging execution of scenarios that depend on Telegram, TikTok, Robokassa, HTTPS, or recovery.
 - No unresolved critical security findings.
@@ -5106,7 +5211,10 @@ A release candidate requires:
 
 Passing automated tests does not by itself authorize production launch.
 
-# 67. Acceptance Checklist
+The manifest format and stable-version promotion rule are documented in
+[Release Candidate Manifest](#63-release-candidate-manifest).
+
+# 68. Acceptance Checklist
 
 Группа спецификации: Качество
 
@@ -5115,11 +5223,11 @@ Final implementation must satisfy [Architecture Summary](#2-architecture-summary
 
 Non-functional requirements must be validated according to [Non-Functional Requirements](#6-non-functional-requirements).
 
-Documentation completeness must be checked against [Specification Index](#70-specification-index).
+Documentation completeness must be checked against [Specification Index](#71-specification-index).
 
 Implementation progress must be checked against [Implementation Roadmap](#5-implementation-roadmap).
 
-## 67.1. Functional Readiness
+## 68.1. Functional Readiness
 
 - New Telegram user registration works.
 - FREE plan is assigned automatically.
@@ -5141,7 +5249,7 @@ Implementation progress must be checked against [Implementation Roadmap](#5-impl
 - User blocking, FREE fallback, plan changes, settings changes, role changes, and safe retries are audited.
 - Only eligible temporary publication failures can be manually retried.
 
-## 67.2. Technical Readiness
+## 68.2. Technical Readiness
 
 - `docker compose up -d` starts all services.
 - PostgreSQL and Redis are not exposed publicly.
@@ -5164,7 +5272,7 @@ Implementation progress must be checked against [Implementation Roadmap](#5-impl
 - License and third-party component register has been reviewed.
 - Non-functional requirements have been checked.
 
-## 67.3. Operational Readiness
+## 68.3. Operational Readiness
 
 - Production `.env` is prepared.
 - HTTPS is configured.
@@ -5183,51 +5291,52 @@ Implementation progress must be checked against [Implementation Roadmap](#5-impl
 - Operations runbook is current.
 - Release and rollback procedures are documented.
 
-## 67.4. Final Sign-Off
+## 68.4. Final Sign-Off
 
 Project is ready for production only after functional, integration, security, and operational checks pass successfully.
 
-Required QA scenarios are documented in [QA Test Data and Acceptance Scenarios](#65-qa-test-data-and-acceptance-scenarios).
+Required QA scenarios are documented in [QA Test Data and Acceptance Scenarios](#66-qa-test-data-and-acceptance-scenarios).
 
-Requirement coverage is tracked in [Requirements Traceability Matrix](#68-requirements-traceability-matrix).
+Requirement coverage is tracked in [Requirements Traceability Matrix](#69-requirements-traceability-matrix).
 
 The first production run should follow [Production Launch Plan](#39-production-launch-plan).
 
 Post-launch support should follow [Post-Launch Maintenance and Versioning](#43-post-launch-maintenance-and-versioning).
 
-Future changes should be accepted through [Change Acceptance Policy](#64-change-acceptance-policy).
+Future changes should be accepted through [Change Acceptance Policy](#65-change-acceptance-policy).
 
-# 68. Requirements Traceability Matrix
+# 69. Requirements Traceability Matrix
 
 Группа спецификации: Приложения
 
 
-## 68.1. Purpose
+## 69.1. Purpose
 
 Each functional requirement must have a stable identifier and a visible link to implementation, tests, and documentation.
 
-## 68.2. Current Matrix
+## 69.2. Current Matrix
 
 | ID | Requirement | Component | Test evidence | Docs | Status |
 | --- | --- | --- | --- | --- | --- |
-| `REQ-001` | User registration | Bot / DB | `QA-REG-001`; subscriptions and FSM tests | [Users](#8-users-entity), [QA](#65-qa-test-data-and-acceptance-scenarios) | Implemented |
+| `REQ-001` | User registration | Bot / DB | `QA-REG-001`; subscriptions and FSM tests | [Users](#8-users-entity), [QA](#66-qa-test-data-and-acceptance-scenarios) | Implemented |
 | `REQ-002` | TikTok OAuth | API / OAuth | `QA-OAUTH-001`; API and TikTok tests | [TikTok Config](#20-tiktok-developer-configuration), [Public API](#25-public-rest-api) | Implemented; staging pending |
 | `REQ-003` | Paid plans | Robokassa | `QA-PAY-001`; payment idempotency tests | [Payments](#11-payments-entity), [Robokassa](#21-robokassa-setup) | Implemented; staging pending |
 | `REQ-004` | Video publication | Worker / TikTok | `QA-UPL-001`; FSM, video, worker, and lifecycle tests | [Upload Jobs](#12-upload-jobs-entity), [Lifecycle](#19-video-publication-lifecycle) | Implemented; staging pending |
 | `REQ-005` | Daily limits | Usage service | `QA-LIMIT-001`; quota concurrency tests | [Daily Usage](#13-daily-usage-entity) | Implemented |
-| `NFR-001` | Core NFR controls | Cross-cutting | CI quality, coverage, migration, container | [NFR](#6-non-functional-requirements), [Tests](#66-test-strategy-and-quality-gates) | Implemented; production evidence pending |
+| `NFR-001` | Core NFR controls | Cross-cutting | CI quality, coverage, migration, container | [NFR](#6-non-functional-requirements), [Tests](#67-test-strategy-and-quality-gates) | Implemented; production evidence pending |
 | `NFR-002` | Security audit | Audit | Admin, tracing, webhook, secret scan | [Security Audit](#30-security-logging-and-audit) | Implemented |
 | `NFR-003` | Infrastructure dependencies | Operations | Container and post-update checks | [Infrastructure](#60-infrastructure-dependency-management) | Implemented; staging pending |
 | `NFR-004` | Confidential data | Security | Encryption and secret-scan tests | [Data Policy](#31-confidential-data-policy) | Implemented |
-| `DOC-001` | Documentation maintenance | Documentation | Unified build and release review | [Spec Index](#70-specification-index) | Implemented |
+| `DOC-001` | Documentation maintenance | Documentation | Unified build and release review | [Spec Index](#71-specification-index) | Implemented |
 | `CFG-001` | Environment and secrets | Configuration | Config and deploy-validator tests | [Environment](#32-environment-configuration-and-secrets-control) | Implemented |
 | `TD-001` | Technical debt | Development | Release readiness review | [Technical Debt](#58-technical-debt-management) | Process defined |
 | `DEP-001` | Licenses and components | Dependencies | Dependency and release review | [Licenses](#61-license-and-third-party-component-management) | Process defined |
 | `API-001` | API compatibility | REST / OpenAPI | OpenAPI checker and API tests | [API Versioning](#24-api-versioning-and-client-compatibility) | Implemented |
 | `ROAD-001` | Implementation roadmap | Delivery | Preflight, smoke, and roadmap control points | [Roadmap](#5-implementation-roadmap), [Staging Runbook](#38-staging-acceptance-runbook) | Stage 10 automation done; external acceptance pending |
 | `OPS-001` | Controlled production launch | Operations | Deploy validator and webhook-management tests | [Production Launch](#39-production-launch-plan), [Staging Runbook](#38-staging-acceptance-runbook) | Implemented; provider evidence pending |
+| `REL-001` | Reproducible release candidate | Release | Manifest determinism, version, migration, and prerelease tests | [Release Candidate](#63-release-candidate-manifest), [Release](#64-release-management) | Implemented; staging evidence pending |
 
-## 68.3. Maintenance Rules
+## 69.3. Maintenance Rules
 
 - Every new requirement receives a unique `REQ-###` identifier.
 - Every new acceptance scenario receives a unique `QA-...` identifier.
@@ -5236,16 +5345,16 @@ Each functional requirement must have a stable identifier and a visible link to 
 - The matrix must be reviewed before every release.
 - A requirement is complete only when implementation, automated or manual QA coverage, and documentation are all present.
 
-## 68.4. Completion Criterion
+## 69.4. Completion Criterion
 
 The project is release-ready only when every approved requirement has traceability to implementation, tests, and documentation.
 
-# 69. Glossary and Naming Conventions
+# 70. Glossary and Naming Conventions
 
 Группа спецификации: Приложения
 
 
-## 69.1. Glossary
+## 70.1. Glossary
 
 | Term | Definition |
 | --- | --- |
@@ -5261,7 +5370,7 @@ The project is release-ready only when every approved requirement has traceabili
 | Admin Action | Immutable administrative audit event |
 | System Setting | Mutable non-secret runtime configuration value |
 
-## 69.2. Naming Conventions
+## 70.2. Naming Conventions
 
 - Database tables use `snake_case` and plural names.
 - Python modules use `snake_case`.
@@ -5271,7 +5380,7 @@ The project is release-ready only when every approved requirement has traceabili
 - Environment variables use uppercase `SNAKE_CASE`.
 - Plan names are written as `FREE`, `PRO`, and `BUSINESS` in product and technical documentation.
 
-## 69.3. Entity Names
+## 70.3. Entity Names
 
 Use these canonical names:
 
@@ -5289,20 +5398,20 @@ Use these canonical names:
 | Admin Action | `admin_actions` |
 | System Setting | `system_settings` |
 
-## 69.4. Consistency Rule
+## 70.4. Consistency Rule
 
 Code, documentation, database schema, tests, API responses, and user-facing text should use the same terminology unless an external provider requires a different term.
 
 When a current implementation uses a different internal field name, document the mapping in the relevant entity specification and change it only through Alembic migration and compatibility review.
 
-# 70. Specification Index
+# 71. Specification Index
 
 Группа спецификации: Приложения
 
 
 This document is the final index for the Tik_Tok_Loader technical specification. All specification parts are treated as one requirement set for development, testing, deployment, operations, and maintenance.
 
-## 70.1. Purpose
+## 71.1. Purpose
 
 The current documentation set is the authoritative project specification. It is used as:
 
@@ -5313,11 +5422,11 @@ The current documentation set is the authoritative project specification. It is 
 - Deployment and operations guide.
 - Maintenance and change-control reference.
 
-## 70.2. Core Specification Groups
+## 71.2. Core Specification Groups
 
 | Group | Documents |
 | --- | --- |
-| Architecture | [Architecture Summary](#2-architecture-summary), [Project Component Map](#3-project-component-map), [Sequence Flows](#4-sequence-flows), [Glossary and Naming Conventions](#69-glossary-and-naming-conventions) |
+| Architecture | [Architecture Summary](#2-architecture-summary), [Project Component Map](#3-project-component-map), [Sequence Flows](#4-sequence-flows), [Glossary and Naming Conventions](#70-glossary-and-naming-conventions) |
 | Functional behavior | [User Guide](#18-user-guide), [Video Lifecycle](#19-video-publication-lifecycle), [Robokassa Setup](#21-robokassa-setup), [TikTok Developer Configuration](#20-tiktok-developer-configuration) |
 | Data model | [Logical Data Model](#7-logical-data-model), entity specifications for users, TikTok accounts, subscriptions, payments, upload jobs, usage, webhooks, admin actions, and settings |
 | API contracts | [REST API Standards](#23-rest-api-standards), [API Versioning and Client Compatibility](#24-api-versioning-and-client-compatibility), [Public REST API](#25-public-rest-api), [Administrative REST API](#26-administrative-rest-api), [OpenAPI and Contract Documentation](#27-openapi-and-contract-documentation), [Error Codes and Exception Handling](#28-error-codes-and-exception-handling) |
@@ -5325,20 +5434,20 @@ The current documentation set is the authoritative project specification. It is 
 | Operations | [Deployment](#35-deployment), [Staging Acceptance Runbook](#38-staging-acceptance-runbook), [Production Launch Plan](#39-production-launch-plan), [Operations Runbook](#40-operations-runbook), [SOP Checklists](#41-sop-checklists), [Incident Response and Disaster Recovery](#44-incident-response-and-disaster-recovery), [Incident Management](#45-incident-management) |
 | Reliability and scale | [Non-Functional Requirements](#6-non-functional-requirements), [Performance and Scaling](#51-performance-and-scaling), [Capacity and Performance Management](#52-capacity-and-performance-management), [Queue and Retry Policy](#50-queue-and-retry-policy), [Service Continuity Plan](#47-service-continuity-plan) |
 | Data protection and retention | [Data Retention](#48-data-retention), [File Storage Policy](#49-file-storage-policy), [Backup and Restore Policy](#46-backup-and-restore-policy) |
-| Release and change control | [Release Management](#63-release-management), [Post-Launch Maintenance and Versioning](#43-post-launch-maintenance-and-versioning), [Change Acceptance Policy](#64-change-acceptance-policy), [Migration and Version Compatibility Plan](#62-migration-and-version-compatibility-plan), [Infrastructure Dependency Management](#60-infrastructure-dependency-management), [License and Third-Party Component Management](#61-license-and-third-party-component-management), [Technical Debt Management](#58-technical-debt-management) |
-| Quality control | [Implementation Roadmap](#5-implementation-roadmap), [QA Test Data and Acceptance Scenarios](#65-qa-test-data-and-acceptance-scenarios), [Acceptance Checklist](#67-acceptance-checklist), [Requirements Traceability Matrix](#68-requirements-traceability-matrix), [Development Standards](#55-development-standards) |
+| Release and change control | [Release Management](#64-release-management), [Release Candidate Manifest](#63-release-candidate-manifest), [Post-Launch Maintenance and Versioning](#43-post-launch-maintenance-and-versioning), [Change Acceptance Policy](#65-change-acceptance-policy), [Migration and Version Compatibility Plan](#62-migration-and-version-compatibility-plan), [Infrastructure Dependency Management](#60-infrastructure-dependency-management), [License and Third-Party Component Management](#61-license-and-third-party-component-management), [Technical Debt Management](#58-technical-debt-management) |
+| Quality control | [Implementation Roadmap](#5-implementation-roadmap), [QA Test Data and Acceptance Scenarios](#66-qa-test-data-and-acceptance-scenarios), [Acceptance Checklist](#68-acceptance-checklist), [Requirements Traceability Matrix](#69-requirements-traceability-matrix), [Development Standards](#55-development-standards) |
 
-## 70.3. Documentation Maintenance Rules
+## 71.3. Documentation Maintenance Rules
 
 - Every functionality change must update the relevant documentation section in the same change set.
 - Architecture changes must be documented before release approval.
 - New entities, API endpoints, background jobs, configuration keys, scenarios, and external integration behavior must be documented together with implementation.
 - Documentation version must match the application version and release notes.
 - `CHANGELOG.md` must describe user-facing, operational, security, dependency, and documentation changes relevant to the release.
-- Requirement links must be kept current in [Requirements Traceability Matrix](#68-requirements-traceability-matrix).
+- Requirement links must be kept current in [Requirements Traceability Matrix](#69-requirements-traceability-matrix).
 - Technical debt must be reviewed before release according to [Technical Debt Management](#58-technical-debt-management).
 
-## 70.4. Completeness Control
+## 71.4. Completeness Control
 
 Before release, verify:
 
@@ -5354,20 +5463,20 @@ Before release, verify:
 - License and third-party component status is reviewed and documented.
 - Implementation roadmap status is reviewed.
 
-## 70.5. Release Rule
+## 71.5. Release Rule
 
 The documentation set must be reviewed before every production release. A release is not ready if code, tests, configuration, deployment procedures, OpenAPI contracts, or operational runbooks contradict the current specification.
 
-## 70.6. Final Statement
+## 71.6. Final Statement
 
 The specification parts form the project documentation foundation for Tik_Tok_Loader. The set must be used as the technical assignment, architecture specification, and maintenance guide for future development.
 
-# 71. Risk Management
+# 72. Risk Management
 
 Группа спецификации: Приложения
 
 
-## 71.1. Operational Constraints
+## 72.1. Operational Constraints
 
 - Use only official TikTok interfaces.
 - Do not perform actions outside granted OAuth permissions.
@@ -5375,7 +5484,7 @@ The specification parts form the project documentation foundation for Tik_Tok_Lo
 - External integrations must handle temporary unavailability.
 - Do not retry TikTok authorization errors or platform restriction errors automatically.
 
-## 71.2. Risk Register
+## 72.2. Risk Register
 
 | Risk | Controls |
 | --- | --- |
@@ -5388,7 +5497,7 @@ The specification parts form the project documentation foundation for Tik_Tok_Lo
 | Secret leakage | Keep secrets in `.env` or secret storage only; CI secret scan; never export secret-like settings |
 | Video processing failure | Validate files before publishing; do not consume daily quota until official TikTok API accepts publication |
 
-## 71.3. Change Control
+## 72.3. Change Control
 
 Before production changes:
 
@@ -5400,7 +5509,7 @@ Before production changes:
 6. Deploy step-by-step.
 7. Monitor `/health`, `/ready`, `/metrics`, queues, payments, and TikTok API errors.
 
-## 71.4. Resilience Criteria
+## 72.4. Resilience Criteria
 
 The system must preserve user history, payment records, subscriptions, upload metadata, and audit trails during temporary external failures and controlled restarts.
 

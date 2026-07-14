@@ -119,6 +119,7 @@ the UI.
 - [Data Retention](docs/data-retention.md)
 - [Video Lifecycle](docs/video-lifecycle.md)
 - [Release Management](docs/release.md)
+- [Release Candidate Manifest](docs/release-candidate.md)
 - [Containerization](docs/containerization.md)
 - [Operations Runbook](docs/operations-runbook.md)
 - [Configuration Management](docs/configuration-management.md)

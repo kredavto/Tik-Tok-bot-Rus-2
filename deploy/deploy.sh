@@ -24,6 +24,11 @@ git fetch --prune --tags origin
 TARGET_SHA="$(git rev-parse --verify "${GIT_REF}^{commit}")"
 git checkout --detach "$TARGET_SHA"
 
+log "building deterministic release candidate manifest"
+python3 tools/build_release_candidate.py \
+  --env-file "$ENV_FILE" \
+  --output "$STATE_DIR/release-manifest.json"
+
 log "building application image"
 compose build --pull
 log "applying Alembic migrations"

@@ -38,6 +38,10 @@ ENV_FILE=.env bash deploy/preflight.sh production
 ENV_FILE=.env bash deploy/deploy.sh production vX.Y.Z
 ```
 
+The checked-out application version must equal `APP_VERSION` in `.env`. A release candidate such as
+`0.2.0-rc.1` is accepted for staging and rejected for production until promoted to a stable SemVer.
+Each deployment records a deterministic source manifest under `.deploy/release-manifest.json`.
+
 The complete certificate bootstrap, deployment, backup, restore, rollback, and CI procedure is in
 [CI/CD and Deployment Automation](ci-cd-deployment.md).
 

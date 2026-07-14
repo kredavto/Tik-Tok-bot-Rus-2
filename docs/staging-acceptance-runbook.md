@@ -7,6 +7,7 @@ the application's official scopes.
 ## Entry Criteria
 
 - The release commit passed all GitHub Actions jobs.
+- The CI run contains the `release-candidate-manifest` artifact for the same full Git SHA.
 - DNS points the staging domain to the Netherlands VPS.
 - A valid TLS certificate and matching private key are installed.
 - The Telegram token has never appeared in chat, source, logs, or Git.
@@ -27,7 +28,8 @@ docker compose ps
 The preflight validates the environment without printing secrets, checks certificate lifetime,
 hostname and key matching, validates the Compose model, checks Docker, and enforces a free-disk
 floor. Deployment creates a verified database backup, applies migrations, starts services,
-configures the Telegram webhook, and runs public smoke tests.
+configures the Telegram webhook, runs public smoke tests, and writes the server-side release
+manifest before image construction.
 
 The public smoke test verifies the versioned health, readiness and metrics endpoints, required
 OpenAPI paths, admin security headers, and the webhook URL returned by Telegram. It does not send
@@ -57,6 +59,7 @@ OAuth payloads.
 Store sanitized evidence in the release record or pull request:
 
 - release tag and full Git SHA;
+- release-candidate manifest filename and aggregate source-tree SHA-256;
 - GitHub Actions run URL;
 - preflight and smoke-test pass timestamps;
 - Docker image tag and `docker compose ps` status;
@@ -70,4 +73,5 @@ Store sanitized evidence in the release record or pull request:
 Staging is accepted only when all automated checks and critical manual scenarios pass, no P1/P2
 defect remains open, and the rollback target is known. Production credentials must be separate,
 Robokassa test mode must be disabled, and the production launch still requires an explicit owner
-decision.
+decision. The accepted prerelease must be promoted to a stable SemVer and pass CI again before
+production deployment.

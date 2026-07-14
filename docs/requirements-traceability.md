@@ -24,6 +24,7 @@ Each functional requirement must have a stable identifier and a visible link to 
 | `API-001` | API compatibility | REST / OpenAPI | OpenAPI checker and API tests | [API Versioning](api-versioning-compatibility.md) | Implemented |
 | `ROAD-001` | Implementation roadmap | Delivery | Preflight, smoke, and roadmap control points | [Roadmap](implementation-roadmap.md), [Staging Runbook](staging-acceptance-runbook.md) | Stage 10 automation done; external acceptance pending |
 | `OPS-001` | Controlled production launch | Operations | Deploy validator and webhook-management tests | [Production Launch](production-launch.md), [Staging Runbook](staging-acceptance-runbook.md) | Implemented; provider evidence pending |
+| `REL-001` | Reproducible release candidate | Release | Manifest determinism, version, migration, and prerelease tests | [Release Candidate](release-candidate.md), [Release](release.md) | Implemented; staging evidence pending |
 
 ## Maintenance Rules
 
