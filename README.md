@@ -21,6 +21,7 @@ Important: this project does not implement VPN, proxy routing, device spoofing, 
 - PostgreSQL 16 database.
 - Redis queues and cache.
 - Dedicated scheduler for subscription expiry, OAuth refresh, and retention cleanup.
+- Responsive administrative console with RBAC, analytics, audit, and safe queue controls.
 - Video intake from Telegram and local storage.
 - Official TikTok Content Posting API client scaffold.
 - Docker Compose setup for deployment on a VPS.
@@ -76,6 +77,13 @@ with a clear user-facing error and does not attempt an unofficial fallback or by
 The `scheduler` container uses Redis leases to enqueue periodic tasks exactly once per configured
 window. It expires PRO/BUSINESS subscriptions and returns users to FREE, refreshes TikTok OAuth
 tokens before expiration, and runs retention cleanup. Docker monitors its Redis heartbeat.
+
+## Administrative Console
+
+FastAPI serves the operational console at `/admin-ui/` and its versioned API at
+`/api/v1/admin`. Access requires a configured administrator Telegram ID, API token, and CSRF
+token. Credentials are held only in browser memory, and TikTok OAuth tokens are never returned to
+the UI.
 
 ## Documentation
 

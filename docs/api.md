@@ -111,11 +111,13 @@ curl "https://your-domain.example/api/v1/oauth/tiktok/start?state=$OAUTH_STATE"
 List upload jobs:
 
 ```bash
-curl "https://your-domain.example/admin/upload-jobs?limit=50&offset=0" \
+curl "https://your-domain.example/api/v1/admin/upload-jobs?limit=50&offset=0" \
   -H "Authorization: Bearer $ADMIN_API_TOKEN" \
   -H "X-Admin-Telegram-Id: $ADMIN_TELEGRAM_ID"
 ```
 
 ## Admin API
+
+The browser console is available at `/admin-ui/`. Its API is served under `/api/v1/admin`.
 
 See [Administrator Guide](admin.md) and [Administrative REST API](admin-rest-api.md).

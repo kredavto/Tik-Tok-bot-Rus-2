@@ -21,13 +21,14 @@ The current implementation may use `key` for `setting_key` and `value` for `sett
 
 ## Example Settings
 
-- PRO and BUSINESS prices.
-- Daily publication limits.
-- Temporary file retention.
-- Maintenance mode.
-- Logging levels and retention periods.
-- Intake enabled or disabled.
-- Feature flags for controlled rollout.
+- `intake_enabled`.
+- `video_retention_hours`.
+- `log_retention_days`.
+- `backup_retention_days`.
+- `audit_log_retention_days`.
+
+Plan prices, daily limits, duration, and sale availability are stored in `plans`, not duplicated in
+`system_settings`.
 
 ## Integrity Requirements
 
@@ -37,6 +38,8 @@ The current implementation may use `key` for `setting_key` and `value` for `sett
 - Setting updates must be transactional.
 - Setting updates must be written to `admin_actions`.
 - Configuration export must exclude secret-like settings.
+- Seed defaults only when a key is absent; never overwrite an administrator change at startup.
+- Retention workers read database values for each cleanup cycle and use `.env` as fallback.
 
 ## Security Requirements
 

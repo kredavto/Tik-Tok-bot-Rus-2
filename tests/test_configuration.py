@@ -1,7 +1,11 @@
 import pytest
 
 from app.core.config import validate_runtime_settings
-from app.services.configuration import is_secret_like, validate_runtime_configuration
+from app.services.configuration import (
+    is_secret_like,
+    validate_runtime_configuration,
+    validate_setting_value,
+)
 
 
 def test_secret_like_keys_are_detected() -> None:
@@ -30,6 +34,23 @@ def test_configuration_import_accepts_non_secret_settings() -> None:
     }
 
     validate_runtime_configuration(payload)
+
+
+@pytest.mark.parametrize(
+    ("value", "value_type"),
+    [("48", "int"), ("false", "bool"), ('{"enabled": true}', "json")],
+)
+def test_typed_system_setting_accepts_valid_value(value: str, value_type: str) -> None:
+    validate_setting_value(value, value_type)
+
+
+@pytest.mark.parametrize(
+    ("value", "value_type"),
+    [("many", "int"), ("yes", "bool"), ("{", "json"), ("value", "secret")],
+)
+def test_typed_system_setting_rejects_invalid_value(value: str, value_type: str) -> None:
+    with pytest.raises((ValueError, TypeError)):
+        validate_setting_value(value, value_type)
 
 
 def test_webhook_mode_requires_https_and_secret(monkeypatch) -> None:

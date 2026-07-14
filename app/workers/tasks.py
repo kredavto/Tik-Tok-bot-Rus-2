@@ -40,6 +40,7 @@ from app.db.session import (
     upsert_tiktok_account,
 )
 from app.security.crypto import decrypt_secret
+from app.services.configuration import get_int_setting
 from app.services.tiktok import (
     TikTokApiError,
     TikTokClient,
@@ -531,12 +532,23 @@ async def _check_publish_status(upload_id: str, user_id: str, attempt: int) -> N
 
 async def _cleanup_retention() -> None:
     now = datetime.now(UTC)
-    video_cutoff = now - timedelta(hours=settings.video_retention_hours)
-    log_cutoff = now - timedelta(days=settings.log_retention_days)
-    audit_cutoff = now - timedelta(days=settings.audit_log_retention_days)
-    backup_cutoff = now - timedelta(days=settings.backup_retention_days)
-
     async with session_scope() as session:
+        video_retention_hours = await get_int_setting(
+            session, "video_retention_hours", settings.video_retention_hours
+        )
+        log_retention_days = await get_int_setting(
+            session, "log_retention_days", settings.log_retention_days
+        )
+        audit_retention_days = await get_int_setting(
+            session, "audit_log_retention_days", settings.audit_log_retention_days
+        )
+        backup_retention_days = await get_int_setting(
+            session, "backup_retention_days", settings.backup_retention_days
+        )
+        video_cutoff = now - timedelta(hours=video_retention_hours)
+        log_cutoff = now - timedelta(days=log_retention_days)
+        audit_cutoff = now - timedelta(days=audit_retention_days)
+
         terminal_jobs = (
             await session.scalars(
                 select(UploadJob).where(
@@ -574,6 +586,7 @@ async def _cleanup_retention() -> None:
         for action in old_admin_actions:
             await session.delete(action)
 
+    backup_cutoff = now - timedelta(days=backup_retention_days)
     backup_dir = Path(settings.backup_dir)
     if backup_dir.exists():
         for backup in backup_dir.glob("*"):

@@ -17,7 +17,8 @@
 | `created_at` | TIMESTAMP WITH TIME ZONE | Action time |
 | `ip_address` | VARCHAR | Administrative request source when available |
 
-The current implementation may use `metadata_json` for `details`. Any schema rename or added field, including `ip_address`, must be delivered through Alembic migration and compatibility checks.
+The implementation uses `metadata_json` for `details`. The `ip_address` field is introduced by
+Alembic revision `0006_admin_console`.
 
 ## Recorded Actions
 

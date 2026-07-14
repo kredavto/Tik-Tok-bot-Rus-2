@@ -43,7 +43,7 @@ OUTPUT_DIR = DOCS / "final"
 PROJECT_TITLE = "Tik_Tok_Loader"
 DOC_TITLE_RU = "Единая техническая спецификация"
 DOC_TITLE_EN = "Unified Technical Specification"
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 REPO = "kredavto/Tik-Tok-bot-Rus-2"
 
 
@@ -71,6 +71,7 @@ SOURCE_DOCS: list[SourceDoc] = [
     SourceDoc("webhook-events-entity.md", "Данные"),
     SourceDoc("admin-actions-entity.md", "Данные"),
     SourceDoc("system-settings-entity.md", "Данные"),
+    SourceDoc("admin.md", "Администрирование"),
     SourceDoc("user-guide.md", "Пользовательские сценарии"),
     SourceDoc("video-lifecycle.md", "Пользовательские сценарии"),
     SourceDoc("tiktok-developer-configuration.md", "Интеграции"),
@@ -239,7 +240,11 @@ def set_table_geometry(table, column_count: int) -> None:
     table.alignment = WD_TABLE_ALIGNMENT.LEFT
     table.autofit = False
     widths = column_widths(column_count)
-    for row in table.rows:
+    for row_index, row in enumerate(table.rows):
+        tr_pr = row._tr.get_or_add_trPr()
+        tr_pr.append(OxmlElement("w:cantSplit"))
+        if row_index == 0:
+            tr_pr.append(OxmlElement("w:tblHeader"))
         for idx, cell in enumerate(row.cells):
             set_cell_width(cell, widths[idx])
             cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER

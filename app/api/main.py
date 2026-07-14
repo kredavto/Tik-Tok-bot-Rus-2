@@ -1,6 +1,7 @@
 import hmac
 import json
 import logging
+from pathlib import Path
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -11,6 +12,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import Update
 from fastapi import FastAPI, Form, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, PlainTextResponse, RedirectResponse, Response
+from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 from sqlalchemy import func, select, text
 
@@ -67,7 +69,11 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="Tik_Tok_Loader API", lifespan=lifespan)
-app.include_router(admin_router)
+app.include_router(admin_router, prefix="/api/v1")
+app.include_router(admin_router, include_in_schema=False)
+
+ADMIN_UI_DIR = Path(__file__).resolve().parents[1] / "admin_ui" / "static"
+app.mount("/admin-ui", StaticFiles(directory=ADMIN_UI_DIR, html=True), name="admin-ui")
 
 METRICS = {
     "http_requests_total": 0,
@@ -103,6 +109,14 @@ async def request_id_middleware(request: Request, call_next):
     response.headers["X-Request-ID"] = request_id
     response.headers["X-Correlation-ID"] = correlation_id
     response.headers["X-Response-Time-ms"] = str(round((time.monotonic() - started) * 1000, 2))
+    if request.url.path.startswith("/admin-ui"):
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; script-src 'self'; style-src 'self'; "
+            "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'"
+        )
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
     METRICS["http_requests_total"] += 1
     return response
 

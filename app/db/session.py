@@ -25,6 +25,7 @@ from app.db.models import (
     WebhookEvent,
 )
 from app.security.crypto import encrypt_secret
+from app.services.configuration import seed_system_settings
 
 engine = create_async_engine(settings.database_url)
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
@@ -39,6 +40,7 @@ class SubscriptionExpirationNotice:
 async def init_db() -> None:
     async with session_scope() as session:
         await seed_plans(session)
+        await seed_system_settings(session)
 
 
 @asynccontextmanager

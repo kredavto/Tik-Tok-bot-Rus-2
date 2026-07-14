@@ -249,6 +249,7 @@ class AdminAction(Base):
     target_type: Mapped[str | None] = mapped_column(String(128), nullable=True)
     target_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     metadata_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
@@ -258,6 +259,12 @@ class SystemSetting(Base):
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     key: Mapped[str] = mapped_column(String(128), unique=True, index=True)
     value: Mapped[str] = mapped_column(Text)
+    value_type: Mapped[str] = mapped_column(String(16), default="string")
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_editable: Mapped[bool] = mapped_column(Boolean, default=True)
+    updated_by: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True, index=True
+    )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, onupdate=utc_now
     )

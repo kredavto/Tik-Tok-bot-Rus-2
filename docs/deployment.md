@@ -47,6 +47,16 @@ curl https://your-domain.example/metrics
 docker compose ps scheduler
 ```
 
+After HTTPS is active, open the administrative console at:
+
+```text
+https://your-domain.example/admin-ui/
+```
+
+Access requires a Telegram ID listed in `TELEGRAM_ADMIN_IDS`, `ADMIN_API_TOKEN`, and
+`ADMIN_CSRF_TOKEN`. Generate independent high-entropy values for production. The browser console
+does not persist them after the page is reloaded or closed.
+
 The API image contains `alembic.ini` and the complete `alembic/` migration tree. The scheduler
 healthcheck reads its Redis heartbeat; an unhealthy scheduler means subscription expiry, token
 refresh, and retention cleanup are not being dispatched.

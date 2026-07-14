@@ -8,6 +8,13 @@ The project follows Semantic Versioning.
 
 ### Added
 
+- Responsive administrative console for users, tariffs, payments, publication queue, runtime
+  settings, analytics, and audit history.
+- Versioned `/api/v1/admin` endpoints for user details, FREE fallback, publication error review,
+  eligible task retry, typed settings, and audit search.
+- Alembic `0006_admin_console` migration for administrative request IP and typed setting metadata.
+- Runtime system-setting seeds and database-backed retention policy values.
+- Admin console security and retry-classification regression tests.
 - Production Telegram webhook dispatch through FastAPI with Redis-backed aiogram FSM.
 - TikTok creator-info flow with manual privacy, interaction, and commercial-content choices.
 - Official TikTok Content Posting status polling and final webhook handling.
@@ -36,6 +43,9 @@ The project follows Semantic Versioning.
 
 ### Security
 
+- Admin UI credentials remain in page memory and are not written to browser storage.
+- Administrative static responses use CSP, frame denial, no-sniff, and no-store headers.
+- User detail endpoints expose TikTok account metadata without OAuth token fields.
 - Local Word files containing Telegram API tokens are excluded from Git.
 - Production webhook mode fails startup without HTTPS and a Telegram webhook secret.
 - Public requests can no longer choose a Telegram user identifier during TikTok OAuth linking.

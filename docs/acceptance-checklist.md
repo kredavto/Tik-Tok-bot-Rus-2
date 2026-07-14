@@ -24,6 +24,11 @@ Implementation progress must be checked against [Implementation Roadmap](impleme
 - SuccessURL does not activate subscriptions.
 - Expired paid subscriptions return to FREE and produce one pending user notification.
 - User can disconnect TikTok.
+- Admin console is available only through HTTPS in production.
+- SUPPORT, ADMIN, and SUPER_ADMIN see only server-authorized operations.
+- User detail never returns encrypted or decrypted TikTok OAuth tokens.
+- User blocking, FREE fallback, plan changes, settings changes, role changes, and safe retries are audited.
+- Only eligible temporary publication failures can be manually retried.
 
 ## Technical Readiness
 
@@ -38,6 +43,8 @@ Implementation progress must be checked against [Implementation Roadmap](impleme
 - Confidential data handling and secret rotation policy is documented.
 - Environment configuration and secret readiness are verified.
 - OpenAPI is available at `/docs` and `/openapi.json`.
+- Versioned administrative endpoints are present under `/api/v1/admin`.
+- Admin static responses include CSP, frame denial, no-sniff, and no-store headers.
 - API version compatibility and deprecation impact have been reviewed.
 - Requirements traceability matrix is current.
 - Specification index is current.

@@ -44,6 +44,7 @@ include = ["app*"]
 
 [tool.setuptools.package-data]
 "app.bot" = ["locales/*.json"]
+"app.admin_ui" = ["static/*.html", "static/*.css", "static/*.js"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
