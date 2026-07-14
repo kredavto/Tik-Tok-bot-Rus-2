@@ -162,4 +162,5 @@ the UI.
 - [Sequence Flows](docs/sequence-flows.md)
 - [Glossary and Naming Conventions](docs/glossary-naming.md)
 - [QA Test Data and Acceptance Scenarios](docs/qa-acceptance-scenarios.md)
+- [Test Strategy and Quality Gates](docs/test-strategy.md)
 - [Requirements Traceability Matrix](docs/requirements-traceability.md)

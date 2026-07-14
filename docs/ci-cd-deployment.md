@@ -7,10 +7,11 @@ deployment procedure for Tik_Tok_Loader.
 
 GitHub Actions runs three jobs:
 
-- `Quality and security`: Ruff formatting and linting, MyPy, Bash syntax, ShellCheck, and secret
-   scanning.
+- `Quality and security`: Ruff formatting and linting, MyPy, OpenAPI contract validation, Python
+  bytecode compilation, Bash syntax, ShellCheck, and secret scanning.
 - `Migrations and tests`: PostgreSQL 16 and Redis integration services, Alembic upgrade/check,
-   downgrade-to-base/upgrade verification on a disposable database, and the full test suite.
+  downgrade-to-base/upgrade verification on a disposable database, the full test suite, XML
+  coverage output, and a 45% project coverage floor.
 - `Container build`: Docker Compose model validation, application image build, and verification
    that the runtime image uses the unprivileged `appuser` account.
 
@@ -92,6 +93,9 @@ The script:
 The deployment operator must still configure Telegram, TikTok, and Robokassa dashboards and run
 the acceptance scenarios. Termius is an SSH client for these server-side commands; it does not
 change the deployment procedure.
+
+The full automated test-layer map and external acceptance boundary are documented in
+[Test Strategy and Quality Gates](test-strategy.md).
 
 ## Backup and Restore
 

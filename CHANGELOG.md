@@ -8,6 +8,11 @@ The project follows Semantic Versioning.
 
 ### Added
 
+- Comprehensive FSM, video-validation, API-contract, worker-lock, queue-lease, payment,
+  subscription, quota-concurrency, and upload-lifecycle tests.
+- CI coverage gate with XML output, OpenAPI contract validation, and application compile check.
+- Test strategy defining automated layers, concurrency guarantees, staging boundaries, and release
+  evidence.
 - Three-job GitHub Actions pipeline for quality/security, database integration, and container
   runtime checks.
 - Target-aware deployment environment validator with secret-safe diagnostics.
@@ -37,6 +42,11 @@ The project follows Semantic Versioning.
 
 ### Changed
 
+- Telegram user registration and daily usage initialization now use PostgreSQL upserts to preserve
+  uniqueness under concurrent requests.
+- Robokassa ResultURL processing now locks payment and user rows, rejects malformed amounts with a
+  valid payment status, and suppresses duplicate subscription activation and notification.
+- REST errors now follow the versioned error catalog with safe messages and request/correlation IDs.
 - Application containers now run with dropped capabilities, `no-new-privileges`, init handling,
   and isolated temporary filesystems.
 - Alembic startup now uses a one-shot Compose migration gate before API, bot, worker, and

@@ -4,9 +4,11 @@ import hmac
 import pytest
 
 from app.services.tiktok import (
+    TikTokApiError,
     TikTokClient,
     _chunk_plan,
     _truncate_utf16,
+    _upload_chunk,
     build_oauth_url,
     validate_webhook_signature,
 )
@@ -89,3 +91,70 @@ async def test_creator_info_is_parsed_from_official_response(monkeypatch) -> Non
     assert creator.privacy_level_options == ("SELF_ONLY", "MUTUAL_FOLLOW_FRIENDS")
     assert creator.duet_disabled is True
     assert creator.max_video_post_duration_sec == 180
+
+
+class FakeUploadResponse:
+    def __init__(self, status: int, body: str = "response") -> None:
+        self.status = status
+        self.body = body
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *_args) -> None:
+        return None
+
+    async def text(self) -> str:
+        return self.body
+
+
+class FakeUploadSession:
+    def __init__(self, statuses: list[int]) -> None:
+        self.statuses = statuses
+        self.requests = 0
+
+    def put(self, *_args, **_kwargs) -> FakeUploadResponse:
+        self.requests += 1
+        return FakeUploadResponse(self.statuses.pop(0))
+
+
+@pytest.mark.asyncio
+async def test_upload_chunk_retries_temporary_server_error(monkeypatch) -> None:
+    delays: list[int] = []
+
+    async def fake_sleep(seconds: int) -> None:
+        delays.append(seconds)
+
+    monkeypatch.setattr("app.services.tiktok.asyncio.sleep", fake_sleep)
+    session = FakeUploadSession([500, 201])
+
+    await _upload_chunk(
+        session=session,  # type: ignore[arg-type]
+        upload_url="https://upload.example.test/video",
+        chunk=b"video",
+        content_type="video/mp4",
+        content_range="bytes 0-4/5",
+        expected_status=201,
+    )
+
+    assert session.requests == 2
+    assert delays == [1]
+
+
+@pytest.mark.asyncio
+async def test_upload_chunk_does_not_retry_client_error(monkeypatch) -> None:
+    sleep = pytest.fail
+    monkeypatch.setattr("app.services.tiktok.asyncio.sleep", sleep)
+    session = FakeUploadSession([400])
+
+    with pytest.raises(TikTokApiError, match="response"):
+        await _upload_chunk(
+            session=session,  # type: ignore[arg-type]
+            upload_url="https://upload.example.test/video",
+            chunk=b"video",
+            content_type="video/mp4",
+            content_range="bytes 0-4/5",
+            expected_status=201,
+        )
+
+    assert session.requests == 1

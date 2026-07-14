@@ -1,7 +1,19 @@
+import asyncio
+import random
+
 import pytest
+from sqlalchemy import func, select
 
 from app.core.plans import PlanCode
-from app.db.session import create_payment, get_or_create_user, init_db, session_scope
+from app.db.models import Payment, Subscription, User
+from app.db.session import (
+    active_plan_code,
+    create_payment,
+    get_or_create_user,
+    init_db,
+    mark_payment_paid,
+    session_scope,
+)
 from app.services import robokassa
 
 
@@ -25,3 +37,65 @@ async def test_robokassa_order_is_created_with_unique_invoice() -> None:
 
     assert payment.provider_invoice_id >= 1001
     assert payment.status == "created"
+
+
+@pytest.mark.asyncio
+async def test_result_url_confirmation_is_idempotent_under_concurrency() -> None:
+    await init_db()
+    telegram_id = random.randint(800_000_000, 899_999_999)
+    async with session_scope() as session:
+        user = await get_or_create_user(session, telegram_id, "payment_race")
+        payment = await create_payment(session, user.id, PlanCode.PRO.value)
+        inv_id = payment.provider_invoice_id
+        user_id = user.id
+
+    async def confirm() -> bool:
+        async with session_scope() as session:
+            result = await mark_payment_paid(session, inv_id, "499.00")
+            return result.activated
+
+    activations = await asyncio.gather(confirm(), confirm())
+
+    assert sorted(activations) == [False, True]
+    async with session_scope() as session:
+        stored_payment = await session.scalar(
+            select(Payment).where(Payment.provider_invoice_id == inv_id)
+        )
+        active_count = await session.scalar(
+            select(func.count(Subscription.id)).where(
+                Subscription.user_id == user_id,
+                Subscription.status == "active",
+            )
+        )
+        stored_user = await session.get(User, user_id)
+
+    assert stored_payment is not None
+    assert stored_payment.status == "paid"
+    assert stored_payment.subscription_id is not None
+    assert active_count == 1
+    assert stored_user is not None
+    async with session_scope() as session:
+        assert await active_plan_code(session, stored_user) == PlanCode.PRO.value
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("out_sum", ["498.99", "not-a-number"])
+async def test_result_url_rejects_invalid_amount(out_sum: str) -> None:
+    await init_db()
+    telegram_id = random.randint(900_000_000, 999_999_999)
+    async with session_scope() as session:
+        user = await get_or_create_user(session, telegram_id, "payment_amount")
+        payment = await create_payment(session, user.id, PlanCode.PRO.value)
+        inv_id = payment.provider_invoice_id
+        user_id = user.id
+
+    async with session_scope() as session:
+        confirmation = await mark_payment_paid(session, inv_id, out_sum)
+        assert confirmation.activated is False
+        assert confirmation.payment is not None
+        assert confirmation.payment.status == "failed"
+
+    async with session_scope() as session:
+        user = await get_or_create_user(session, telegram_id, "payment_amount")
+        assert user.id == user_id
+        assert await active_plan_code(session, user) == PlanCode.FREE.value

@@ -1,11 +1,13 @@
+import asyncio
 import random
 from datetime import UTC, datetime, timedelta
+from uuid import UUID
 
 import pytest
 from sqlalchemy import func, select
 
 from app.core.plans import PlanCode
-from app.db.models import Subscription
+from app.db.models import DailyUsage, Subscription, User
 from app.db.session import (
     active_plan_code,
     can_upload_today,
@@ -94,3 +96,54 @@ async def test_paid_upgrade_does_not_emit_expiration_notice() -> None:
 
     async with session_scope() as session:
         assert await expire_due_paid_subscriptions(session, batch_size=10) == []
+
+
+@pytest.mark.asyncio
+async def test_concurrent_registration_creates_one_user_and_subscription() -> None:
+    await init_db()
+    telegram_id = random.randint(500_000_000, 599_999_999)
+
+    async def register() -> UUID:
+        async with session_scope() as session:
+            user = await get_or_create_user(session, telegram_id, "registration_race")
+            return user.id
+
+    user_ids = await asyncio.gather(*(register() for _ in range(4)))
+
+    assert len(set(user_ids)) == 1
+    async with session_scope() as session:
+        user_count = await session.scalar(
+            select(func.count(User.id)).where(User.telegram_id == telegram_id)
+        )
+        active_count = await session.scalar(
+            select(func.count(Subscription.id)).where(
+                Subscription.user_id == user_ids[0],
+                Subscription.status == "active",
+            )
+        )
+    assert user_count == 1
+    assert active_count == 1
+
+
+@pytest.mark.asyncio
+async def test_concurrent_first_usage_check_creates_one_counter() -> None:
+    await init_db()
+    telegram_id = random.randint(600_000_000, 699_999_999)
+    async with session_scope() as session:
+        user = await get_or_create_user(session, telegram_id, "usage_race")
+        user_id = user.id
+
+    async def check_limit() -> tuple[bool, int, int]:
+        async with session_scope() as session:
+            user = await session.get(User, user_id)
+            assert user is not None
+            return await can_upload_today(session, user)
+
+    results = await asyncio.gather(*(check_limit() for _ in range(4)))
+
+    assert results == [(True, 0, 2)] * 4
+    async with session_scope() as session:
+        usage_count = await session.scalar(
+            select(func.count(DailyUsage.id)).where(DailyUsage.user_id == user_id)
+        )
+    assert usage_count == 1

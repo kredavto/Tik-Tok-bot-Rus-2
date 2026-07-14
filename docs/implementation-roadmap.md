@@ -17,6 +17,13 @@ This document is the final implementation roadmap for Tik_Tok_Loader. It can be 
 | 9. Comprehensive testing | Run unit, integration, FSM, Robokassa, TikTok mock, queue, migration, security, and acceptance checks. | Required tests pass and QA scenarios are documented as complete. |
 | 10. Production preparation and launch | Prepare production `.env`, domain, HTTPS, webhooks, TikTok app settings, Robokassa URLs, backups, monitoring, and launch smoke tests. | Production launch checklist passes and project is ready for operation. |
 
+## Current Status
+
+Current implementation status: stages 1 through 9 are represented in the repository and automated
+quality gates. Stage 9 is complete at code and CI configuration level; external acceptance evidence
+is intentionally deferred to staging. Stage 10 remains pending until production credentials,
+approved provider applications, domain, HTTPS, backup destination, and server access are available.
+
 ## Control Points
 
 Before declaring the project ready:

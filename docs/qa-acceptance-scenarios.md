@@ -18,7 +18,9 @@ Use test credentials and staging-only data. Do not use production secrets in QA 
 
 ## Acceptance Scenarios
 
-### New User Registration
+### QA-REG-001: New User Registration
+
+Automation: implemented in `tests/test_subscriptions.py` and `tests/test_bot_fsm.py`.
 
 Expected result:
 
@@ -27,7 +29,10 @@ Expected result:
 - FREE plan is assigned.
 - Audit and diagnostic logs contain expected entries.
 
-### TikTok OAuth Connection
+### QA-OAUTH-001: TikTok OAuth Connection
+
+Automation: OAuth state, URL, signature, and encrypted storage paths are covered. Final provider
+authorization remains a staging check.
 
 Expected result:
 
@@ -36,7 +41,10 @@ Expected result:
 - Tokens are encrypted before storage.
 - User receives a successful connection notification.
 
-### Successful Video Publication
+### QA-UPL-001: Successful Video Publication
+
+Automation: video validation, FSM options, queue locking, TikTok client mocks, and status history
+are covered. Final publication through an approved TikTok application remains a staging check.
 
 Expected result:
 
@@ -47,7 +55,9 @@ Expected result:
 - User daily usage is incremented only after acceptance.
 - User receives final notification.
 
-### Daily Limit Exceeded
+### QA-LIMIT-001: Daily Limit Exceeded
+
+Automation: implemented in `tests/test_subscriptions.py`, including concurrent first-use checks.
 
 Expected result:
 
@@ -56,7 +66,10 @@ Expected result:
 - User receives a clear limit notification.
 - Logs include user and correlation context.
 
-### PRO Purchase Through Robokassa
+### QA-PAY-001: PRO Purchase Through Robokassa
+
+Automation: signature, order creation, amount validation, and duplicate ResultURL activation are
+covered. A Robokassa test-mode round trip remains a staging check.
 
 Expected result:
 
@@ -66,7 +79,9 @@ Expected result:
 - SuccessURL does not activate subscription.
 - User receives payment success notification.
 
-### Automatic Return to FREE
+### QA-SUB-001: Automatic Return to FREE
+
+Automation: implemented in `tests/test_subscriptions.py`.
 
 Expected result:
 
@@ -75,7 +90,10 @@ Expected result:
 - User history remains intact.
 - User receives expiration or plan-change notification when applicable.
 
-### Repeated Webhook
+### QA-WEBHOOK-001: Repeated Webhook
+
+Automation: payment idempotency and webhook signature rejection are covered. Provider redelivery
+is also checked during staging acceptance.
 
 Expected result:
 
@@ -84,7 +102,10 @@ Expected result:
 - Payment or subscription is not activated twice.
 - Webhook event history contains enough diagnostic detail.
 
-### Temporary Queue Failure Recovery
+### QA-QUEUE-001: Temporary Queue Failure Recovery
+
+Automation: scheduler lease recovery, worker lock exclusion, and bounded TikTok chunk retries are
+covered.
 
 Expected result:
 

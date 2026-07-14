@@ -31,6 +31,10 @@ jobs:
         run: ruff check .
       - name: Type check
         run: mypy app
+      - name: Validate OpenAPI contract
+        run: python tools/check_openapi.py
+      - name: Compile application
+        run: python -m compileall -q app
       - name: Shell validation
         run: |
           find deploy -type f -name '*.sh' -print0 | xargs -0 -n1 bash -n
@@ -90,7 +94,7 @@ jobs:
           alembic downgrade base
           alembic upgrade head
       - name: Run tests
-        run: pytest
+        run: pytest --cov=app --cov-report=term-missing --cov-report=xml --cov-fail-under=45
 
   container:
     name: Container build

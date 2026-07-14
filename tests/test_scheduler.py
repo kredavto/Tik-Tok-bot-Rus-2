@@ -1,3 +1,5 @@
+import asyncio
+
 from app.workers.scheduler import PeriodicDispatch, dispatch_once
 
 
@@ -68,3 +70,16 @@ async def test_scheduler_releases_lease_when_enqueue_fails() -> None:
     assert redis.deleted == ["scheduler:lease:subscriptions"]
     assert await dispatch_once(redis, dispatches) == ["subscriptions"]  # type: ignore[arg-type]
     assert attempts == 2
+
+
+async def test_scheduler_concurrency_enqueues_one_copy() -> None:
+    queued: list[str] = []
+    redis = FakeRedis()
+    dispatches = (PeriodicDispatch("subscriptions", 60, lambda: queued.append("task")),)
+
+    results = await asyncio.gather(
+        *(dispatch_once(redis, dispatches) for _ in range(20))  # type: ignore[arg-type]
+    )
+
+    assert sum(bool(result) for result in results) == 1
+    assert queued == ["task"]

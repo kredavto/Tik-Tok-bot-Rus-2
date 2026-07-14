@@ -11,6 +11,7 @@ from uuid import UUID, uuid4
 from aiogram import Bot, Dispatcher
 from aiogram.types import Update
 from fastapi import FastAPI, Form, HTTPException, Query, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
@@ -88,14 +89,50 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     return JSONResponse(
         status_code=exc.status_code,
         content={
+            "success": False,
             "error": {
-                "code": exc.status_code,
-                "message": exc.detail,
-                "request_id": getattr(request.state, "request_id", None),
-                "correlation_id": getattr(request.state, "correlation_id", None),
-            }
+                "code": _error_code(request.url.path, exc.status_code),
+                "message": str(exc.detail),
+            },
+            "request_id": getattr(request.state, "request_id", None),
+            "correlation_id": getattr(request.state, "correlation_id", None),
         },
     )
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_exception_handler(
+    request: Request,
+    _: RequestValidationError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=422,
+        content={
+            "success": False,
+            "error": {
+                "code": "VAL_422",
+                "message": "Request validation failed",
+            },
+            "request_id": getattr(request.state, "request_id", None),
+            "correlation_id": getattr(request.state, "correlation_id", None),
+        },
+    )
+
+
+def _error_code(path: str, status_code: int) -> str:
+    if "/payments/" in path:
+        prefix = "PAY"
+    elif "/oauth/" in path:
+        prefix = "AUTH"
+    elif "/tiktok" in path:
+        prefix = "TT"
+    elif status_code == 422:
+        prefix = "VAL"
+    elif status_code in {502, 503, 504}:
+        prefix = "NET"
+    else:
+        prefix = "SYS"
+    return f"{prefix}_{status_code}"
 
 
 @app.middleware("http")
@@ -482,12 +519,18 @@ async def robokassa_result(
         raise HTTPException(status_code=400, detail="Invalid payment currency")
 
     async with session_scope() as session:
-        payment = await mark_payment_paid(session, int(inv_id), out_sum, raw_payload=payload)
+        confirmation = await mark_payment_paid(
+            session,
+            int(inv_id),
+            out_sum,
+            raw_payload=payload,
+        )
+        payment = confirmation.payment
         user = await session.get(User, payment.user_id) if payment else None
 
     if not payment or payment.status != "paid":
         raise HTTPException(status_code=400, detail="Payment was not accepted")
-    if user:
+    if user and confirmation.activated:
         await _notify_payment_success(user.telegram_id, payment.plan_id)
     return f"OK{inv_id}"
 
