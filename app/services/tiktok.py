@@ -17,8 +17,9 @@ class TikTokPublishingDisabled(RuntimeError):
 
 
 class TikTokApiError(RuntimeError):
-    def __init__(self, code: str, message: str) -> None:
+    def __init__(self, code: str, message: str, status_code: int | None = None) -> None:
         self.code = code
+        self.status_code = status_code
         super().__init__(message)
 
 
@@ -100,7 +101,11 @@ class TikTokClient:
             async with session.post(self.token_url, data=payload) as response:
                 data = await response.json()
                 if response.status >= 400:
-                    raise TikTokApiError(str(data.get("error", "oauth_error")), str(data))
+                    raise TikTokApiError(
+                        str(data.get("error", "oauth_error")),
+                        str(data),
+                        status_code=response.status,
+                    )
 
         return TikTokTokenResponse(
             open_id=data["open_id"],
@@ -121,7 +126,11 @@ class TikTokClient:
             async with session.post(self.token_url, data=payload) as response:
                 data = await response.json()
                 if response.status >= 400:
-                    raise TikTokApiError(str(data.get("error", "oauth_refresh_error")), str(data))
+                    raise TikTokApiError(
+                        str(data.get("error", "oauth_refresh_error")),
+                        str(data),
+                        status_code=response.status,
+                    )
 
         return TikTokTokenResponse(
             open_id=data["open_id"],
@@ -246,7 +255,11 @@ class TikTokClient:
         error = data.get("error") or {}
         code = error.get("code")
         if response.status >= 400 or code not in (None, "ok"):
-            raise TikTokApiError(str(code or response.status), error.get("message") or str(data))
+            raise TikTokApiError(
+                str(code or response.status),
+                error.get("message") or str(data),
+                status_code=response.status,
+            )
         return data
 
 

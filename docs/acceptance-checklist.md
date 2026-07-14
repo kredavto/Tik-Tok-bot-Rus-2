@@ -22,13 +22,14 @@ Implementation progress must be checked against [Implementation Roadmap](impleme
 - Robokassa payment link generation works for PRO and BUSINESS.
 - Robokassa ResultURL activates paid subscriptions.
 - SuccessURL does not activate subscriptions.
+- Expired paid subscriptions return to FREE and produce one pending user notification.
 - User can disconnect TikTok.
 
 ## Technical Readiness
 
 - `docker compose up -d` starts all services.
 - PostgreSQL and Redis are not exposed publicly.
-- API, PostgreSQL, Redis, and Nginx healthchecks pass.
+- API, PostgreSQL, Redis, scheduler, and Nginx healthchecks pass.
 - Alembic migrations apply cleanly.
 - Migration compatibility checks are complete.
 - CI passes Ruff format, Ruff lint, MyPy, tests, Alembic, Docker build, and secret scan.

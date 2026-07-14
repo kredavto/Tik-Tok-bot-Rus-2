@@ -7,7 +7,8 @@
 - Review `/metrics` for queue size and error counters.
 - Confirm the latest PostgreSQL backup exists.
 - Confirm backup verification follows [Backup and Restore Policy](backup-restore-policy.md).
-- Review critical JSON logs for `api`, `bot`, `worker`, `postgres`, `redis`, and `nginx`.
+- Review critical JSON logs for `api`, `bot`, `worker`, `scheduler`, `postgres`, `redis`, and `nginx`.
+- Confirm the `scheduler` container is healthy and its subscription sweep is running.
 - Use Request ID and Correlation ID when investigating related API, worker, payment, and publication events.
 - Check Robokassa ResultURL events in `webhook_events`.
 

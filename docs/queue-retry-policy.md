@@ -23,6 +23,22 @@ The worker layer handles:
 - PostgreSQL stores the durable task state.
 - Redis may cache short-lived status and coordination data.
 
+## Periodic Maintenance
+
+The dedicated `scheduler` service dispatches maintenance actors through Dramatiq. A Redis lease
+is acquired for each periodic task before dispatch, which allows multiple scheduler instances to
+run without intentionally enqueueing the same interval twice. If broker dispatch fails, the lease
+is released so the next scheduler tick can retry.
+
+The current periodic tasks are:
+
+- Expire due PRO and BUSINESS subscriptions and create the replacement FREE subscription.
+- Refresh TikTok access tokens before their expiry.
+- Remove temporary files and expired operational records according to the retention policy.
+
+Subscription selection uses PostgreSQL `FOR UPDATE SKIP LOCKED`. Expiration notifications use a
+per-subscription Redis lock and a durable `expiration_notified_at` marker.
+
 ## Retryable Errors
 
 Automatic retry is allowed for:
@@ -31,6 +47,7 @@ Automatic retry is allowed for:
 - Publication status checks that have not yet reached a terminal TikTok status.
 - Temporary Telegram notification failures.
 - Temporary Redis or database connectivity issues when retrying is safe.
+- TikTok token refresh requests that fail because of network errors, HTTP 429, or HTTP 5xx.
 
 The complete publication actor is not automatically replayed after an ambiguous failure because
 the official API may already have accepted the publication. Such jobs are marked failed for
@@ -49,6 +66,8 @@ Do not retry automatically for:
 - Invalid user video format, unsupported container, or corrupted file.
 - User cancellation.
 - Policy or authorization rejection from an official external API.
+- TikTok refresh-token rejection or another permanent OAuth error. The account is marked as
+  refresh-blocked until the user reconnects it through the official OAuth flow.
 
 ## Status Updates
 

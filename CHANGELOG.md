@@ -16,6 +16,10 @@ The project follows Semantic Versioning.
   TikTok post options.
 - Regression tests for TikTok signatures, replay protection, chunk planning, creator info,
   webhook configuration, localization, and bot keyboards.
+- Redis-leased scheduler with a heartbeat healthcheck.
+- Automatic paid-subscription expiry, FREE fallback, and retryable Telegram notification state.
+- Proactive TikTok token refresh with permanent OAuth error blocking.
+- Alembic maintenance-state migration and scheduler lease regression tests.
 
 ### Changed
 
@@ -28,6 +32,7 @@ The project follows Semantic Versioning.
 - TikTok OAuth start now accepts only a short-lived state created by the Telegram bot.
 - Full upload jobs are no longer retried after an ambiguous failure; deterministic byte-range
   chunk uploads retry server errors with bounded exponential backoff.
+- Docker images now include Alembic configuration and migration files required by API startup.
 
 ### Security
 

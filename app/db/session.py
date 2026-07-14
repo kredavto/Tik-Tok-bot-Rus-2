@@ -1,11 +1,13 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import aliased
 
 from app.core.config import settings
 from app.core.plans import PLANS, PlanCode
@@ -26,6 +28,12 @@ from app.security.crypto import encrypt_secret
 
 engine = create_async_engine(settings.database_url)
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
+
+
+@dataclass(frozen=True)
+class SubscriptionExpirationNotice:
+    subscription_id: UUID
+    telegram_id: int
 
 
 async def init_db() -> None:
@@ -224,6 +232,8 @@ async def upsert_tiktok_account(
         account.refresh_token_encrypted = encrypt_secret(refresh_token) if refresh_token else None
         account.token_expires_at = expires_at
         account.scopes = scopes
+        account.refresh_blocked_at = None
+        account.refresh_error_code = None
     await session.flush()
     return account
 
@@ -352,6 +362,7 @@ async def create_paid_subscription(
 
 
 async def expire_active_subscriptions(session: AsyncSession, user_id: UUID) -> None:
+    now = datetime.now(UTC)
     statement = select(Subscription).where(
         Subscription.user_id == user_id,
         Subscription.status == "active",
@@ -359,8 +370,110 @@ async def expire_active_subscriptions(session: AsyncSession, user_id: UUID) -> N
     subscriptions = (await session.scalars(statement)).all()
     for subscription in subscriptions:
         subscription.status = "expired"
-        if not subscription.ends_at or subscription.ends_at > datetime.now(UTC):
-            subscription.ends_at = datetime.now(UTC)
+        if subscription.plan_id != PlanCode.FREE.value:
+            subscription.expiration_notified_at = now
+        if not subscription.ends_at or subscription.ends_at > now:
+            subscription.ends_at = now
+
+
+async def expire_due_paid_subscriptions(
+    session: AsyncSession,
+    *,
+    now: datetime | None = None,
+    batch_size: int = 100,
+) -> list[SubscriptionExpirationNotice]:
+    effective_now = now or datetime.now(UTC)
+    due = (
+        await session.scalars(
+            select(Subscription)
+            .where(
+                Subscription.status == "active",
+                Subscription.plan_id != PlanCode.FREE.value,
+                Subscription.ends_at.is_not(None),
+                Subscription.ends_at <= effective_now,
+            )
+            .order_by(Subscription.ends_at)
+            .limit(batch_size)
+            .with_for_update(skip_locked=True)
+        )
+    ).all()
+
+    for subscription in due:
+        subscription.status = "expired"
+    await session.flush()
+
+    for subscription in due:
+        await create_free_subscription(session, subscription.user_id)
+    await session.flush()
+
+    active_subscription = aliased(Subscription)
+    active_free_exists = (
+        select(active_subscription.id)
+        .where(
+            active_subscription.user_id == Subscription.user_id,
+            active_subscription.status == "active",
+            active_subscription.plan_id == PlanCode.FREE.value,
+        )
+        .exists()
+    )
+    rows = (
+        await session.execute(
+            select(Subscription.id, User.telegram_id)
+            .join(User, User.id == Subscription.user_id)
+            .where(
+                Subscription.status == "expired",
+                Subscription.plan_id != PlanCode.FREE.value,
+                Subscription.ends_at.is_not(None),
+                Subscription.ends_at <= effective_now,
+                Subscription.expiration_notified_at.is_(None),
+                active_free_exists,
+            )
+            .order_by(Subscription.ends_at)
+            .limit(batch_size)
+            .with_for_update(of=Subscription, skip_locked=True)
+        )
+    ).all()
+    return [
+        SubscriptionExpirationNotice(subscription_id=subscription_id, telegram_id=telegram_id)
+        for subscription_id, telegram_id in rows
+    ]
+
+
+async def mark_subscription_expiration_notified(
+    session: AsyncSession,
+    subscription_id: UUID,
+) -> bool:
+    subscription = await session.get(Subscription, subscription_id, with_for_update=True)
+    if (
+        subscription is None
+        or subscription.status != "expired"
+        or subscription.expiration_notified_at is not None
+    ):
+        return False
+    subscription.expiration_notified_at = datetime.now(UTC)
+    return True
+
+
+async def list_tiktok_accounts_due_for_refresh(
+    session: AsyncSession,
+    *,
+    due_before: datetime,
+    batch_size: int = 100,
+) -> list[UUID]:
+    return list(
+        (
+            await session.scalars(
+                select(TikTokAccount.id)
+                .where(
+                    TikTokAccount.token_expires_at.is_not(None),
+                    TikTokAccount.token_expires_at <= due_before,
+                    TikTokAccount.refresh_blocked_at.is_(None),
+                )
+                .order_by(TikTokAccount.token_expires_at)
+                .limit(batch_size)
+            )
+        ).all()
+    )
 
 
 async def create_payment(session: AsyncSession, user_id: UUID, plan_code: str) -> Payment:

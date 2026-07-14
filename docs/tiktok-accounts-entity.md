@@ -15,6 +15,8 @@
 | `access_token` | TEXT encrypted | OAuth access token |
 | `refresh_token` | TEXT encrypted | OAuth refresh token |
 | `token_expires_at` | TIMESTAMP WITH TIME ZONE | Access token expiration time |
+| `refresh_blocked_at` | TIMESTAMP WITH TIME ZONE | Time automatic refresh was stopped after a non-retryable error |
+| `refresh_error_code` | VARCHAR | Sanitized non-retryable refresh error code |
 | `created_at` | TIMESTAMP WITH TIME ZONE | Connection creation time |
 | `updated_at` | TIMESTAMP WITH TIME ZONE | Last update time |
 
@@ -35,6 +37,8 @@ The current implementation may use internal column names such as `open_id`, `acc
 - Delete encrypted tokens when the user disconnects the TikTok account.
 - Check access token expiration before each TikTok API call.
 - Refresh access tokens safely through the official OAuth refresh flow.
+- Retry only network, rate-limit, and server failures. A permanent OAuth response blocks further
+  scheduled refresh attempts until the user reconnects the account.
 - Do not collect TikTok passwords.
 
 ## Integrity Requirements

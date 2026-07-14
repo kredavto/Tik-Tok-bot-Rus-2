@@ -5,6 +5,7 @@
 - `bot`: Telegram bot on aiogram.
 - `api`: FastAPI backend.
 - `worker`: Dramatiq background workers.
+- `scheduler`: recurring task dispatch with Redis leases and heartbeat.
 - `postgres`: PostgreSQL 16.
 - `redis`: Redis cache, locks, and queue backend.
 - `nginx`: reverse proxy for public HTTP/HTTPS traffic.
@@ -35,6 +36,7 @@ Compose includes healthchecks for:
 - Redis via `redis-cli ping`.
 - API via `/health`.
 - Nginx via `/health` proxy.
+- Scheduler via its Redis heartbeat.
 
 Service continuity requirements are documented in [Service Continuity Plan](service-continuity-plan.md).
 

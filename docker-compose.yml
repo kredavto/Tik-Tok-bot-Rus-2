@@ -97,6 +97,28 @@ services:
     networks:
       - internal
 
+  scheduler:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: python -m app.workers.scheduler
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      worker:
+        condition: service_started
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "python", "-m", "app.workers.scheduler", "--healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
   nginx:
     image: nginx:1.27-alpine
     restart: unless-stopped

@@ -43,7 +43,7 @@ OUTPUT_DIR = DOCS / "final"
 PROJECT_TITLE = "Tik_Tok_Loader"
 DOC_TITLE_RU = "Единая техническая спецификация"
 DOC_TITLE_EN = "Unified Technical Specification"
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 REPO = "kredavto/Tik-Tok-bot-Rus-2"
 
 
@@ -153,6 +153,23 @@ def strip_md_links(text: str) -> str:
     text = re.sub(r"!\[([^\]]*)\]\([^)]+\)", r"\1", text)
     text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"\1", text)
     return text
+
+
+def rewrite_markdown_links(text: str, section_anchors: dict[str, str]) -> str:
+    def replace(match: re.Match[str]) -> str:
+        label = match.group("label")
+        target = match.group("target")
+        fragment = match.group("fragment") or ""
+        filename = Path(target).name
+        if filename in section_anchors:
+            return f"[{label}](#{section_anchors[filename]})"
+        return f"[{label}](../{target}{fragment})"
+
+    return re.sub(
+        r"\[(?P<label>[^\]]+)\]\((?P<target>[^)#]+\.md)(?P<fragment>#[^)]+)?\)",
+        replace,
+        text,
+    )
 
 
 def read_title(path: Path) -> str:
@@ -398,6 +415,11 @@ def emit_md_front_matter() -> list[str]:
 
 
 def convert_markdown(source_docs: Iterable[SourceDoc]) -> str:
+    source_docs = tuple(source_docs)
+    section_anchors = {
+        source.path: slugify(f"{idx} {read_title(DOCS / source.path)}")
+        for idx, source in enumerate(source_docs, start=1)
+    }
     lines = emit_md_front_matter()
     for idx, source in enumerate(source_docs, start=1):
         path = DOCS / source.path
@@ -445,7 +467,7 @@ def convert_markdown(source_docs: Iterable[SourceDoc]) -> str:
                     f"#### {idx}.{h2_count}.{h3_count}.{h4_count}. {strip_md_links(line[5:].strip())}"
                 )
                 continue
-            lines.append(line)
+            lines.append(rewrite_markdown_links(line, section_anchors))
     lines.append("")
     return "\n".join(lines)
 
@@ -708,7 +730,18 @@ def para(text: str, style: ParagraphStyle) -> Paragraph:
     text = strip_md_links(text)
     text = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", text)
     text = re.sub(r"`([^`]+)`", r"<font name='Courier'>\1</font>", text)
-    return Paragraph(escape(text, {"<b>": "<b>", "</b>": "</b>", "<font name='Courier'>": "<font name='Courier'>", "</font>": "</font>"}), style)
+    return Paragraph(
+        escape(
+            text,
+            {
+                "<b>": "<b>",
+                "</b>": "</b>",
+                "<font name='Courier'>": "<font name='Courier'>",
+                "</font>": "</font>",
+            },
+        ),
+        style,
+    )
 
 
 def clean_pdf_text(text: str) -> str:
@@ -758,7 +791,10 @@ def build_pdf(markdown: str, output_path: Path) -> None:
     abbrev_data = [["Сокращение / термин", "Описание"], *ABBREVIATIONS]
     story.append(
         Table(
-            [[Paragraph(clean_pdf_text(str(cell)), styles["body"]) for cell in row] for row in abbrev_data],
+            [
+                [Paragraph(clean_pdf_text(str(cell)), styles["body"]) for cell in row]
+                for row in abbrev_data
+            ],
             colWidths=pdf_column_widths(2),
             repeatRows=1,
             style=TableStyle(

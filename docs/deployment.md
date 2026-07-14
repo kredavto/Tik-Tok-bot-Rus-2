@@ -27,7 +27,7 @@ cd Tik-Tok-bot-Rus-2
 cp .env.example .env
 nano .env
 docker compose up -d --build
-docker compose logs -f api bot worker
+docker compose logs -f api bot worker scheduler
 ```
 
 Run migrations explicitly before first start or during deploy:
@@ -44,7 +44,12 @@ Health checks:
 curl https://your-domain.example/health
 curl https://your-domain.example/ready
 curl https://your-domain.example/metrics
+docker compose ps scheduler
 ```
+
+The API image contains `alembic.ini` and the complete `alembic/` migration tree. The scheduler
+healthcheck reads its Redis heartbeat; an unhealthy scheduler means subscription expiry, token
+refresh, and retention cleanup are not being dispatched.
 
 ## Systemd Alternative
 

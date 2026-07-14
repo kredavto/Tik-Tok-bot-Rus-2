@@ -27,6 +27,7 @@ Non-functional requirements are defined in [Non-Functional Requirements](non-fun
 | PostgreSQL | Users, plans, subscriptions, payments, upload jobs, audit data, settings |
 | Redis | Cache, locks, queue coordination, OAuth state, rate limiting |
 | Worker | Video validation, preparation, publication workflow, cleanup, background jobs |
+| Scheduler | Redis-leased dispatch and heartbeat for recurring maintenance jobs |
 | Robokassa | Paid PRO and BUSINESS subscription payments |
 | TikTok OAuth 2.0 | User authorization for official TikTok API access |
 | TikTok Content Posting API | Official publication workflow |

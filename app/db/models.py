@@ -62,12 +62,24 @@ class TikTokAccount(Base):
         DateTime(timezone=True), nullable=True
     )
     scopes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    refresh_blocked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    refresh_error_code: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, onupdate=utc_now
     )
 
     user: Mapped[User] = relationship(back_populates="tiktok_accounts")
+
+    __table_args__ = (
+        Index(
+            "ix_tiktok_accounts_refresh_due",
+            "token_expires_at",
+            "refresh_blocked_at",
+        ),
+    )
 
 
 class Plan(Base):
@@ -93,6 +105,9 @@ class Subscription(Base):
     starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     ends_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True
+    )
+    expiration_notified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 

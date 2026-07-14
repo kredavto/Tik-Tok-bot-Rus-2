@@ -6,18 +6,35 @@ from pathlib import Path
 from uuid import UUID
 
 from aiogram import Bot
+import aiohttp
 import dramatiq
 from dramatiq.brokers.redis import RedisBroker
 from sqlalchemy import select
 
 from app.bot.messages import text as bot_text
 from app.core.config import settings
-from app.core.redis import get_redis, upload_job_lock, user_limit_lock
+from app.core.redis import (
+    get_redis,
+    subscription_notification_lock,
+    upload_job_lock,
+    user_limit_lock,
+)
 from app.core.upload_status import UploadStatus
-from app.db.models import AdminAction, TikTokAccount, UploadJob, UploadJobEvent, User, WebhookEvent
+from app.db.models import (
+    AdminAction,
+    Subscription,
+    TikTokAccount,
+    UploadJob,
+    UploadJobEvent,
+    User,
+    WebhookEvent,
+)
 from app.db.session import (
     can_upload_today,
     consume_daily_upload,
+    expire_due_paid_subscriptions,
+    list_tiktok_accounts_due_for_refresh,
+    mark_subscription_expiration_notified,
     session_scope,
     transition_upload_job,
     upsert_tiktok_account,
@@ -56,6 +73,21 @@ def check_publish_status(upload_id: str, user_id: str, attempt: int = 0) -> None
 @dramatiq.actor(max_retries=3)
 def notify_upload_status(telegram_id: int, status: str) -> None:
     asyncio.run(_notify_upload_status(telegram_id, status))
+
+
+@dramatiq.actor(max_retries=2)
+def expire_subscriptions() -> None:
+    asyncio.run(_expire_subscriptions())
+
+
+@dramatiq.actor(max_retries=0)
+def refresh_expiring_tiktok_tokens() -> None:
+    asyncio.run(_refresh_expiring_tiktok_tokens())
+
+
+@dramatiq.actor(max_retries=3)
+def notify_subscription_expired(subscription_id: str, telegram_id: int) -> None:
+    asyncio.run(_notify_subscription_expired(subscription_id, telegram_id))
 
 
 async def _process_upload(upload_id: str, user_id: str) -> None:
@@ -298,11 +330,138 @@ async def _notify_upload_status(telegram_id: int, status: str) -> None:
             message = bot_text("publish_complete")
         elif status == "TIKTOK_REVOKED":
             message = bot_text("tiktok_revoked")
+        elif status == "TIKTOK_REAUTH_REQUIRED":
+            message = bot_text("tiktok_reauth_required")
         else:
             message = bot_text("publish_error", reason="TikTok отклонил публикацию")
         await bot.send_message(telegram_id, message)
     finally:
         await bot.session.close()
+
+
+async def _expire_subscriptions() -> None:
+    async with session_scope() as session:
+        notices = await expire_due_paid_subscriptions(
+            session,
+            batch_size=settings.maintenance_batch_size,
+        )
+
+    for notice in notices:
+        notify_subscription_expired.send(str(notice.subscription_id), notice.telegram_id)
+    logger.info("Subscription expiration sweep completed", extra={"notice_count": len(notices)})
+
+
+async def _notify_subscription_expired(subscription_id: str, telegram_id: int) -> None:
+    async with subscription_notification_lock(subscription_id) as acquired:
+        if not acquired:
+            return
+
+        subscription_uuid = UUID(subscription_id)
+        async with session_scope() as session:
+            subscription = await session.get(Subscription, subscription_uuid)
+            if (
+                subscription is None
+                or subscription.status != "expired"
+                or subscription.expiration_notified_at is not None
+            ):
+                return
+
+        if not settings.bot_token:
+            logger.warning(
+                "Subscription expiration notification deferred because bot token is unavailable",
+                extra={"subscription_id": subscription_id},
+            )
+            return
+
+        bot = Bot(token=settings.bot_token)
+        try:
+            await bot.send_message(telegram_id, bot_text("subscription_expired"))
+        finally:
+            await bot.session.close()
+
+        async with session_scope() as session:
+            await mark_subscription_expiration_notified(session, subscription_uuid)
+
+
+async def _refresh_expiring_tiktok_tokens() -> None:
+    due_before = datetime.now(UTC) + timedelta(seconds=settings.token_refresh_lead_seconds)
+    async with session_scope() as session:
+        account_ids = await list_tiktok_accounts_due_for_refresh(
+            session,
+            due_before=due_before,
+            batch_size=settings.maintenance_batch_size,
+        )
+
+    refreshed = 0
+    blocked = 0
+    for account_id in account_ids:
+        result = await _refresh_tiktok_account(account_id, due_before)
+        refreshed += result == "refreshed"
+        blocked += result == "blocked"
+    logger.info(
+        "TikTok token refresh sweep completed",
+        extra={"candidate_count": len(account_ids), "refreshed": refreshed, "blocked": blocked},
+    )
+
+
+async def _refresh_tiktok_account(account_id: UUID, due_before: datetime) -> str:
+    telegram_id: int | None = None
+    async with session_scope() as session:
+        account = await session.scalar(
+            select(TikTokAccount).where(TikTokAccount.id == account_id).with_for_update()
+        )
+        if (
+            account is None
+            or account.refresh_blocked_at is not None
+            or account.token_expires_at is None
+            or account.token_expires_at > due_before
+        ):
+            return "skipped"
+
+        user = await session.get(User, account.user_id)
+        telegram_id = user.telegram_id if user else None
+        if not account.refresh_token_encrypted:
+            account.refresh_blocked_at = datetime.now(UTC)
+            account.refresh_error_code = "missing_refresh_token"
+            result = "blocked"
+        else:
+            try:
+                refreshed_token = await TikTokClient().refresh_access_token(
+                    decrypt_secret(account.refresh_token_encrypted)
+                )
+            except TikTokApiError as exc:
+                if exc.status_code == 429 or (exc.status_code and exc.status_code >= 500):
+                    logger.warning(
+                        "Temporary TikTok token refresh error",
+                        extra={"account_id": str(account_id), "code": exc.code},
+                    )
+                    return "temporary_error"
+                account.refresh_blocked_at = datetime.now(UTC)
+                account.refresh_error_code = exc.code[:255]
+                result = "blocked"
+            except (aiohttp.ClientError, TimeoutError, OSError):
+                logger.warning(
+                    "Temporary network error during TikTok token refresh",
+                    extra={"account_id": str(account_id)},
+                    exc_info=True,
+                )
+                return "temporary_error"
+            else:
+                await upsert_tiktok_account(
+                    session=session,
+                    user_id=account.user_id,
+                    open_id=refreshed_token.open_id,
+                    display_name=account.display_name,
+                    access_token=refreshed_token.access_token,
+                    refresh_token=refreshed_token.refresh_token,
+                    expires_in=refreshed_token.expires_in,
+                    scopes=refreshed_token.scope or account.scopes,
+                )
+                result = "refreshed"
+
+    if result == "blocked" and telegram_id is not None:
+        notify_upload_status.send(telegram_id, "TIKTOK_REAUTH_REQUIRED")
+    return result
 
 
 async def _check_publish_status(upload_id: str, user_id: str, attempt: int) -> None:

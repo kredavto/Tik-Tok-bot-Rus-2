@@ -20,6 +20,7 @@ Important: this project does not implement VPN, proxy routing, device spoofing, 
 - Robokassa payment link generation and result signature validation.
 - PostgreSQL 16 database.
 - Redis queues and cache.
+- Dedicated scheduler for subscription expiry, OAuth refresh, and retention cleanup.
 - Video intake from Telegram and local storage.
 - Official TikTok Content Posting API client scaffold.
 - Docker Compose setup for deployment on a VPS.
@@ -67,7 +68,14 @@ choice, lets the user configure the interaction options TikTok currently allows,
 commercial-content disclosure. Production publication remains disabled until the TikTok app and
 `video.publish` scope are approved.
 
-Until those requirements are met, the bot stores accepted videos as queued submissions and shows the user that publishing is pending official TikTok integration.
+Until those requirements are met, production publication remains disabled. A queued task stops
+with a clear user-facing error and does not attempt an unofficial fallback or bypass.
+
+## Scheduled Maintenance
+
+The `scheduler` container uses Redis leases to enqueue periodic tasks exactly once per configured
+window. It expires PRO/BUSINESS subscriptions and returns users to FREE, refreshes TikTok OAuth
+tokens before expiration, and runs retention cleanup. Docker monitors its Redis heartbeat.
 
 ## Documentation
 
