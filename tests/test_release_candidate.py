@@ -1,4 +1,6 @@
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 from sqlalchemy import UniqueConstraint
@@ -24,6 +26,18 @@ def test_current_release_version_is_consistent() -> None:
 
     assert report.version == "0.2.0-rc.1"
     assert set(report.sources.values()) == {report.version}
+
+
+def test_release_candidate_cli_bootstraps_repository_imports() -> None:
+    result = subprocess.run(
+        [sys.executable, "-I", str(ROOT / "tools/build_release_candidate.py"), "--help"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "Build a deterministic release candidate manifest" in result.stdout
 
 
 def test_runtime_environment_version_must_match(tmp_path: Path) -> None:

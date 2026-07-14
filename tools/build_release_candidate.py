@@ -3,15 +3,17 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import subprocess
+import sys
 
-from app.core.release_candidate import (
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from app.core.release_candidate import (  # noqa: E402
     ReleaseCandidateError,
     build_release_manifest,
     serialize_manifest,
 )
-
-
-ROOT = Path(__file__).resolve().parents[1]
 
 
 def _git(*args: str) -> str:
