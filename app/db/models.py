@@ -90,6 +90,7 @@ class Plan(Base):
     id: Mapped[str] = mapped_column(String(32), primary_key=True)
     title: Mapped[str] = mapped_column(String(64), unique=True)
     price_rub: Mapped[int] = mapped_column(Integer)
+    price_stars: Mapped[int | None] = mapped_column(Integer, nullable=True)
     daily_limit: Mapped[int] = mapped_column(Integer)
     duration_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -138,6 +139,8 @@ class Payment(Base):
     )
     plan_id: Mapped[str] = mapped_column(ForeignKey("plans.id"), index=True)
     amount_rub: Mapped[int] = mapped_column(Integer)
+    amount_stars: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    currency: Mapped[str] = mapped_column(String(8), default="RUB")
     status: Mapped[str] = mapped_column(String(32), default="created", index=True)
     provider: Mapped[str] = mapped_column(String(32), default="robokassa")
     provider_invoice_id: Mapped[int] = mapped_column(
@@ -145,6 +148,7 @@ class Payment(Base):
         server_default=text("nextval('payment_inv_id_seq')"),
         unique=True,
     )
+    provider_charge_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     raw_payload: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -154,6 +158,13 @@ class Payment(Base):
 
     __table_args__ = (
         Index("ix_payments_provider_invoice_id", "provider_invoice_id"),
+        Index(
+            "uq_payments_provider_charge",
+            "provider",
+            "provider_charge_id",
+            unique=True,
+            postgresql_where=text("provider_charge_id IS NOT NULL"),
+        ),
         Index("ix_payments_status_created", "status", "created_at"),
         Index("ix_payments_user_created", "user_id", "created_at"),
     )

@@ -4,7 +4,8 @@
 
 - Secrets are stored only in `.env` or a managed secret store.
 - Runtime non-secret settings are stored in PostgreSQL `system_settings`.
-- Tariffs are stored in PostgreSQL `plans`.
+- Tariffs, RUB reference prices, and independent Telegram Stars prices are stored in PostgreSQL
+  `plans`.
 
 System setting storage rules are documented in [System Settings Entity](system-settings-entity.md).
 

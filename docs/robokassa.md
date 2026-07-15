@@ -1,5 +1,10 @@
 # Robokassa Setup
 
+> Policy boundary: PRO and BUSINESS are digital services consumed inside Telegram. The bot must use
+> Telegram Stars for in-bot checkout and must not show Robokassa as an alternative payment method.
+> This integration remains available only for a separately approved sales channel after platform and
+> legal review.
+
 End-to-end payment sequence is documented in [Sequence Flows](sequence-flows.md).
 
 ## Tariff Mapping

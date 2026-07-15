@@ -29,11 +29,38 @@ def test_configuration_import_rejects_secret_settings() -> None:
 def test_configuration_import_accepts_non_secret_settings() -> None:
     payload = {
         "version": 1,
-        "plans": [{"id": "pro", "title": "PRO", "price_rub": 499, "daily_limit": 5}],
+        "plans": [
+            {
+                "id": "pro",
+                "title": "PRO",
+                "price_rub": 499,
+                "price_stars": 250,
+                "daily_limit": 5,
+            }
+        ],
         "system_settings": [{"key": "intake_enabled", "value": "true"}],
     }
 
     validate_runtime_configuration(payload)
+
+
+def test_configuration_import_rejects_non_positive_stars_price() -> None:
+    payload = {
+        "version": 1,
+        "plans": [
+            {
+                "id": "pro",
+                "title": "PRO",
+                "price_rub": 499,
+                "price_stars": 0,
+                "daily_limit": 5,
+            }
+        ],
+        "system_settings": [],
+    }
+
+    with pytest.raises(ValueError, match="Stars"):
+        validate_runtime_configuration(payload)
 
 
 @pytest.mark.parametrize(

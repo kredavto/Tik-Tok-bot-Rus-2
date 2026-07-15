@@ -512,6 +512,8 @@ async def create_payment(session: AsyncSession, user_id: UUID, plan_code: str) -
         user_id=user_id,
         plan_id=plan_code,
         amount_rub=plan.price_rub,
+        currency="RUB",
+        provider="robokassa",
     )
     session.add(payment)
     await session.flush()
@@ -524,6 +526,124 @@ async def create_payment(session: AsyncSession, user_id: UUID, plan_code: str) -
         status="processed",
     )
     return payment
+
+
+async def create_stars_payment(
+    session: AsyncSession,
+    user_id: UUID,
+    plan_code: str,
+) -> Payment:
+    plan = await get_plan_record(session, plan_code)
+    if (
+        plan_code == PlanCode.FREE.value
+        or not plan.is_active
+        or plan.price_stars is None
+        or plan.price_stars <= 0
+    ):
+        raise ValueError(f"Plan is not available for Stars purchase: {plan_code}")
+    payment = Payment(
+        user_id=user_id,
+        plan_id=plan_code,
+        amount_rub=plan.price_rub,
+        amount_stars=plan.price_stars,
+        currency="XTR",
+        provider="telegram_stars",
+    )
+    session.add(payment)
+    await session.flush()
+    await record_webhook_event(
+        session,
+        provider="telegram_stars",
+        event_type="payment_status_changed",
+        external_id=str(payment.id),
+        payload={
+            "status": "created",
+            "plan_id": plan_code,
+            "amount_stars": plan.price_stars,
+        },
+        status="processed",
+    )
+    return payment
+
+
+async def validate_stars_checkout(
+    session: AsyncSession,
+    payment_id: UUID,
+    telegram_id: int,
+    currency: str,
+    total_amount: int,
+) -> bool:
+    payment = await session.get(Payment, payment_id)
+    if payment is None or payment.provider != "telegram_stars" or payment.status != "created":
+        return False
+    user = await session.get(User, payment.user_id)
+    return bool(
+        user
+        and user.telegram_id == telegram_id
+        and currency == "XTR"
+        and payment.currency == "XTR"
+        and payment.amount_stars == total_amount
+    )
+
+
+async def mark_stars_payment_paid(
+    session: AsyncSession,
+    payment_id: UUID,
+    telegram_id: int,
+    currency: str,
+    total_amount: int,
+    telegram_payment_charge_id: str,
+) -> PaymentConfirmation:
+    payment = await session.scalar(
+        select(Payment).where(Payment.id == payment_id).with_for_update()
+    )
+    if payment is None or payment.provider != "telegram_stars":
+        return PaymentConfirmation(payment=None, activated=False)
+
+    user = await session.get(User, payment.user_id)
+    if user is None or user.telegram_id != telegram_id:
+        return PaymentConfirmation(payment=None, activated=False)
+    if payment.status == "paid":
+        if payment.provider_charge_id == telegram_payment_charge_id:
+            return PaymentConfirmation(payment=payment, activated=False)
+        return PaymentConfirmation(payment=None, activated=False)
+    if (
+        currency != "XTR"
+        or payment.currency != "XTR"
+        or payment.amount_stars != total_amount
+        or not telegram_payment_charge_id
+    ):
+        return PaymentConfirmation(payment=None, activated=False)
+
+    duplicate = await session.scalar(
+        select(Payment.id).where(
+            Payment.provider == "telegram_stars",
+            Payment.provider_charge_id == telegram_payment_charge_id,
+            Payment.id != payment.id,
+        )
+    )
+    if duplicate is not None:
+        return PaymentConfirmation(payment=None, activated=False)
+
+    subscription = await create_paid_subscription(session, payment.user_id, payment.plan_id)
+    payment.subscription_id = subscription.id
+    payment.status = "paid"
+    payment.provider_charge_id = telegram_payment_charge_id
+    payment.paid_at = datetime.now(UTC)
+    await record_webhook_event(
+        session,
+        provider="telegram_stars",
+        event_type="payment_status_changed",
+        external_id=telegram_payment_charge_id,
+        payload={
+            "status": "paid",
+            "payment_id": str(payment.id),
+            "subscription_id": str(subscription.id),
+            "amount_stars": total_amount,
+        },
+        status="processed",
+    )
+    return PaymentConfirmation(payment=payment, activated=True)
 
 
 async def mark_payment_paid(

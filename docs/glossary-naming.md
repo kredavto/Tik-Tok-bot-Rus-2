@@ -12,7 +12,10 @@
 | Request ID | Unique identifier for one HTTP request |
 | Correlation ID | Identifier for a chain of related operations |
 | Plan | Tariff definition: FREE, PRO, or BUSINESS |
-| Payment | Robokassa payment record |
+| Payment | Provider-neutral payment attempt and confirmation record |
+| Telegram Stars | Telegram digital payment currency, code `XTR` |
+| SBP C2B | Official merchant payment through the Faster Payments System |
+| Merchant QR | Bank/SBP-issued QR payload tied to a registered merchant or payment point |
 | Admin Action | Immutable administrative audit event |
 | System Setting | Mutable non-secret runtime configuration value |
 

@@ -29,7 +29,7 @@ API version lifecycle and compatibility rules are documented in [API Versioning 
 | PATCH | `/api/v1/admin/users/{id}/role` | Change role; SUPER_ADMIN only |
 | GET | `/api/v1/admin/plans` | Tariff list |
 | PATCH | `/api/v1/admin/plans/{id}` | Update tariff parameters |
-| GET | `/api/v1/admin/payments` | Payment list |
+| GET | `/api/v1/admin/payments` | Provider-neutral payment list with RUB/XTR amounts |
 | GET | `/api/v1/admin/upload-jobs` | Publication queue |
 | GET | `/api/v1/admin/errors` | Failed publications |
 | POST | `/api/v1/admin/upload-jobs/{id}/retry` | Retry an eligible temporary failure |

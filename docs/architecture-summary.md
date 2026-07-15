@@ -28,7 +28,9 @@ Non-functional requirements are defined in [Non-Functional Requirements](non-fun
 | Redis | Cache, locks, queue coordination, OAuth state, rate limiting |
 | Worker | Video validation, preparation, publication workflow, cleanup, background jobs |
 | Scheduler | Redis-leased dispatch and heartbeat for recurring maintenance jobs |
-| Robokassa | Paid PRO and BUSINESS subscription payments |
+| Telegram Stars | In-bot payment for PRO and BUSINESS digital subscriptions |
+| Robokassa | Dormant external-channel payment integration, subject to policy approval |
+| SBP C2B | Future bank-issued merchant QR/API integration, subject to acquiring setup |
 | TikTok OAuth 2.0 | User authorization for official TikTok API access |
 | TikTok Content Posting API | Official publication workflow |
 | Admin API | Users, subscriptions, payments, plans, jobs, analytics, settings |
@@ -43,7 +45,8 @@ Main component interaction flows are documented in [Sequence Flows](sequence-flo
 - Paid subscriptions expire automatically and return users to FREE.
 - Daily upload limits are enforced transactionally.
 - Video files are validated safely before publication processing.
-- Payments are processed idempotently through Robokassa ResultURL.
+- Telegram Stars payments are confirmed idempotently from `successful_payment`.
+- Robokassa ResultURL and future SBP callbacks remain idempotent in approved external channels.
 - Background jobs are idempotent and safe to retry only for temporary failures.
 - OAuth tokens are stored encrypted.
 - User, payment, publication, webhook, and admin actions are logged.

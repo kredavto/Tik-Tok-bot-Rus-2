@@ -39,38 +39,40 @@ Rules:
 - Consume daily usage only after official TikTok API acceptance.
 - Do not retry automatically for authorization, permission, platform, or regional restrictions.
 
-## Payment Flow
+## Telegram Stars Payment Flow
 
 ```mermaid
 sequenceDiagram
     participant User
     participant Bot as Telegram Bot
-    participant API as FastAPI Backend
     participant DB as PostgreSQL
-    participant Robo as Robokassa
+    participant TG as Telegram Payments
 
     User->>Bot: Select PRO or BUSINESS
-    Bot->>API: Create payment order
-    API->>DB: Store payment with InvId
-    API-->>Bot: Return payment URL
-    Bot-->>User: Send payment URL
-    User->>Robo: Pay invoice
-    Robo->>API: ResultURL notification
-    API->>API: Verify signature, amount, currency, InvId
-    API->>DB: Mark payment paid and activate subscription
-    API-->>Robo: OK{InvId}
-    API->>Bot: Notify subscription activated
+    Bot->>DB: Create XTR payment UUID
+    Bot->>TG: Send XTR invoice
+    TG-->>Bot: pre_checkout_query
+    Bot->>DB: Validate user, amount, currency, status
+    Bot-->>TG: Answer within 10 seconds
+    TG-->>Bot: successful_payment
+    Bot->>DB: Lock payment and store charge ID
+    Bot->>DB: Activate one subscription transactionally
     Bot-->>User: Payment success message
 ```
 
 Rules:
 
 - FREE does not create a payment.
-- Only ResultURL activates subscriptions.
-- SuccessURL is informational.
-- Repeated ResultURL events are idempotent.
+- Only `successful_payment` activates an in-bot subscription.
+- Sending an invoice and accepting pre-checkout do not activate a subscription.
+- Duplicate payment updates and charge IDs are idempotent.
 - Payment status and subscription activation must be transactional.
-- Never log Robokassa secrets.
+- Never log bot tokens or sensitive payment data.
+
+The separately approved Robokassa callback flow remains documented in
+[Robokassa Setup](robokassa.md). Future SBP behavior is defined in
+[SBP Merchant Payments](sbp.md); neither is presented as an alternative in-bot checkout for digital
+subscriptions.
 
 ## Cross-Cutting Requirements
 

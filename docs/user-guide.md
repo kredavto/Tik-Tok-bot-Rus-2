@@ -25,7 +25,9 @@ The bot validates and prepares the video, then sends it to TikTok only through t
 - PRO: 5 videos per day.
 - BUSINESS: 10 videos per day.
 
-Paid plans are activated only after Robokassa ResultURL confirmation.
+Paid plans purchased in the bot are invoiced in Telegram Stars and activate only after Telegram
+confirms `successful_payment`. Use `/paysupport` for payment support without sending passwords,
+one-time codes, or card details.
 
 ## TikTok Disconnect
 

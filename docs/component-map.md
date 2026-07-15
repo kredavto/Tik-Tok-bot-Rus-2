@@ -13,7 +13,9 @@ This document is the high-level navigation map for Tik_Tok_Loader components. It
 | Worker | Background processing for video validation, preparation, publication, status checks, cleanup, subscription expiry, and retries. |
 | Scheduler | Redis-leased dispatch of subscription expiry, OAuth refresh, and retention tasks. |
 | TikTok API | Official OAuth 2.0 authorization and Content Posting API video publication. |
-| Robokassa | Payment acceptance for PRO and BUSINESS subscriptions through the existing merchant account. |
+| Telegram Stars | In-bot payment acceptance for PRO and BUSINESS digital subscriptions. |
+| Robokassa | Existing callback integration reserved for a separately approved sales channel. |
+| SBP C2B | Future official merchant QR/API integration issued by an acquiring bank. |
 | Admin Panel | Administrative management, analytics, audit review, settings, users, payments, and upload queues. |
 
 ## Interaction Flows
@@ -27,7 +29,10 @@ flowchart LR
     Scheduler["Scheduler"] --> Redis
     Redis --> Worker["Worker"]
     Worker --> TikTok["TikTok Content Posting API"]
+    Stars["Telegram Stars"] --> Bot
     Robokassa["Robokassa"] --> ResultURL["ResultURL"]
+    SBP["SBP acquiring bank"] --> PaymentCallback["Verified callback/status"]
+    PaymentCallback --> API
     ResultURL --> API
     API --> Bot
     Bot --> User
@@ -38,7 +43,9 @@ Canonical service flows are:
 - User -> Telegram Bot -> FastAPI.
 - FastAPI -> PostgreSQL / Redis.
 - Worker -> official TikTok Content Posting API.
-- Robokassa -> ResultURL -> FastAPI.
+- Telegram Stars -> Bot API update -> PostgreSQL subscription transaction.
+- Approved external channel: Robokassa -> ResultURL -> FastAPI.
+- Future approved channel: SBP acquiring bank -> verified callback/status -> FastAPI.
 - FastAPI -> Telegram Bot -> User.
 
 Detailed publication and payment sequences are documented in [Sequence Flows](sequence-flows.md).

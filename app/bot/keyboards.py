@@ -41,15 +41,25 @@ def agreement_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-def tariffs_menu(plans: list[tuple[str, str, int]]) -> InlineKeyboardMarkup:
+def tariffs_menu(plans: list[tuple[str, str, int, int | None]]) -> InlineKeyboardMarkup:
     rows = []
-    for plan_code, title, price_rub in plans:
+    for plan_code, title, price_rub, price_stars in plans:
         if price_rub <= 0:
+            continue
+        if not price_stars:
+            rows.append(
+                [
+                    InlineKeyboardButton(
+                        text=f"{title} - оплата временно недоступна",
+                        callback_data="payment:unavailable",
+                    )
+                ]
+            )
             continue
         rows.append(
             [
                 InlineKeyboardButton(
-                    text=f"{title} - {price_rub} руб.",
+                    text=f"{title} - {price_stars} Stars",
                     callback_data=f"buy:{plan_code}",
                 )
             ]

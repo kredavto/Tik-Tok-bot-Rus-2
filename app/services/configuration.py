@@ -90,6 +90,7 @@ async def export_runtime_configuration(session: AsyncSession) -> dict[str, Any]:
                 "id": plan.id,
                 "title": plan.title,
                 "price_rub": plan.price_rub,
+                "price_stars": plan.price_stars,
                 "daily_limit": plan.daily_limit,
                 "duration_days": plan.duration_days,
                 "is_active": plan.is_active,
@@ -124,6 +125,8 @@ def validate_runtime_configuration(payload: dict[str, Any]) -> None:
     for plan in payload.get("plans", []):
         if int(plan["price_rub"]) < 0:
             raise ValueError("Plan price must be non-negative")
+        if plan.get("price_stars") is not None and int(plan["price_stars"]) <= 0:
+            raise ValueError("Plan Stars price must be positive")
         if int(plan["daily_limit"]) < 0:
             raise ValueError("Plan daily limit must be non-negative")
 
@@ -137,6 +140,8 @@ async def import_runtime_configuration(session: AsyncSession, payload: dict[str,
             session.add(plan)
         plan.title = plan_payload["title"]
         plan.price_rub = int(plan_payload["price_rub"])
+        price_stars = plan_payload.get("price_stars")
+        plan.price_stars = int(price_stars) if price_stars is not None else None
         plan.daily_limit = int(plan_payload["daily_limit"])
         plan.duration_days = plan_payload.get("duration_days")
         plan.is_active = bool(plan_payload.get("is_active", True))

@@ -43,7 +43,7 @@ OUTPUT_DIR = DOCS / "final"
 PROJECT_TITLE = "Tik_Tok_Loader"
 DOC_TITLE_RU = "Единая техническая спецификация"
 DOC_TITLE_EN = "Unified Technical Specification"
-VERSION = "0.8.0"
+VERSION = "0.9.0"
 REPO = "kredavto/Tik-Tok-bot-Rus-2"
 
 
@@ -75,6 +75,8 @@ SOURCE_DOCS: list[SourceDoc] = [
     SourceDoc("user-guide.md", "Пользовательские сценарии"),
     SourceDoc("video-lifecycle.md", "Пользовательские сценарии"),
     SourceDoc("tiktok-developer-configuration.md", "Интеграции"),
+    SourceDoc("telegram-stars.md", "Интеграции"),
+    SourceDoc("sbp.md", "Интеграции"),
     SourceDoc("robokassa.md", "Интеграции"),
     SourceDoc("api.md", "API"),
     SourceDoc("rest-api-standards.md", "API"),
@@ -141,9 +143,12 @@ ABBREVIATIONS: list[tuple[str, str]] = [
     ("OAuth 2.0", "Протокол авторизации для подключения аккаунта TikTok"),
     ("RBAC", "Role-Based Access Control, ролевая модель доступа"),
     ("REST", "Representational State Transfer"),
+    ("SBP / СБП", "Система быстрых платежей"),
+    ("C2B", "Consumer-to-Business, платеж физического лица организации"),
     ("SOP", "Standard Operating Procedure, стандартная операционная процедура"),
     ("TLS/SSL", "Криптографическая защита транспортного соединения"),
     ("UTC", "Coordinated Universal Time"),
+    ("XTR", "Код валюты Telegram Stars в Bot API"),
 ]
 
 
@@ -262,6 +267,50 @@ def set_table_geometry(table, column_count: int) -> None:
         tbl_pr.append(tbl_w)
     tbl_w.set(qn("w:w"), "9360")
     tbl_w.set(qn("w:type"), "dxa")
+
+
+def new_numbering_instance(doc: Document, style_name: str = "List Number") -> int:
+    """Create a numbering instance that restarts an existing list style at one."""
+    style_num_pr = doc.styles[style_name]._element.pPr.numPr
+    base_num_id = int(style_num_pr.numId.val)
+    numbering = doc.part.numbering_part.element
+    base_num = next(
+        item
+        for item in numbering.findall(qn("w:num"))
+        if int(item.get(qn("w:numId"))) == base_num_id
+    )
+    abstract_num_id = base_num.find(qn("w:abstractNumId")).get(qn("w:val"))
+    new_num_id = (
+        max(
+            (int(item.get(qn("w:numId"))) for item in numbering.findall(qn("w:num"))),
+            default=0,
+        )
+        + 1
+    )
+
+    num = OxmlElement("w:num")
+    num.set(qn("w:numId"), str(new_num_id))
+    abstract = OxmlElement("w:abstractNumId")
+    abstract.set(qn("w:val"), abstract_num_id)
+    num.append(abstract)
+    level_override = OxmlElement("w:lvlOverride")
+    level_override.set(qn("w:ilvl"), "0")
+    start_override = OxmlElement("w:startOverride")
+    start_override.set(qn("w:val"), "1")
+    level_override.append(start_override)
+    num.append(level_override)
+    numbering.append(num)
+    return new_num_id
+
+
+def set_paragraph_numbering(paragraph, num_id: int) -> None:
+    num_pr = paragraph._p.get_or_add_pPr().get_or_add_numPr()
+    level = OxmlElement("w:ilvl")
+    level.set(qn("w:val"), "0")
+    number = OxmlElement("w:numId")
+    number.set(qn("w:val"), str(num_id))
+    num_pr.append(level)
+    num_pr.append(number)
 
 
 def column_widths(column_count: int) -> list[int]:
@@ -478,13 +527,15 @@ def convert_markdown(source_docs: Iterable[SourceDoc]) -> str:
                 continue
             lines.append(rewrite_markdown_links(line, section_anchors))
     lines.append("")
-    return "\n".join(lines)
+    return "\n".join(lines).rstrip() + "\n"
 
 
 def add_markdown_to_docx(doc: Document, markdown: str) -> None:
     code_lines: list[str] = []
     table_lines: list[list[str]] = []
     in_code = False
+    ordered_list_num_id: int | None = None
+    ordered_list_paragraph = None
 
     def flush_code() -> None:
         nonlocal code_lines
@@ -539,6 +590,11 @@ def add_markdown_to_docx(doc: Document, markdown: str) -> None:
             continue
         flush_table()
         if not line.strip():
+            ordered_list_num_id = None
+            ordered_list_paragraph = None
+            continue
+        if ordered_list_paragraph is not None and re.match(r"^\s{2,}\S", line):
+            ordered_list_paragraph.add_run(f" {strip_md_links(line.strip())}")
             continue
         if line.startswith("# "):
             title = strip_md_links(line[2:].strip())
@@ -559,14 +615,22 @@ def add_markdown_to_docx(doc: Document, markdown: str) -> None:
             run.font.color.rgb = RGBColor.from_string("1F4D78")
             continue
         if line.startswith("- "):
+            ordered_list_num_id = None
+            ordered_list_paragraph = None
             p = doc.add_paragraph(style="List Bullet")
             p.add_run(strip_md_links(line[2:].strip()))
             continue
         numbered = re.match(r"^(\d+)\.\s+(.*)$", line)
         if numbered:
+            if ordered_list_num_id is None:
+                ordered_list_num_id = new_numbering_instance(doc)
             p = doc.add_paragraph(style="List Number")
+            set_paragraph_numbering(p, ordered_list_num_id)
             p.add_run(strip_md_links(numbered.group(2)))
+            ordered_list_paragraph = p
             continue
+        ordered_list_num_id = None
+        ordered_list_paragraph = None
         if line.startswith("> "):
             p = doc.add_paragraph()
             p.paragraph_format.left_indent = Inches(0.25)

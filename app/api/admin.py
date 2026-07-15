@@ -47,6 +47,7 @@ MAX_PAGE_LIMIT = 200
 
 class PlanUpdate(BaseModel):
     price_rub: int | None = Field(default=None, ge=0)
+    price_stars: int | None = Field(default=None, ge=1)
     daily_limit: int | None = Field(default=None, ge=0)
     duration_days: int | None = Field(default=None, ge=1)
     is_active: bool | None = None
@@ -175,7 +176,16 @@ async def dashboard(admin: User = Depends(require_permission(Permission.VIEW_STA
     async with session_scope() as session:
         users_total = await session.scalar(select(func.count(User.id)))
         payments_paid = await session.scalar(
-            select(func.coalesce(func.sum(Payment.amount_rub), 0)).where(Payment.status == "paid")
+            select(func.coalesce(func.sum(Payment.amount_rub), 0)).where(
+                Payment.status == "paid",
+                Payment.provider == "robokassa",
+            )
+        )
+        stars_paid = await session.scalar(
+            select(func.coalesce(func.sum(Payment.amount_stars), 0)).where(
+                Payment.status == "paid",
+                Payment.provider == "telegram_stars",
+            )
         )
         queued = await session.scalar(
             select(func.count(UploadJob.id)).where(
@@ -196,6 +206,7 @@ async def dashboard(admin: User = Depends(require_permission(Permission.VIEW_STA
     return {
         "users_total": users_total or 0,
         "revenue_rub": payments_paid or 0,
+        "revenue_stars": stars_paid or 0,
         "queue_active": queued or 0,
         "publication_errors": errors or 0,
     }
@@ -216,7 +227,16 @@ async def analytics(admin: User = Depends(require_permission(Permission.VIEW_STA
             )
         )
         revenue = await session.scalar(
-            select(func.coalesce(func.sum(Payment.amount_rub), 0)).where(Payment.status == "paid")
+            select(func.coalesce(func.sum(Payment.amount_rub), 0)).where(
+                Payment.status == "paid",
+                Payment.provider == "robokassa",
+            )
+        )
+        stars_revenue = await session.scalar(
+            select(func.coalesce(func.sum(Payment.amount_stars), 0)).where(
+                Payment.status == "paid",
+                Payment.provider == "telegram_stars",
+            )
         )
         tiktok_errors = await session.scalar(
             select(func.count(UploadJob.id)).where(UploadJob.error_message.ilike("%TikTok%"))
@@ -236,6 +256,7 @@ async def analytics(admin: User = Depends(require_permission(Permission.VIEW_STA
         "active_by_plan": plans,
         "uploads_today": uploads_today or 0,
         "robokassa_revenue_rub": revenue or 0,
+        "telegram_stars_revenue": stars_revenue or 0,
         "free_to_pro_conversion": round((plans.get("pro", 0) / free_total) * 100, 2),
         "free_to_business_conversion": round((plans.get("business", 0) / free_total) * 100, 2),
         "tiktok_api_errors": tiktok_errors or 0,
@@ -481,6 +502,7 @@ async def plans(admin: User = Depends(require_permission(Permission.MANAGE_PLANS
             "id": plan.id,
             "title": plan.title,
             "price_rub": plan.price_rub,
+            "price_stars": plan.price_stars,
             "daily_limit": plan.daily_limit,
             "duration_days": plan.duration_days,
             "is_active": plan.is_active,
@@ -541,6 +563,9 @@ async def payments(
                 "inv_id": payment.provider_invoice_id,
                 "plan_id": payment.plan_id,
                 "amount_rub": payment.amount_rub,
+                "amount_stars": payment.amount_stars,
+                "currency": payment.currency,
+                "provider": payment.provider,
                 "status": payment.status,
                 "created_at": payment.created_at.isoformat(),
             }

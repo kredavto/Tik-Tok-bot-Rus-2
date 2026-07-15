@@ -15,9 +15,10 @@ Important: this project does not implement VPN, proxy routing, device spoofing, 
 ## What Is Included
 
 - Telegram bot built with aiogram.
-- FastAPI backend for Robokassa webhooks and TikTok OAuth callbacks.
+- FastAPI backend for provider webhooks and TikTok OAuth callbacks.
 - User plans and daily upload limits.
-- Robokassa payment link generation and result signature validation.
+- Telegram Stars invoices with transactional and idempotent subscription activation.
+- Robokassa callback support reserved for separately approved external channels.
 - PostgreSQL 16 database.
 - Redis queues and cache.
 - Dedicated scheduler for subscription expiry, OAuth refresh, and retention cleanup.
@@ -55,6 +56,10 @@ For production, configure:
 - `ROBOKASSA_PASSWORD_2`
 - `PUBLIC_BASE_URL`
 - TikTok developer credentials after app approval
+
+Paid-plan prices in Telegram Stars are configured in PostgreSQL through the administrator panel.
+The bot keeps paid plans unavailable until positive `price_stars` values are approved for PRO and
+BUSINESS.
 
 ## TikTok Publishing
 
@@ -101,6 +106,8 @@ the UI.
 - [CI/CD and Deployment Automation](docs/ci-cd-deployment.md)
 - [Compliance Notes](docs/compliance.md)
 - [Robokassa Setup](docs/robokassa.md)
+- [Telegram Stars](docs/telegram-stars.md)
+- [SBP Merchant Payments](docs/sbp.md)
 - [Security, Backup, and Monitoring](docs/security.md)
 - [Security Logging and Audit](docs/security-logging-audit.md)
 - [Confidential Data Policy](docs/confidential-data-policy.md)

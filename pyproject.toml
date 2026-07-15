@@ -1,7 +1,7 @@
 [project]
 name = "tik-tok-bot-rus-2"
 version = "0.2.0-rc.1"
-description = "Telegram bot with Robokassa billing and official TikTok posting workflow"
+description = "Telegram bot with Stars billing and official TikTok posting workflow"
 requires-python = ">=3.12"
 dependencies = [
   "aiogram>=3.10,<4",

@@ -39,7 +39,7 @@ The permission matrix is defined in `app.security.rbac`, so new roles and permis
 
 - Dashboard and analytics: `/api/v1/admin/dashboard`, `/api/v1/admin/analytics`
 - Users and user details: `/api/v1/admin/users`
-- Plans: `/api/v1/admin/plans`
+- Plans and independent RUB/Stars prices: `/api/v1/admin/plans`
 - Payments: `/api/v1/admin/payments`
 - Upload queue and publication errors: `/api/v1/admin/upload-jobs`, `/api/v1/admin/errors`
 - System settings: `/api/v1/admin/settings`
@@ -69,6 +69,7 @@ Admins can:
 - Inspect publication and payment history.
 - Return a user to FREE without deleting subscription history.
 - Review payment and subscription state.
+- Review RUB and Telegram Stars revenue separately.
 
 SUPER_ADMIN can assign roles. Every mutating operation requires the CSRF token and is recorded
 with the request source IP when available.

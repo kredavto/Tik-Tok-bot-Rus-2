@@ -251,18 +251,19 @@ function smallJobsTable(items) {
 
 function smallPaymentsTable(items) {
   if (!items.length) return '<div class="empty">Нет платежей</div>';
-  return `<div class="table-wrap"><table><thead><tr><th>InvId</th><th>Тариф</th><th>Сумма</th><th>Статус</th><th>Дата</th></tr></thead><tbody>${items.map((payment) => `<tr><td>${payment.inv_id}</td><td>${escapeHtml(payment.plan_id.toUpperCase())}</td><td>${formatMoney(payment.amount_rub)}</td><td>${status(payment.status)}</td><td>${formatDate(payment.created_at)}</td></tr>`).join("")}</tbody></table></div>`;
+  return `<div class="table-wrap"><table><thead><tr><th>ID</th><th>Провайдер</th><th>Тариф</th><th>Сумма</th><th>Статус</th><th>Дата</th></tr></thead><tbody>${items.map((payment) => `<tr><td>${payment.inv_id}</td><td>${escapeHtml(payment.provider)}</td><td>${escapeHtml(payment.plan_id.toUpperCase())}</td><td>${payment.currency === "XTR" ? `${payment.amount_stars} Stars` : formatMoney(payment.amount_rub)}</td><td>${status(payment.status)}</td><td>${formatDate(payment.created_at)}</td></tr>`).join("")}</tbody></table></div>`;
 }
 
 async function renderPlans() {
   const plans = await api("/plans");
   content.innerHTML = `
     <div class="table-wrap"><table>
-      <thead><tr><th>Тариф</th><th>Цена, RUB</th><th>Лимит</th><th>Срок, дней</th><th>Продажа</th><th></th></tr></thead>
+      <thead><tr><th>Тариф</th><th>Цена, RUB</th><th>Цена, Stars</th><th>Лимит</th><th>Срок, дней</th><th>Продажа</th><th></th></tr></thead>
       <tbody>${plans.map((plan) => `
         <tr data-plan-row="${plan.id}">
           <td><strong>${escapeHtml(plan.title)}</strong></td>
           <td><input name="price_rub" type="number" min="0" value="${plan.price_rub}"></td>
+          <td><input name="price_stars" type="number" min="1" value="${plan.price_stars || ""}" ${plan.id === "free" ? "disabled" : ""}></td>
           <td><input name="daily_limit" type="number" min="0" value="${plan.daily_limit}"></td>
           <td><input name="duration_days" type="number" min="1" value="${plan.duration_days || ""}" ${plan.id === "free" ? "disabled" : ""}></td>
           <td><select name="is_active"><option value="true" ${plan.is_active ? "selected" : ""}>Включена</option><option value="false" ${!plan.is_active ? "selected" : ""}>Отключена</option></select></td>
@@ -277,6 +278,8 @@ async function renderPlans() {
         daily_limit: Number(row.querySelector('[name="daily_limit"]').value),
         is_active: row.querySelector('[name="is_active"]').value === "true",
       };
+      const stars = row.querySelector('[name="price_stars"]').value;
+      if (stars) payload.price_stars = Number(stars);
       const duration = row.querySelector('[name="duration_days"]').value;
       if (duration) payload.duration_days = Number(duration);
       await mutate(`/plans/${button.dataset.savePlan}`, "PATCH", payload, "Тариф обновлен");

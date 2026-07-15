@@ -66,18 +66,26 @@ Expected result:
 - User receives a clear limit notification.
 - Logs include user and correlation context.
 
-### QA-PAY-001: PRO Purchase Through Robokassa
+### QA-PAY-001: PRO Purchase Through Telegram Stars
 
-Automation: signature, order creation, amount validation, and duplicate ResultURL activation are
-covered. A Robokassa test-mode round trip remains a staging check.
+Automation: order creation, user/currency/amount validation, charge uniqueness, and concurrent
+duplicate confirmation are covered. A real Telegram Stars round trip remains a staging check.
 
 Expected result:
 
-- Payment order and `InvId` are created.
-- Robokassa ResultURL signature, amount, currency, and `InvId` are verified.
-- Subscription activates only after ResultURL.
-- SuccessURL does not activate subscription.
+- An XTR invoice is created from the configured Stars price.
+- User, amount, currency, payment UUID, and charge ID are verified.
+- Subscription activates only after `successful_payment`.
+- Duplicate updates do not create another subscription.
 - User receives payment success notification.
+
+### QA-PAY-002: External Payment Channels Remain Gated
+
+Expected result:
+
+- Robokassa and SBP are not shown as alternative checkout methods for digital plans in the bot.
+- A telephone/text QR cannot be accepted as an official SBP merchant QR.
+- SBP remains disabled until the acquiring bank supplies a verified payload and callback/status API.
 
 ### QA-SUB-001: Automatic Return to FREE
 

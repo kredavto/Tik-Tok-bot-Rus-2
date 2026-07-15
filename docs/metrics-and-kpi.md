@@ -26,7 +26,7 @@ Track these indicators for project growth:
 | Active BUSINESS users | Shows paid BUSINESS adoption |
 | FREE to PRO conversion | Measures PRO monetization |
 | FREE to BUSINESS conversion | Measures BUSINESS monetization |
-| Successful payments | Measures Robokassa revenue flow |
+| Successful payments | Measures provider-specific payment flow |
 | Revenue by plan | Supports pricing and growth analysis |
 
 ## Quality Metrics
@@ -50,7 +50,7 @@ The admin dashboard should expose:
 - User counts by tariff.
 - New registrations by period.
 - Publication volume and success rate.
-- Robokassa successful payments and revenue by period.
+- RUB and Telegram Stars successful payments and revenue by period, reported separately.
 - Conversion FREE to PRO and FREE to BUSINESS.
 - Queue size, processing latency, and failed jobs.
 - Critical errors and repeated failures.

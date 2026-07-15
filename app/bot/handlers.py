@@ -5,7 +5,13 @@ from uuid import UUID
 from aiogram import Bot, F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
+from aiogram.types import (
+    CallbackQuery,
+    InlineKeyboardMarkup,
+    LabeledPrice,
+    Message,
+    PreCheckoutQuery,
+)
 from sqlalchemy import select
 
 from app.bot import messages
@@ -37,7 +43,7 @@ from app.db.session import (
     accept_agreement,
     active_plan_code,
     can_upload_today,
-    create_payment,
+    create_stars_payment,
     create_upload_job,
     get_or_create_user,
     get_primary_tiktok_account,
@@ -45,12 +51,13 @@ from app.db.session import (
     has_tiktok_account,
     is_intake_enabled,
     list_recent_upload_jobs,
+    mark_stars_payment_paid,
     revoke_tiktok_accounts,
     session_scope,
     upsert_tiktok_account,
+    validate_stars_checkout,
 )
 from app.security.crypto import decrypt_secret
-from app.services.robokassa import build_payment_url
 from app.services.tiktok import (
     TikTokApiError,
     TikTokClient,
@@ -109,7 +116,7 @@ async def tariffs(message: Message, state: FSMContext) -> None:
             ).all()
         )
     await state.set_state(BotStates.PAYMENT_SELECT_PLAN)
-    keyboard_plans = [(plan.id, plan.title, plan.price_rub) for plan in plans]
+    keyboard_plans = [(plan.id, plan.title, plan.price_rub, plan.price_stars) for plan in plans]
     await message.answer(_tariff_text(plans), reply_markup=tariffs_menu(keyboard_plans))
 
 
@@ -426,31 +433,98 @@ async def cancel_upload(callback: CallbackQuery, state: FSMContext) -> None:
 
 
 @router.callback_query(F.data.startswith("buy:"))
-async def buy_callback(callback: CallbackQuery, state: FSMContext) -> None:
+async def buy_callback(callback: CallbackQuery, bot: Bot, state: FSMContext) -> None:
     assert callback.data is not None
     assert isinstance(callback.message, Message)
     plan_code = callback.data.split(":", 1)[1]
     async with session_scope() as session:
         plan = await session.get(Plan, plan_code)
-        if not plan or not plan.is_active or plan.price_rub <= 0:
+        if (
+            not plan
+            or not plan.is_active
+            or plan.price_rub <= 0
+            or plan.price_stars is None
+            or plan.price_stars <= 0
+        ):
             await callback.answer("Тариф недоступен для покупки.", show_alert=True)
             return
-        if not settings.robokassa_login or not settings.robokassa_password1:
-            await callback.message.answer(messages.PAYMENT_ERROR)
-            await callback.answer()
-            return
         user = await get_or_create_user(session, callback.from_user.id, callback.from_user.username)
-        payment = await create_payment(session, user.id, plan.id)
+        payment = await create_stars_payment(session, user.id, plan.id)
 
-    url = build_payment_url(
-        payment.provider_invoice_id,
-        payment.amount_rub,
-        f"Тариф {plan.title} на 30 дней",
+    await bot.send_invoice(
+        chat_id=callback.from_user.id,
+        title=f"Тариф {plan.title}",
+        description=f"Подписка {plan.title} на {plan.duration_days or 30} дней",
+        payload=f"stars:{payment.id}",
+        currency="XTR",
+        prices=[LabeledPrice(label=plan.title, amount=payment.amount_stars or 0)],
     )
-    # Payment completion is finalized only by Robokassa ResultURL.
     await state.set_state(BotStates.PAYMENT_WAIT)
-    await callback.message.answer(f"Ссылка на оплату тарифа {plan.title}:\n{url}")
     await callback.answer()
+
+
+@router.callback_query(F.data == "payment:unavailable")
+async def payment_unavailable(callback: CallbackQuery) -> None:
+    await callback.answer(messages.STARS_NOT_CONFIGURED, show_alert=True)
+
+
+@router.pre_checkout_query()
+async def stars_pre_checkout(query: PreCheckoutQuery) -> None:
+    payment_id = _stars_payment_id(query.invoice_payload)
+    valid = False
+    if payment_id is not None:
+        async with session_scope() as session:
+            valid = await validate_stars_checkout(
+                session,
+                payment_id,
+                query.from_user.id,
+                query.currency,
+                query.total_amount,
+            )
+    await query.answer(
+        ok=valid,
+        error_message=None if valid else messages.PAYMENT_VALIDATION_ERROR,
+    )
+
+
+@router.message(F.successful_payment)
+async def stars_payment_success(message: Message, state: FSMContext) -> None:
+    assert message.from_user is not None
+    successful_payment = message.successful_payment
+    assert successful_payment is not None
+    payment_id = _stars_payment_id(successful_payment.invoice_payload)
+    if payment_id is None:
+        await message.answer(messages.PAYMENT_VALIDATION_ERROR)
+        return
+
+    async with session_scope() as session:
+        confirmation = await mark_stars_payment_paid(
+            session,
+            payment_id,
+            message.from_user.id,
+            successful_payment.currency,
+            successful_payment.total_amount,
+            successful_payment.telegram_payment_charge_id,
+        )
+        if confirmation.payment is None:
+            await message.answer(messages.PAYMENT_VALIDATION_ERROR)
+            return
+        plan = await get_plan_record(session, confirmation.payment.plan_id)
+
+    await state.clear()
+    await state.set_state(BotStates.MAIN_MENU)
+    if confirmation.activated:
+        await message.answer(
+            messages.text("payment_success", plan=plan.title),
+            reply_markup=main_menu(),
+        )
+    else:
+        await message.answer(messages.PAYMENT_ALREADY_PROCESSED, reply_markup=main_menu())
+
+
+@router.message(Command("paysupport"))
+async def payment_support(message: Message) -> None:
+    await message.answer(messages.PAYMENT_SUPPORT)
 
 
 @router.message(F.text == BTN_HISTORY)
@@ -500,6 +574,16 @@ async def help_message(message: Message) -> None:
 
 def _compose_caption(description: str | None, hashtags: str | None) -> str:
     return "\n\n".join(part for part in [description, hashtags] if part)
+
+
+def _stars_payment_id(payload: str) -> UUID | None:
+    prefix, separator, value = payload.partition(":")
+    if prefix != "stars" or not separator:
+        return None
+    try:
+        return UUID(value)
+    except ValueError:
+        return None
 
 
 async def _load_creator_info(
@@ -573,7 +657,8 @@ def _tariff_text(plans: list[Plan]) -> str:
             if plan.price_rub == 0
             else f"{plan.price_rub} руб./{plan.duration_days or 30} дней"
         )
-        lines.append(f"{plan.title}: {price}, {plan.daily_limit} видео в сутки")
+        stars = f", {plan.price_stars} Stars" if plan.price_stars else ""
+        lines.append(f"{plan.title}: {price}{stars}, {plan.daily_limit} видео в сутки")
     return "\n".join(lines)
 
 

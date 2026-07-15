@@ -6,6 +6,22 @@ The project follows Semantic Versioning.
 
 ## [Unreleased]
 
+### Added
+
+- Telegram Stars (`XTR`) invoice flow with pre-checkout validation, transactional subscription
+  activation, unique charge tracking, duplicate-delivery protection, `/paysupport`, configurable
+  plan prices, and separate Stars analytics.
+- Official SBP C2B integration specification with acquiring, callback, QR provenance, fiscalization,
+  and Telegram digital-goods policy gates.
+- Alembic `0008_telegram_stars_payments` migration and focused Stars concurrency/security tests.
+
+### Changed
+
+- In-bot paid-plan checkout now follows Telegram's digital-goods requirement and no longer exposes
+  Robokassa links as an alternative to Stars.
+- Payment records and administrator views now distinguish provider, currency, RUB amount, Stars
+  amount, and provider charge identifier.
+
 ### Fixed
 
 - Make inbound webhook claims atomic across API workers, separate reverse-proxied clients for

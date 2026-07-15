@@ -13,10 +13,10 @@ Tik_Tok_Loader. Detailed business scenarios are maintained in
 | API and contracts | Health, tracing headers, safe errors, OAuth state validation, webhook rejection, OpenAPI paths | `tests/test_api_integration.py`, `tools/check_openapi.py` |
 | Video and TikTok client | File signatures, duration, cleanup, chunk planning, retries, creator info, webhook HMAC | `tests/test_video_service.py`, `tests/test_tiktok_service.py` |
 | Queue resilience | Distributed job lock and scheduler lease idempotency | `tests/test_worker_resilience.py`, `tests/test_scheduler.py` |
-| PostgreSQL integration | Registration, plans, daily limits, payment confirmation, subscription expiry, upload event history | `tests/test_subscriptions.py`, `tests/test_robokassa.py`, `tests/test_upload_lifecycle_integration.py` |
+| PostgreSQL integration | Registration, plans, daily limits, Stars/Robokassa confirmation, subscription expiry, upload event history | `tests/test_subscriptions.py`, `tests/test_telegram_stars.py`, `tests/test_robokassa.py`, `tests/test_upload_lifecycle_integration.py` |
 | Migration | Upgrade, schema drift check, downgrade to base, and clean re-upgrade | GitHub Actions `Migrations and tests` job |
 | Container | Compose model, image build, and non-root runtime | GitHub Actions `Container build` job |
-| Staging acceptance | Real Telegram webhook, approved TikTok application, Robokassa test mode, HTTPS, backup and restore | Signed release checklist and staging run record |
+| Staging acceptance | Real Telegram Stars invoice, approved TikTok application, HTTPS, backup and restore | Signed release checklist and staging run record |
 
 ## Local Quality Commands
 
@@ -50,6 +50,8 @@ Automated PostgreSQL tests verify these invariants:
 - Concurrent Telegram registration creates one user and one active FREE subscription.
 - Concurrent first-use quota checks create one daily usage row.
 - Duplicate Robokassa confirmation activates a paid subscription exactly once.
+- Duplicate Telegram Stars confirmation activates a paid subscription exactly once.
+- Stars checkout rejects a mismatched user, currency, amount, payment ID, or reused charge ID.
 - A paid ResultURL with malformed or mismatched amount cannot activate a subscription.
 - Upload status history contains every accepted transition and terminal jobs cannot be reopened.
 - Redis leases prevent duplicate scheduler dispatch and upload worker execution.
@@ -60,8 +62,9 @@ Unit and integration tests mock TikTok HTTP responses and validate only the offi
 Content Posting API contract implemented by this project. They do not prove that a TikTok
 application has been approved or that a specific account or region is eligible to publish.
 
-Robokassa production activation requires a real ResultURL round trip against the configured store.
-SuccessURL is informational and is never acceptance evidence.
+Telegram Stars production activation requires a real invoice and `successful_payment` round trip.
+Robokassa and SBP require separate external-channel approval and provider callback evidence before
+activation.
 
 ## Release Evidence
 
