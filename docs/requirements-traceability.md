@@ -10,8 +10,7 @@ Each functional requirement must have a stable identifier and a visible link to 
 | --- | --- | --- | --- | --- | --- |
 | `REQ-001` | User registration | Bot / DB | `QA-REG-001`; subscriptions and FSM tests | [Users](users-entity.md), [QA](qa-acceptance-scenarios.md) | Implemented |
 | `REQ-002` | TikTok OAuth | API / OAuth | `QA-OAUTH-001`; API and TikTok tests | [TikTok Config](tiktok-developer-configuration.md), [Public API](public-rest-api.md) | Implemented; staging pending |
-| `REQ-003` | Paid plans in Telegram | Telegram Stars | `QA-PAY-001`; Stars validation and idempotency tests | [Payments](payments-entity.md), [Telegram Stars](telegram-stars.md) | Implemented; Stars prices and staging pending |
-| `REQ-006` | SBP merchant payments | Bank acquiring / SBP | `QA-PAY-002`; provider callback tests pending | [SBP](sbp.md) | Blocked on official acquiring payload and credentials |
+| `REQ-003` | Paid plans in Telegram | Telegram Stars | `QA-PAY-001`; Stars validation and idempotency tests | [Payments](payments-entity.md), [Telegram Stars](telegram-stars.md) | Implemented at 199/499 XTR; staging pending |
 | `REQ-004` | Video publication | Worker / TikTok | `QA-UPL-001`; FSM, video, worker, and lifecycle tests | [Upload Jobs](upload-jobs-entity.md), [Lifecycle](video-lifecycle.md) | Implemented; staging pending |
 | `REQ-005` | Daily limits | Usage service | `QA-LIMIT-001`; quota concurrency tests | [Daily Usage](daily-usage-entity.md) | Implemented |
 | `NFR-001` | Core NFR controls | Cross-cutting | CI quality, coverage, migration, container | [NFR](non-functional-requirements.md), [Tests](test-strategy.md) | Implemented; production evidence pending |

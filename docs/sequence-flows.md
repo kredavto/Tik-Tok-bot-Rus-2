@@ -70,8 +70,7 @@ Rules:
 - Never log bot tokens or sensitive payment data.
 
 The separately approved Robokassa callback flow remains documented in
-[Robokassa Setup](robokassa.md). Future SBP behavior is defined in
-[SBP Merchant Payments](sbp.md); neither is presented as an alternative in-bot checkout for digital
+[Robokassa Setup](robokassa.md) and is not presented as an alternative in-bot checkout for digital
 subscriptions.
 
 ## Cross-Cutting Requirements

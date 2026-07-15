@@ -21,7 +21,7 @@ async def _create_stars_order(telegram_id: int) -> tuple[Payment, int]:
     async with session_scope() as session:
         plan = await session.get(Plan, PlanCode.PRO.value)
         assert plan is not None
-        plan.price_stars = 250
+        assert plan.price_stars == 199
         user = await get_or_create_user(session, telegram_id, "stars_user")
         payment = await create_stars_payment(session, user.id, PlanCode.PRO.value)
         return payment, user.telegram_id
@@ -32,10 +32,10 @@ async def test_stars_checkout_requires_exact_user_currency_and_amount() -> None:
     payment, telegram_id = await _create_stars_order(random.randint(1_100_000_000, 1_199_999_999))
 
     async with session_scope() as session:
-        assert await validate_stars_checkout(session, payment.id, telegram_id, "XTR", 250)
-        assert not await validate_stars_checkout(session, payment.id, telegram_id, "RUB", 250)
-        assert not await validate_stars_checkout(session, payment.id, telegram_id, "XTR", 249)
-        assert not await validate_stars_checkout(session, payment.id, telegram_id + 1, "XTR", 250)
+        assert await validate_stars_checkout(session, payment.id, telegram_id, "XTR", 199)
+        assert not await validate_stars_checkout(session, payment.id, telegram_id, "RUB", 199)
+        assert not await validate_stars_checkout(session, payment.id, telegram_id, "XTR", 198)
+        assert not await validate_stars_checkout(session, payment.id, telegram_id + 1, "XTR", 199)
 
 
 @pytest.mark.asyncio
@@ -50,7 +50,7 @@ async def test_stars_confirmation_is_idempotent_under_concurrency() -> None:
                 payment.id,
                 telegram_id,
                 "XTR",
-                250,
+                199,
                 charge_id,
             )
             return result.activated
@@ -86,13 +86,13 @@ async def test_stars_confirmation_rejects_reused_charge_id() -> None:
 
     async with session_scope() as session:
         accepted = await mark_stars_payment_paid(
-            session, first.id, first_telegram_id, "XTR", 250, charge_id
+            session, first.id, first_telegram_id, "XTR", 199, charge_id
         )
         assert accepted.activated
 
     async with session_scope() as session:
         rejected = await mark_stars_payment_paid(
-            session, second.id, second_telegram_id, "XTR", 250, charge_id
+            session, second.id, second_telegram_id, "XTR", 199, charge_id
         )
         assert rejected.payment is None
 

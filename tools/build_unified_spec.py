@@ -43,7 +43,7 @@ OUTPUT_DIR = DOCS / "final"
 PROJECT_TITLE = "Tik_Tok_Loader"
 DOC_TITLE_RU = "Единая техническая спецификация"
 DOC_TITLE_EN = "Unified Technical Specification"
-VERSION = "0.9.0"
+VERSION = "0.9.1"
 REPO = "kredavto/Tik-Tok-bot-Rus-2"
 
 
@@ -76,7 +76,6 @@ SOURCE_DOCS: list[SourceDoc] = [
     SourceDoc("video-lifecycle.md", "Пользовательские сценарии"),
     SourceDoc("tiktok-developer-configuration.md", "Интеграции"),
     SourceDoc("telegram-stars.md", "Интеграции"),
-    SourceDoc("sbp.md", "Интеграции"),
     SourceDoc("robokassa.md", "Интеграции"),
     SourceDoc("api.md", "API"),
     SourceDoc("rest-api-standards.md", "API"),
@@ -143,8 +142,6 @@ ABBREVIATIONS: list[tuple[str, str]] = [
     ("OAuth 2.0", "Протокол авторизации для подключения аккаунта TikTok"),
     ("RBAC", "Role-Based Access Control, ролевая модель доступа"),
     ("REST", "Representational State Transfer"),
-    ("SBP / СБП", "Система быстрых платежей"),
-    ("C2B", "Consumer-to-Business, платеж физического лица организации"),
     ("SOP", "Standard Operating Procedure, стандартная операционная процедура"),
     ("TLS/SSL", "Криптографическая защита транспортного соединения"),
     ("UTC", "Coordinated Universal Time"),

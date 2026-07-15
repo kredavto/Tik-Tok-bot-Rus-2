@@ -74,6 +74,7 @@ async def seed_plans(session: AsyncSession) -> None:
                 id=plan.code.value,
                 title=plan.title,
                 price_rub=plan.price_rub,
+                price_stars=plan.price_stars,
                 daily_limit=plan.daily_limit,
                 duration_days=duration_days,
             )

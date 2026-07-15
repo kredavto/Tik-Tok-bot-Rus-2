@@ -33,15 +33,16 @@ def test_branded_content_is_hidden_for_private_post() -> None:
     assert callbacks == ["commercial:none", "commercial:organic"]
 
 
-def test_tariff_keyboard_uses_stars_and_disables_unconfigured_plan() -> None:
+def test_tariff_keyboard_uses_configured_stars_prices() -> None:
     keyboard = tariffs_menu(
         [
             ("free", "FREE", 0, None),
-            ("pro", "PRO", 499, 250),
-            ("business", "BUSINESS", 999, None),
+            ("pro", "PRO", 499, 199),
+            ("business", "BUSINESS", 999, 499),
         ]
     )
 
-    assert keyboard.inline_keyboard[0][0].text == "PRO - 250 Stars"
+    assert keyboard.inline_keyboard[0][0].text == "PRO - 199 Stars"
     assert keyboard.inline_keyboard[0][0].callback_data == "buy:pro"
-    assert keyboard.inline_keyboard[1][0].callback_data == "payment:unavailable"
+    assert keyboard.inline_keyboard[1][0].text == "BUSINESS - 499 Stars"
+    assert keyboard.inline_keyboard[1][0].callback_data == "buy:business"

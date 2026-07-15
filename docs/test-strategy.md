@@ -63,8 +63,7 @@ Content Posting API contract implemented by this project. They do not prove that
 application has been approved or that a specific account or region is eligible to publish.
 
 Telegram Stars production activation requires a real invoice and `successful_payment` round trip.
-Robokassa and SBP require separate external-channel approval and provider callback evidence before
-activation.
+Robokassa requires separate external-channel approval and provider callback evidence before activation.
 
 ## Release Evidence
 

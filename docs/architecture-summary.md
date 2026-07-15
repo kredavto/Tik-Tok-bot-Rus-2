@@ -30,7 +30,6 @@ Non-functional requirements are defined in [Non-Functional Requirements](non-fun
 | Scheduler | Redis-leased dispatch and heartbeat for recurring maintenance jobs |
 | Telegram Stars | In-bot payment for PRO and BUSINESS digital subscriptions |
 | Robokassa | Dormant external-channel payment integration, subject to policy approval |
-| SBP C2B | Future bank-issued merchant QR/API integration, subject to acquiring setup |
 | TikTok OAuth 2.0 | User authorization for official TikTok API access |
 | TikTok Content Posting API | Official publication workflow |
 | Admin API | Users, subscriptions, payments, plans, jobs, analytics, settings |
@@ -46,7 +45,7 @@ Main component interaction flows are documented in [Sequence Flows](sequence-flo
 - Daily upload limits are enforced transactionally.
 - Video files are validated safely before publication processing.
 - Telegram Stars payments are confirmed idempotently from `successful_payment`.
-- Robokassa ResultURL and future SBP callbacks remain idempotent in approved external channels.
+- Robokassa ResultURL remains idempotent in an approved external channel.
 - Background jobs are idempotent and safe to retry only for temporary failures.
 - OAuth tokens are stored encrypted.
 - User, payment, publication, webhook, and admin actions are logged.

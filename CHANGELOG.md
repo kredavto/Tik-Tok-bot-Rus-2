@@ -11,9 +11,9 @@ The project follows Semantic Versioning.
 - Telegram Stars (`XTR`) invoice flow with pre-checkout validation, transactional subscription
   activation, unique charge tracking, duplicate-delivery protection, `/paysupport`, configurable
   plan prices, and separate Stars analytics.
-- Official SBP C2B integration specification with acquiring, callback, QR provenance, fiscalization,
-  and Telegram digital-goods policy gates.
 - Alembic `0008_telegram_stars_payments` migration and focused Stars concurrency/security tests.
+- Alembic `0009_set_stars_plan_prices` migration setting PRO to `199 XTR` and BUSINESS to
+  `499 XTR`.
 
 ### Changed
 
@@ -21,6 +21,8 @@ The project follows Semantic Versioning.
   Robokassa links as an alternative to Stars.
 - Payment records and administrator views now distinguish provider, currency, RUB amount, Stars
   amount, and provider charge identifier.
+- SBP was removed from the approved project scope; supported payment integrations are Robokassa
+  and Telegram Stars only.
 
 ### Fixed
 

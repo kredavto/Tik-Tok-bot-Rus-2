@@ -6,7 +6,7 @@ PRO and BUSINESS are digital services consumed inside Telegram. Purchases initia
 therefore use Telegram Stars (`XTR`) in accordance with the official Telegram payment rules for
 digital goods and services.
 
-The bot must not present Robokassa, SBP, bank-card links, phone transfers, or another currency as an
+The bot must not present Robokassa, bank-card links, phone transfers, or another currency as an
 alternative checkout method for the same digital subscription inside Telegram.
 
 Official references:
@@ -16,12 +16,9 @@ Official references:
 
 ## Tariff Configuration
 
-`plans.price_stars` stores the positive integer Stars price for each paid plan. The value is managed
-through the administrative API and panel. It is independent from `price_rub`; no automatic RUB-to-XTR
-conversion is allowed.
-
-Until the owner approves exact Stars prices, `price_stars` remains `NULL` and the plan is unavailable
-for purchase through the bot.
+`plans.price_stars` stores the positive integer Stars price for each paid plan. The approved prices
+are `199 XTR` for PRO and `499 XTR` for BUSINESS. Values are managed through the administrative API
+and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversion is allowed.
 
 ## Payment Flow
 
@@ -50,5 +47,6 @@ for purchase through the bot.
 - Exact user, amount, currency, provider, and payment ID are validated.
 - Concurrent duplicate confirmations activate one subscription.
 - Reuse of a charge ID for another payment is rejected.
+- PRO is invoiced for `199 XTR` and BUSINESS for `499 XTR` by default.
 - PRO and BUSINESS Stars prices can be changed without a source-code release.
 - RUB and XTR revenue are reported separately.

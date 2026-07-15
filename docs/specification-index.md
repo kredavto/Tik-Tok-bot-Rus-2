@@ -18,7 +18,7 @@ The current documentation set is the authoritative project specification. It is 
 | Group | Documents |
 | --- | --- |
 | Architecture | [Architecture Summary](architecture-summary.md), [Project Component Map](component-map.md), [Sequence Flows](sequence-flows.md), [Glossary and Naming Conventions](glossary-naming.md) |
-| Functional behavior | [User Guide](user-guide.md), [Video Lifecycle](video-lifecycle.md), [Telegram Stars](telegram-stars.md), [SBP Merchant Payments](sbp.md), [Robokassa Setup](robokassa.md), [TikTok Developer Configuration](tiktok-developer-configuration.md) |
+| Functional behavior | [User Guide](user-guide.md), [Video Lifecycle](video-lifecycle.md), [Telegram Stars](telegram-stars.md), [Robokassa Setup](robokassa.md), [TikTok Developer Configuration](tiktok-developer-configuration.md) |
 | Data model | [Logical Data Model](data-model.md), entity specifications for users, TikTok accounts, subscriptions, payments, upload jobs, usage, webhooks, admin actions, and settings |
 | API contracts | [REST API Standards](rest-api-standards.md), [API Versioning and Client Compatibility](api-versioning-compatibility.md), [Public REST API](public-rest-api.md), [Administrative REST API](admin-rest-api.md), [OpenAPI and Contract Documentation](openapi-contracts.md), [Error Codes and Exception Handling](error-handling.md) |
 | Security and compliance | [Compliance Notes](compliance.md), [Security, Backup, and Monitoring](security.md), [Security Logging and Audit](security-logging-audit.md), [Confidential Data Policy](confidential-data-policy.md), [Environment Configuration and Secrets Control](environment-configuration-secrets.md), [RBAC-related admin documentation](admin-rest-api.md) |

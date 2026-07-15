@@ -6,11 +6,11 @@ Important: this project does not implement VPN, proxy routing, device spoofing, 
 
 ## Tariffs
 
-| Plan | Price | Daily video limit |
-| --- | ---: | ---: |
-| FREE | 0 RUB | 2 |
-| PRO | 499 RUB | 5 |
-| BUSINESS | 999 RUB | 10 |
+| Plan | Price, RUB | Price, Telegram Stars | Daily video limit |
+| --- | ---: | ---: | ---: |
+| FREE | 0 | - | 2 |
+| PRO | 499 | 199 XTR | 5 |
+| BUSINESS | 999 | 499 XTR | 10 |
 
 ## What Is Included
 
@@ -57,9 +57,8 @@ For production, configure:
 - `PUBLIC_BASE_URL`
 - TikTok developer credentials after app approval
 
-Paid-plan prices in Telegram Stars are configured in PostgreSQL through the administrator panel.
-The bot keeps paid plans unavailable until positive `price_stars` values are approved for PRO and
-BUSINESS.
+Paid-plan prices are `199 XTR` for PRO and `499 XTR` for BUSINESS. They are stored in PostgreSQL and
+remain manageable through the administrator panel.
 
 ## TikTok Publishing
 
@@ -107,7 +106,6 @@ the UI.
 - [Compliance Notes](docs/compliance.md)
 - [Robokassa Setup](docs/robokassa.md)
 - [Telegram Stars](docs/telegram-stars.md)
-- [SBP Merchant Payments](docs/sbp.md)
 - [Security, Backup, and Monitoring](docs/security.md)
 - [Security Logging and Audit](docs/security-logging-audit.md)
 - [Confidential Data Policy](docs/confidential-data-policy.md)

@@ -13,13 +13,14 @@ class Plan:
     code: PlanCode
     title: str
     price_rub: int
+    price_stars: int | None
     daily_limit: int
 
 
 PLANS: dict[PlanCode, Plan] = {
-    PlanCode.FREE: Plan(PlanCode.FREE, "FREE", 0, 2),
-    PlanCode.PRO: Plan(PlanCode.PRO, "PRO", 499, 5),
-    PlanCode.BUSINESS: Plan(PlanCode.BUSINESS, "BUSINESS", 999, 10),
+    PlanCode.FREE: Plan(PlanCode.FREE, "FREE", 0, None, 2),
+    PlanCode.PRO: Plan(PlanCode.PRO, "PRO", 499, 199, 5),
+    PlanCode.BUSINESS: Plan(PlanCode.BUSINESS, "BUSINESS", 999, 499, 10),
 }
 
 

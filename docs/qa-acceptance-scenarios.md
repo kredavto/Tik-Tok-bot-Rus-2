@@ -73,19 +73,18 @@ duplicate confirmation are covered. A real Telegram Stars round trip remains a s
 
 Expected result:
 
-- An XTR invoice is created from the configured Stars price.
+- A PRO invoice is created for `199 XTR`; a BUSINESS invoice is created for `499 XTR`.
 - User, amount, currency, payment UUID, and charge ID are verified.
 - Subscription activates only after `successful_payment`.
 - Duplicate updates do not create another subscription.
 - User receives payment success notification.
 
-### QA-PAY-002: External Payment Channels Remain Gated
+### QA-PAY-002: Robokassa External Channel Remains Gated
 
 Expected result:
 
-- Robokassa and SBP are not shown as alternative checkout methods for digital plans in the bot.
-- A telephone/text QR cannot be accepted as an official SBP merchant QR.
-- SBP remains disabled until the acquiring bank supplies a verified payload and callback/status API.
+- Robokassa is not shown as an alternative checkout method for digital plans inside the bot.
+- Robokassa activation remains restricted to a verified ResultURL in its approved external channel.
 
 ### QA-SUB-001: Automatic Return to FREE
 
