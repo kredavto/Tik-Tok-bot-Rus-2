@@ -32,4 +32,13 @@ def downgrade() -> None:
         sa.column("id", sa.String()),
         sa.column("price_stars", sa.Integer()),
     )
-    op.execute(plans.update().where(plans.c.id.in_(["pro", "business"])).values(price_stars=None))
+    op.execute(
+        plans.update()
+        .where(plans.c.id == "pro", plans.c.price_stars == 199)
+        .values(price_stars=None)
+    )
+    op.execute(
+        plans.update()
+        .where(plans.c.id == "business", plans.c.price_stars == 499)
+        .values(price_stars=None)
+    )

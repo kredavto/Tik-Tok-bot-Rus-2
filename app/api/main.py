@@ -519,7 +519,11 @@ async def robokassa_result(
         )
         if event is None:
             payment = await session.scalar(
-                select(Payment).where(Payment.provider_invoice_id == int(inv_id))
+                select(Payment).where(
+                    Payment.provider_invoice_id == int(inv_id),
+                    Payment.provider == "robokassa",
+                    Payment.currency == "RUB",
+                )
             )
             if payment and payment.status == "paid":
                 return f"OK{inv_id}"

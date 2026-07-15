@@ -1161,7 +1161,7 @@ RBAC is enforced on the server. Client-side checks are only UI hints.
 | --- | --- |
 | USER | Telegram bot features for own account |
 | SUPPORT | Statistics, users, payments, upload jobs, and error logs |
-| ADMIN | SUPPORT permissions plus user blocking and tariff management |
+| ADMIN | SUPPORT permissions plus user, tariff, and payment management |
 | SUPER_ADMIN | Full access, including system settings and role management |
 
 The permission matrix is defined in `app.security.rbac`, so new roles and permissions can be added without changing business handlers.
@@ -1201,6 +1201,8 @@ Admins can:
 - Return a user to FREE without deleting subscription history.
 - Review payment and subscription state.
 - Review RUB and Telegram Stars revenue separately.
+- Create audited Robokassa checkout links for an approved external sales channel.
+- Refund eligible Stars payments through Telegram's official refund method.
 
 SUPER_ADMIN can assign roles. Every mutating operation requires the CSRF token and is recorded
 with the request source IP when available.
@@ -1446,6 +1448,9 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 - Keep `/paysupport` available and provide a safe support process.
 - Refunds must use Telegram's `refundStarPayment` method and update the immutable payment history to
   `refunded`; they must not be implemented as an undocumented manual balance adjustment.
+- ADMIN and SUPER_ADMIN perform eligible refunds through
+  `POST /api/v1/admin/payments/{payment_id}/refund-stars`. The operation is serialized by a database
+  row lock, recorded in the audit log, and returns the refunded active subscription to FREE.
 
 ## 21.5. Acceptance Criteria
 
@@ -1455,6 +1460,7 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 - PRO is invoiced for `199 XTR` and BUSINESS for `499 XTR` by default.
 - PRO and BUSINESS Stars prices can be changed without a source-code release.
 - RUB and XTR revenue are reported separately.
+- Repeated Stars refund requests do not call Telegram or alter subscription state twice.
 
 # 22. Robokassa Setup
 
@@ -1463,8 +1469,9 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 
 > Policy boundary: PRO and BUSINESS are digital services consumed inside Telegram. The bot must use
 > Telegram Stars for in-bot checkout and must not show Robokassa as an alternative payment method.
-> This integration remains available only for a separately approved sales channel after platform and
-> legal review.
+> This integration remains available only for an approved external sales channel. Operators create
+> checkout links through the authenticated admin API; the Telegram bot itself continues to offer
+> Stars only.
 
 End-to-end payment sequence is documented in [Sequence Flows](#4-sequence-flows).
 
@@ -1491,9 +1498,27 @@ Result URL signature:
 OutSum:InvId:Password2
 ```
 
-The bot contains helpers for both operations in `app.services.robokassa`.
+`ROBOKASSA_HASH_ALGORITHM` must match the technical settings of the shop and accepts `md5`,
+`sha256`, or `sha512`. Signatures are compared in constant time. The application formats `OutSum`
+with two decimal places when it creates a checkout and validates the exact callback value returned
+by Robokassa.
 
-## 22.3. Activation Rules
+## 22.3. External Checkout
+
+An ADMIN or SUPER_ADMIN creates an order for an existing Telegram user with:
+
+```http
+POST /api/v1/admin/payments/robokassa/orders
+Content-Type: application/json
+
+{"telegram_user_id": 123456789, "plan_id": "pro"}
+```
+
+The endpoint requires the admin bearer token, admin Telegram ID, and CSRF token. It returns a
+single signed `checkout_url`, records an audit action, and never returns either Robokassa password.
+Do not place this endpoint or its checkout link in the Telegram digital-goods flow.
+
+## 22.4. Activation Rules
 
 Only Result URL activates a subscription. Success URL is informational and never changes payment or subscription status.
 
@@ -1510,6 +1535,20 @@ The backend validates:
 - Repeated notifications idempotently.
 
 Robokassa merchant credentials must stay only in `.env`.
+
+## 22.5. Sandbox Acceptance
+
+1. Use the dedicated test Password #1 and Password #2 and set `ROBOKASSA_TEST_MODE=true`.
+2. Confirm the configured hash algorithm matches the shop settings.
+3. Create a fresh external checkout through the admin API and open the returned URL.
+4. Complete the simulated payment in Robokassa; no real money is charged.
+5. Verify the public ResultURL returned `OK{InvId}`, the payment became `paid`, exactly one paid
+   subscription is active, and a duplicate callback does not activate another subscription.
+6. Store only sanitized evidence: timestamp, release SHA, invoice ID, amount, HTTP outcome, payment
+   status, active-subscription count, and webhook status.
+
+Production passwords and `ROBOKASSA_TEST_MODE=false` may be installed only after this scenario
+passes against the same release candidate.
 
 # 23. API Documentation
 
@@ -1603,6 +1642,12 @@ Mutating admin requests also require:
 ```text
 X-CSRF-Token: <ADMIN_CSRF_TOKEN>
 ```
+
+Payment administration adds:
+
+- `POST /api/v1/admin/payments/robokassa/orders` to create an audited external-channel checkout.
+- `POST /api/v1/admin/payments/{payment_id}/refund-stars` to refund a paid Stars transaction through
+  Telegram and persist the `refunded` status.
 
 Telegram webhook requests can use:
 
@@ -1896,6 +1941,8 @@ API version lifecycle and compatibility rules are documented in [API Versioning 
 | GET | `/api/v1/admin/plans` | Tariff list |
 | PATCH | `/api/v1/admin/plans/{id}` | Update tariff parameters |
 | GET | `/api/v1/admin/payments` | Provider-neutral payment list with RUB/XTR amounts |
+| POST | `/api/v1/admin/payments/robokassa/orders` | Create an audited external Robokassa checkout |
+| POST | `/api/v1/admin/payments/{id}/refund-stars` | Refund a paid Stars transaction through Telegram |
 | GET | `/api/v1/admin/upload-jobs` | Publication queue |
 | GET | `/api/v1/admin/errors` | Failed publications |
 | POST | `/api/v1/admin/upload-jobs/{id}/retry` | Retry an eligible temporary failure |
@@ -1917,6 +1964,7 @@ Mutating operations must be transactional:
 - Manual subscription changes.
 - Safe task restart.
 - Configuration import.
+- Robokassa order creation and Telegram Stars refunds.
 
 The safe retry endpoint rejects jobs already accepted by TikTok and any error that is not explicitly
 classified as temporary. It also verifies that the local source file still exists.
@@ -2467,7 +2515,10 @@ webhook verification uses `TIKTOK_CLIENT_SECRET`.
 
 TikTok Developer Portal setup and pre-release checks are described in [TikTok Developer Configuration](#20-tiktok-developer-configuration).
 
-Robokassa: `ROBOKASSA_MERCHANT_LOGIN`, `ROBOKASSA_PASSWORD_1`, `ROBOKASSA_PASSWORD_2`, `ROBOKASSA_RESULT_URL`, `ROBOKASSA_SUCCESS_URL`, `ROBOKASSA_FAIL_URL`.
+Robokassa: `ROBOKASSA_MERCHANT_LOGIN`, `ROBOKASSA_PASSWORD_1`, `ROBOKASSA_PASSWORD_2`,
+`ROBOKASSA_RESULT_URL`, `ROBOKASSA_SUCCESS_URL`, `ROBOKASSA_FAIL_URL`,
+`ROBOKASSA_TEST_MODE`, and `ROBOKASSA_HASH_ALGORITHM`. The hash algorithm must be `md5`, `sha256`,
+or `sha512` and must match the shop's technical settings.
 
 Security: `TOKEN_ENCRYPTION_KEY`, `ADMIN_API_TOKEN`, `ADMIN_CSRF_TOKEN`.
 
@@ -5161,12 +5212,21 @@ Expected result:
 - Duplicate updates do not create another subscription.
 - User receives payment success notification.
 
-### 67.2.6. QA-PAY-002: Robokassa External Channel Remains Gated
+### 67.2.6. QA-PAY-002: Robokassa External Sandbox Payment
+
+Automation: known signature vectors for every supported hash algorithm, order integrity,
+provider/currency checks, amount rejection, and concurrent idempotency are covered. The provider
+checkout and ResultURL delivery remain a staging check.
 
 Expected result:
 
 - Robokassa is not shown as an alternative checkout method for digital plans inside the bot.
-- Robokassa activation remains restricted to a verified ResultURL in its approved external channel.
+- An authenticated administrator creates a unique checkout for an existing user.
+- The test URL contains `IsTest=1` and uses the configured test Password #1 without exposing it.
+- Robokassa reaches the public HTTPS ResultURL and receives `OK{InvId}`.
+- The payment and exactly one subscription become active only after the callback signed with test
+  Password #2.
+- Duplicate callback delivery remains idempotent.
 
 ### 67.2.7. QA-SUB-001: Automatic Return to FREE
 
@@ -5239,7 +5299,7 @@ Tik_Tok_Loader. Detailed business scenarios are maintained in
 | PostgreSQL integration | Registration, plans, daily limits, Stars/Robokassa confirmation, subscription expiry, upload event history | `tests/test_subscriptions.py`, `tests/test_telegram_stars.py`, `tests/test_robokassa.py`, `tests/test_upload_lifecycle_integration.py` |
 | Migration | Upgrade, schema drift check, downgrade to base, and clean re-upgrade | GitHub Actions `Migrations and tests` job |
 | Container | Compose model, image build, and non-root runtime | GitHub Actions `Container build` job |
-| Staging acceptance | Real Telegram Stars invoice, approved TikTok application, HTTPS, backup and restore | Signed release checklist and staging run record |
+| Staging acceptance | Real Telegram Stars invoice, Robokassa sandbox callback, approved TikTok application, HTTPS, backup and restore | Signed release checklist and staging run record |
 
 ## 68.2. Local Quality Commands
 
@@ -5276,6 +5336,8 @@ Automated PostgreSQL tests verify these invariants:
 - Duplicate Telegram Stars confirmation activates a paid subscription exactly once.
 - Stars checkout rejects a mismatched user, currency, amount, payment ID, or reused charge ID.
 - A paid ResultURL with malformed or mismatched amount cannot activate a subscription.
+- A Robokassa ResultURL cannot activate a Stars payment or a non-RUB payment record.
+- Stars refund state changes are idempotent and return the refunded active subscription to FREE.
 - Upload status history contains every accepted transition and terminal jobs cannot be reopened.
 - Redis leases prevent duplicate scheduler dispatch and upload worker execution.
 
@@ -5286,7 +5348,8 @@ Content Posting API contract implemented by this project. They do not prove that
 application has been approved or that a specific account or region is eligible to publish.
 
 Telegram Stars production activation requires a real invoice and `successful_payment` round trip.
-Robokassa requires separate external-channel approval and provider callback evidence before activation.
+Robokassa requires an approved external channel and a real sandbox checkout with ResultURL evidence
+before production credentials are enabled.
 
 ## 68.6. Release Evidence
 

@@ -29,7 +29,10 @@ webhook verification uses `TIKTOK_CLIENT_SECRET`.
 
 TikTok Developer Portal setup and pre-release checks are described in [TikTok Developer Configuration](tiktok-developer-configuration.md).
 
-Robokassa: `ROBOKASSA_MERCHANT_LOGIN`, `ROBOKASSA_PASSWORD_1`, `ROBOKASSA_PASSWORD_2`, `ROBOKASSA_RESULT_URL`, `ROBOKASSA_SUCCESS_URL`, `ROBOKASSA_FAIL_URL`.
+Robokassa: `ROBOKASSA_MERCHANT_LOGIN`, `ROBOKASSA_PASSWORD_1`, `ROBOKASSA_PASSWORD_2`,
+`ROBOKASSA_RESULT_URL`, `ROBOKASSA_SUCCESS_URL`, `ROBOKASSA_FAIL_URL`,
+`ROBOKASSA_TEST_MODE`, and `ROBOKASSA_HASH_ALGORITHM`. The hash algorithm must be `md5`, `sha256`,
+or `sha512` and must match the shop's technical settings.
 
 Security: `TOKEN_ENCRYPTION_KEY`, `ADMIN_API_TOKEN`, `ADMIN_CSRF_TOKEN`.
 

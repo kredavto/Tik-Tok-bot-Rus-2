@@ -70,6 +70,10 @@ class Settings(BaseSettings):
     robokassa_success_url: str = Field("", alias="ROBOKASSA_SUCCESS_URL")
     robokassa_fail_url: str = Field("", alias="ROBOKASSA_FAIL_URL")
     robokassa_test_mode: bool = Field(True, alias="ROBOKASSA_TEST_MODE")
+    robokassa_hash_algorithm: Literal["md5", "sha256", "sha512"] = Field(
+        "md5",
+        alias="ROBOKASSA_HASH_ALGORITHM",
+    )
 
     token_encryption_key: str = Field("", alias="TOKEN_ENCRYPTION_KEY")
     admin_api_token: str = Field("", alias="ADMIN_API_TOKEN")

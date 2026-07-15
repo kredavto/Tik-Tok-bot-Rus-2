@@ -43,6 +43,8 @@ def test_admin_routes_are_available_under_versioned_api() -> None:
     assert "/api/v1/admin/users/{user_id}" in paths
     assert "/api/v1/admin/upload-jobs/{job_id}/retry" in paths
     assert "/api/v1/admin/audit-actions" in paths
+    assert "/api/v1/admin/payments/robokassa/orders" in paths
+    assert "/api/v1/admin/payments/{payment_id}/refund-stars" in paths
 
 
 @pytest.mark.asyncio

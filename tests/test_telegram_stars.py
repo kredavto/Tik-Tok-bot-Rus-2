@@ -7,10 +7,12 @@ from sqlalchemy import func, select
 from app.core.plans import PlanCode
 from app.db.models import Payment, Plan, Subscription
 from app.db.session import (
+    active_plan_code,
     create_stars_payment,
     get_or_create_user,
     init_db,
     mark_stars_payment_paid,
+    mark_stars_payment_refunded,
     session_scope,
     validate_stars_checkout,
 )
@@ -100,3 +102,29 @@ async def test_stars_confirmation_rejects_reused_charge_id() -> None:
         second_payment = await session.get(Payment, second.id)
     assert second_payment is not None
     assert second_payment.status == "created"
+
+
+@pytest.mark.asyncio
+async def test_stars_refund_is_idempotent_and_returns_active_plan_to_free() -> None:
+    payment, telegram_id = await _create_stars_order(random.randint(1_600_000_000, 1_699_999_999))
+    charge_id = f"stars-refund-{payment.id}"
+    async with session_scope() as session:
+        paid = await mark_stars_payment_paid(
+            session, payment.id, telegram_id, "XTR", 199, charge_id
+        )
+        assert paid.activated
+
+    async with session_scope() as session:
+        first = await mark_stars_payment_refunded(session, payment.id)
+        assert first.activated
+    async with session_scope() as session:
+        second = await mark_stars_payment_refunded(session, payment.id)
+        assert second.payment is not None
+        assert not second.activated
+        user = await get_or_create_user(session, telegram_id, "stars_user")
+        assert await active_plan_code(session, user) == PlanCode.FREE.value
+
+    async with session_scope() as session:
+        stored = await session.get(Payment, payment.id)
+    assert stored is not None
+    assert stored.status == "refunded"

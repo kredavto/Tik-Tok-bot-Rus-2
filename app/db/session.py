@@ -647,6 +647,44 @@ async def mark_stars_payment_paid(
     return PaymentConfirmation(payment=payment, activated=True)
 
 
+async def mark_stars_payment_refunded(
+    session: AsyncSession,
+    payment_id: UUID,
+) -> PaymentConfirmation:
+    payment = await session.scalar(
+        select(Payment).where(Payment.id == payment_id).with_for_update()
+    )
+    if payment is None or payment.provider != "telegram_stars" or payment.currency != "XTR":
+        return PaymentConfirmation(payment=None, activated=False)
+    if payment.status == "refunded":
+        return PaymentConfirmation(payment=payment, activated=False)
+    if payment.status != "paid" or not payment.provider_charge_id:
+        return PaymentConfirmation(payment=None, activated=False)
+
+    await session.get(User, payment.user_id, with_for_update=True)
+    subscription = (
+        await session.get(Subscription, payment.subscription_id, with_for_update=True)
+        if payment.subscription_id
+        else None
+    )
+    if subscription and subscription.status == "active":
+        subscription.status = "cancelled"
+        subscription.ends_at = datetime.now(UTC)
+        await session.flush()
+        await create_free_subscription(session, payment.user_id)
+
+    payment.status = "refunded"
+    await record_webhook_event(
+        session,
+        provider="telegram_stars",
+        event_type="payment_status_changed",
+        external_id=payment.provider_charge_id,
+        payload={"status": "refunded", "payment_id": str(payment.id)},
+        status="processed",
+    )
+    return PaymentConfirmation(payment=payment, activated=True)
+
+
 async def mark_payment_paid(
     session: AsyncSession,
     inv_id: int,
@@ -654,7 +692,13 @@ async def mark_payment_paid(
     raw_payload: dict | None = None,
 ) -> PaymentConfirmation:
     payment = await session.scalar(
-        select(Payment).where(Payment.provider_invoice_id == inv_id).with_for_update()
+        select(Payment)
+        .where(
+            Payment.provider_invoice_id == inv_id,
+            Payment.provider == "robokassa",
+            Payment.currency == "RUB",
+        )
+        .with_for_update()
     )
     if not payment:
         return PaymentConfirmation(payment=None, activated=False)
@@ -668,6 +712,8 @@ async def mark_payment_paid(
             status="processed",
         )
         return PaymentConfirmation(payment=payment, activated=False)
+    if payment.status not in {"created", "pending"}:
+        return PaymentConfirmation(payment=None, activated=False)
 
     expected = Decimal(payment.amount_rub).quantize(Decimal("0.01"))
     try:

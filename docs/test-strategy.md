@@ -16,7 +16,7 @@ Tik_Tok_Loader. Detailed business scenarios are maintained in
 | PostgreSQL integration | Registration, plans, daily limits, Stars/Robokassa confirmation, subscription expiry, upload event history | `tests/test_subscriptions.py`, `tests/test_telegram_stars.py`, `tests/test_robokassa.py`, `tests/test_upload_lifecycle_integration.py` |
 | Migration | Upgrade, schema drift check, downgrade to base, and clean re-upgrade | GitHub Actions `Migrations and tests` job |
 | Container | Compose model, image build, and non-root runtime | GitHub Actions `Container build` job |
-| Staging acceptance | Real Telegram Stars invoice, approved TikTok application, HTTPS, backup and restore | Signed release checklist and staging run record |
+| Staging acceptance | Real Telegram Stars invoice, Robokassa sandbox callback, approved TikTok application, HTTPS, backup and restore | Signed release checklist and staging run record |
 
 ## Local Quality Commands
 
@@ -53,6 +53,8 @@ Automated PostgreSQL tests verify these invariants:
 - Duplicate Telegram Stars confirmation activates a paid subscription exactly once.
 - Stars checkout rejects a mismatched user, currency, amount, payment ID, or reused charge ID.
 - A paid ResultURL with malformed or mismatched amount cannot activate a subscription.
+- A Robokassa ResultURL cannot activate a Stars payment or a non-RUB payment record.
+- Stars refund state changes are idempotent and return the refunded active subscription to FREE.
 - Upload status history contains every accepted transition and terminal jobs cannot be reopened.
 - Redis leases prevent duplicate scheduler dispatch and upload worker execution.
 
@@ -63,7 +65,8 @@ Content Posting API contract implemented by this project. They do not prove that
 application has been approved or that a specific account or region is eligible to publish.
 
 Telegram Stars production activation requires a real invoice and `successful_payment` round trip.
-Robokassa requires separate external-channel approval and provider callback evidence before activation.
+Robokassa requires an approved external channel and a real sandbox checkout with ResultURL evidence
+before production credentials are enabled.
 
 ## Release Evidence
 

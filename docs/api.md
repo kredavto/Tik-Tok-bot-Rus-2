@@ -88,6 +88,12 @@ Mutating admin requests also require:
 X-CSRF-Token: <ADMIN_CSRF_TOKEN>
 ```
 
+Payment administration adds:
+
+- `POST /api/v1/admin/payments/robokassa/orders` to create an audited external-channel checkout.
+- `POST /api/v1/admin/payments/{payment_id}/refund-stars` to refund a paid Stars transaction through
+  Telegram and persist the `refunded` status.
+
 Telegram webhook requests can use:
 
 ```text

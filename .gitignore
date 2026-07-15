@@ -23,4 +23,5 @@ dist/
 build/
 *.egg-info/
 Loader_bot_API.docx
+Robokassa.docx
 .~*.docx

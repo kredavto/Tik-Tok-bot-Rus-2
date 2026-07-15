@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Literal
 from uuid import UUID
 
+from aiogram import Bot
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
@@ -25,9 +26,11 @@ from app.db.models import (
 )
 from app.db.session import (
     anonymize_user,
+    create_payment,
     create_free_subscription,
     expire_active_subscriptions,
     get_or_create_user,
+    mark_stars_payment_refunded,
     record_upload_job_event,
     session_scope,
 )
@@ -39,6 +42,7 @@ from app.services.configuration import (
     validate_runtime_configuration,
     validate_setting_value,
 )
+from app.services.robokassa import build_payment_url
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -62,6 +66,11 @@ class SettingUpdate(BaseModel):
 
 class RoleUpdate(BaseModel):
     role: Role
+
+
+class RobokassaOrderCreate(BaseModel):
+    telegram_user_id: int = Field(gt=0)
+    plan_id: Literal["pro", "business"]
 
 
 class ConfigurationImport(BaseModel):
@@ -575,6 +584,101 @@ async def payments(
         "offset": offset,
         "total": total or 0,
     }
+
+
+@router.post("/payments/robokassa/orders", status_code=201)
+async def create_robokassa_order(
+    payload: RobokassaOrderCreate,
+    request: Request,
+    admin: User = Depends(require_permission(Permission.MANAGE_PAYMENTS)),
+    _: None = Depends(require_csrf),
+) -> dict:
+    async with session_scope() as session:
+        user = await session.scalar(
+            select(User).where(User.telegram_id == payload.telegram_user_id)
+        )
+        if user is None:
+            raise HTTPException(status_code=404, detail="Telegram user not found")
+        payment = await create_payment(session, user.id, payload.plan_id)
+        checkout_url = build_payment_url(
+            payment.provider_invoice_id,
+            payment.amount_rub,
+            f"Tik_Tok_Loader {payload.plan_id.upper()} subscription",
+        )
+        await log_admin_action(
+            session,
+            admin,
+            "create_robokassa_order",
+            "payment",
+            str(payment.id),
+            {
+                "inv_id": payment.provider_invoice_id,
+                "plan_id": payment.plan_id,
+                "test_mode": settings.robokassa_test_mode,
+            },
+            request_ip(request),
+        )
+    return {
+        "payment_id": str(payment.id),
+        "inv_id": payment.provider_invoice_id,
+        "amount_rub": payment.amount_rub,
+        "currency": payment.currency,
+        "status": payment.status,
+        "checkout_url": checkout_url,
+        "test_mode": settings.robokassa_test_mode,
+    }
+
+
+@router.post("/payments/{payment_id}/refund-stars")
+async def refund_stars_payment(
+    payment_id: UUID,
+    request: Request,
+    admin: User = Depends(require_permission(Permission.MANAGE_PAYMENTS)),
+    _: None = Depends(require_csrf),
+) -> dict[str, str]:
+    async with session_scope() as session:
+        payment = await session.scalar(
+            select(Payment).where(Payment.id == payment_id).with_for_update()
+        )
+        if payment is None:
+            raise HTTPException(status_code=404, detail="Payment not found")
+        if payment.status == "refunded":
+            return {"status": "refunded", "payment_id": str(payment.id)}
+        if (
+            payment.provider != "telegram_stars"
+            or payment.currency != "XTR"
+            or payment.status != "paid"
+            or not payment.provider_charge_id
+        ):
+            raise HTTPException(status_code=409, detail="Payment is not refundable")
+        user = await session.get(User, payment.user_id)
+        if user is None:
+            raise HTTPException(status_code=409, detail="Payment user not found")
+
+        bot = Bot(token=settings.bot_token)
+        try:
+            refunded = await bot.refund_star_payment(
+                user_id=user.telegram_id,
+                telegram_payment_charge_id=payment.provider_charge_id,
+            )
+        finally:
+            await bot.session.close()
+        if not refunded:
+            raise HTTPException(status_code=502, detail="Telegram did not confirm the refund")
+
+        confirmation = await mark_stars_payment_refunded(session, payment.id)
+        if confirmation.payment is None:
+            raise HTTPException(status_code=409, detail="Payment refund state changed")
+        await log_admin_action(
+            session,
+            admin,
+            "refund_stars_payment",
+            "payment",
+            str(payment.id),
+            {"status": "refunded"},
+            request_ip(request),
+        )
+    return {"status": "refunded", "payment_id": str(payment.id)}
 
 
 @router.get("/upload-jobs")

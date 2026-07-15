@@ -14,6 +14,8 @@ The project follows Semantic Versioning.
 - Alembic `0008_telegram_stars_payments` migration and focused Stars concurrency/security tests.
 - Alembic `0009_set_stars_plan_prices` migration setting PRO to `199 XTR` and BUSINESS to
   `499 XTR`.
+- Audited admin operations for external-channel Robokassa checkout creation and official Telegram
+  Stars refunds.
 
 ### Changed
 
@@ -26,6 +28,10 @@ The project follows Semantic Versioning.
 
 ### Fixed
 
+- Support the Robokassa shop's configured MD5, SHA-256, or SHA-512 algorithm with constant-time
+  signature comparison, and restrict ResultURL activation by provider, currency, and payment state.
+- Ignore the local Robokassa credential document and preserve administrator-customized Stars prices
+  when downgrading the default-price migration.
 - Allow the scheduler heartbeat healthcheck enough time for Python startup on constrained hosts,
   preventing a working scheduler from being reported as unhealthy.
 - Make inbound webhook claims atomic across API workers, separate reverse-proxied clients for

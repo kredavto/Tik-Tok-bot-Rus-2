@@ -79,12 +79,21 @@ Expected result:
 - Duplicate updates do not create another subscription.
 - User receives payment success notification.
 
-### QA-PAY-002: Robokassa External Channel Remains Gated
+### QA-PAY-002: Robokassa External Sandbox Payment
+
+Automation: known signature vectors for every supported hash algorithm, order integrity,
+provider/currency checks, amount rejection, and concurrent idempotency are covered. The provider
+checkout and ResultURL delivery remain a staging check.
 
 Expected result:
 
 - Robokassa is not shown as an alternative checkout method for digital plans inside the bot.
-- Robokassa activation remains restricted to a verified ResultURL in its approved external channel.
+- An authenticated administrator creates a unique checkout for an existing user.
+- The test URL contains `IsTest=1` and uses the configured test Password #1 without exposing it.
+- Robokassa reaches the public HTTPS ResultURL and receives `OK{InvId}`.
+- The payment and exactly one subscription become active only after the callback signed with test
+  Password #2.
+- Duplicate callback delivery remains idempotent.
 
 ### QA-SUB-001: Automatic Return to FREE
 

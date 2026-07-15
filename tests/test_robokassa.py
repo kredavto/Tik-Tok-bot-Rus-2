@@ -1,5 +1,6 @@
 import asyncio
 import random
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 from sqlalchemy import func, select
@@ -9,6 +10,7 @@ from app.db.models import Payment, Subscription, User
 from app.db.session import (
     active_plan_code,
     create_payment,
+    create_stars_payment,
     get_or_create_user,
     init_db,
     mark_payment_paid,
@@ -17,15 +19,73 @@ from app.db.session import (
 from app.services import robokassa
 
 
+@pytest.mark.parametrize(
+    ("algorithm", "expected"),
+    [
+        ("md5", "aca914e7bbfb0fe54ed3b42a1ce34e45"),  # pragma: allowlist secret
+        (
+            "sha256",
+            "".join(
+                (
+                    "3cc87fe5ecb5519e",  # pragma: allowlist secret
+                    "8bc67a253e014d5f",  # pragma: allowlist secret
+                    "637c0e4238709d1c",  # pragma: allowlist secret
+                    "df0a2c6b39241205",  # pragma: allowlist secret
+                )
+            ),
+        ),
+        (
+            "sha512",
+            "".join(
+                (
+                    "5c72bf409a73e2db",  # pragma: allowlist secret
+                    "7109747d13a8f818",  # pragma: allowlist secret
+                    "746306ec2f64e5ac",  # pragma: allowlist secret
+                    "e64a3f93f9c92ff2",  # pragma: allowlist secret
+                    "612edb873b159006",  # pragma: allowlist secret
+                    "216ef1e7c6e80082",  # pragma: allowlist secret
+                    "1b5698860f141901",  # pragma: allowlist secret
+                    "9c724b81804a116c",  # pragma: allowlist secret
+                )
+            ),
+        ),
+    ],
+)
+def test_signature_matches_known_vectors(algorithm: str, expected: str) -> None:
+    assert (
+        robokassa._signature("merchant", "499.00", 123, "password1", algorithm=algorithm)
+        == expected
+    )
+
+
 def test_validate_result_signature(monkeypatch) -> None:
     monkeypatch.setattr(robokassa.settings, "robokassa_password2", "secret")
-    signature = robokassa._signature("199", "1001", "secret")
-    assert robokassa.validate_result_signature("199", "1001", signature)
+    monkeypatch.setattr(robokassa.settings, "robokassa_hash_algorithm", "sha256")
+    signature = robokassa._signature("199.00", "1001", "secret")
+    assert robokassa.validate_result_signature("199.00", "1001", signature.upper())
 
 
 def test_rejects_invalid_result_signature(monkeypatch) -> None:
     monkeypatch.setattr(robokassa.settings, "robokassa_password2", "secret")
     assert not robokassa.validate_result_signature("199", "1001", "bad")
+
+
+def test_payment_url_uses_exact_amount_hash_and_test_flag(monkeypatch) -> None:
+    monkeypatch.setattr(robokassa.settings, "robokassa_login", "merchant")
+    monkeypatch.setattr(robokassa.settings, "robokassa_password1", "password1")
+    monkeypatch.setattr(robokassa.settings, "robokassa_hash_algorithm", "md5")
+    monkeypatch.setattr(robokassa.settings, "robokassa_test_mode", True)
+
+    url = robokassa.build_payment_url(123, 499, "BUSINESS")
+    query = parse_qs(urlparse(url).query)
+
+    assert query["OutSum"] == ["499.00"]
+    assert query["InvId"] == ["123"]
+    assert query["IsTest"] == ["1"]
+    assert query["SignatureValue"] == [
+        "aca914e7bbfb0fe54ed3b42a1ce34e45"  # pragma: allowlist secret
+    ]
+    assert "password1" not in url
 
 
 @pytest.mark.asyncio
@@ -99,3 +159,20 @@ async def test_result_url_rejects_invalid_amount(out_sum: str) -> None:
         user = await get_or_create_user(session, telegram_id, "payment_amount")
         assert user.id == user_id
         assert await active_plan_code(session, user) == PlanCode.FREE.value
+
+
+@pytest.mark.asyncio
+async def test_result_url_rejects_non_robokassa_payment() -> None:
+    await init_db()
+    async with session_scope() as session:
+        user = await get_or_create_user(
+            session, random.randint(1_500_000_000, 1_599_999_999), "wrong_provider"
+        )
+        payment = await create_stars_payment(session, user.id, PlanCode.PRO.value)
+        inv_id = payment.provider_invoice_id
+
+    async with session_scope() as session:
+        confirmation = await mark_payment_paid(session, inv_id, "499.00")
+
+    assert confirmation.payment is None
+    assert confirmation.activated is False

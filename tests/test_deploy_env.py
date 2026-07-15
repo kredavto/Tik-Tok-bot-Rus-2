@@ -35,6 +35,7 @@ def valid_environment() -> dict[str, str]:
         "ROBOKASSA_SUCCESS_URL": "https://loader.example.net/api/v1/payments/robokassa/success",
         "ROBOKASSA_FAIL_URL": "https://loader.example.net/api/v1/payments/robokassa/fail",
         "ROBOKASSA_TEST_MODE": "false",
+        "ROBOKASSA_HASH_ALGORITHM": "sha256",  # pragma: allowlist secret
         "TIKTOK_PUBLISH_ENABLED": "false",
     }
 
@@ -82,6 +83,15 @@ def test_production_rejects_robokassa_test_mode() -> None:
     result = validate_environment(values, "production")
 
     assert "ROBOKASSA_TEST_MODE: production requires false" in result.errors
+
+
+def test_invalid_robokassa_hash_algorithm_is_rejected() -> None:
+    values = valid_environment()
+    values["ROBOKASSA_HASH_ALGORITHM"] = "sha1"
+
+    result = validate_environment(values, "production")
+
+    assert "ROBOKASSA_HASH_ALGORITHM: must be md5, sha256, or sha512" in result.errors
 
 
 def test_callback_paths_must_match_the_public_contract() -> None:

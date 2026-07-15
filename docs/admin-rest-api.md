@@ -30,6 +30,8 @@ API version lifecycle and compatibility rules are documented in [API Versioning 
 | GET | `/api/v1/admin/plans` | Tariff list |
 | PATCH | `/api/v1/admin/plans/{id}` | Update tariff parameters |
 | GET | `/api/v1/admin/payments` | Provider-neutral payment list with RUB/XTR amounts |
+| POST | `/api/v1/admin/payments/robokassa/orders` | Create an audited external Robokassa checkout |
+| POST | `/api/v1/admin/payments/{id}/refund-stars` | Refund a paid Stars transaction through Telegram |
 | GET | `/api/v1/admin/upload-jobs` | Publication queue |
 | GET | `/api/v1/admin/errors` | Failed publications |
 | POST | `/api/v1/admin/upload-jobs/{id}/retry` | Retry an eligible temporary failure |
@@ -51,6 +53,7 @@ Mutating operations must be transactional:
 - Manual subscription changes.
 - Safe task restart.
 - Configuration import.
+- Robokassa order creation and Telegram Stars refunds.
 
 The safe retry endpoint rejects jobs already accepted by TikTok and any error that is not explicitly
 classified as temporary. It also verifies that the local source file still exists.

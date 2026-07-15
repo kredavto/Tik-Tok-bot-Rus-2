@@ -30,7 +30,7 @@ RBAC is enforced on the server. Client-side checks are only UI hints.
 | --- | --- |
 | USER | Telegram bot features for own account |
 | SUPPORT | Statistics, users, payments, upload jobs, and error logs |
-| ADMIN | SUPPORT permissions plus user blocking and tariff management |
+| ADMIN | SUPPORT permissions plus user, tariff, and payment management |
 | SUPER_ADMIN | Full access, including system settings and role management |
 
 The permission matrix is defined in `app.security.rbac`, so new roles and permissions can be added without changing business handlers.
@@ -70,6 +70,8 @@ Admins can:
 - Return a user to FREE without deleting subscription history.
 - Review payment and subscription state.
 - Review RUB and Telegram Stars revenue separately.
+- Create audited Robokassa checkout links for an approved external sales channel.
+- Refund eligible Stars payments through Telegram's official refund method.
 
 SUPER_ADMIN can assign roles. Every mutating operation requires the CSRF token and is recorded
 with the request source IP when available.

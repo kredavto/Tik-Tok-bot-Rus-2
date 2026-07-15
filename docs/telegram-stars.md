@@ -41,6 +41,9 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 - Keep `/paysupport` available and provide a safe support process.
 - Refunds must use Telegram's `refundStarPayment` method and update the immutable payment history to
   `refunded`; they must not be implemented as an undocumented manual balance adjustment.
+- ADMIN and SUPER_ADMIN perform eligible refunds through
+  `POST /api/v1/admin/payments/{payment_id}/refund-stars`. The operation is serialized by a database
+  row lock, recorded in the audit log, and returns the refunded active subscription to FREE.
 
 ## Acceptance Criteria
 
@@ -50,3 +53,4 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 - PRO is invoiced for `199 XTR` and BUSINESS for `499 XTR` by default.
 - PRO and BUSINESS Stars prices can be changed without a source-code release.
 - RUB and XTR revenue are reported separately.
+- Repeated Stars refund requests do not call Telegram or alter subscription state twice.
