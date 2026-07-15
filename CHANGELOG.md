@@ -26,6 +26,8 @@ The project follows Semantic Versioning.
 
 ### Fixed
 
+- Allow the scheduler heartbeat healthcheck enough time for Python startup on constrained hosts,
+  preventing a working scheduler from being reported as unhealthy.
 - Make inbound webhook claims atomic across API workers, separate reverse-proxied clients for
   rate limiting, accept Robokassa payment-method aliases, preserve accepted TikTok publications
   when quota state changes, and periodically reconcile posts still processing at TikTok.
