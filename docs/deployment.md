@@ -30,6 +30,17 @@ docker compose up -d --build
 docker compose logs -f api bot worker scheduler
 ```
 
+When the host already uses ports 80/443 and Cloudflare Tunnel provides HTTPS, keep the application
+on an isolated loopback port and omit the bundled Nginx service:
+
+```bash
+docker compose -f docker-compose.yml -f deploy/docker-compose.cloudflared.yml up -d
+```
+
+The override publishes only the API on `127.0.0.1:${API_HOST_PORT:-8081}` and places `nginx` behind
+an explicit profile. Configure the tunnel hostname to `http://localhost:8081`. PostgreSQL and Redis
+remain unexposed. Use a different `API_HOST_PORT` for every stack on the same server.
+
 For staging and production, use the checked automation instead of running these commands
 individually:
 

@@ -16,6 +16,8 @@ The project follows Semantic Versioning.
   `499 XTR`.
 - Audited admin operations for external-channel Robokassa checkout creation and official Telegram
   Stars refunds.
+- A Cloudflare Tunnel Compose override that exposes only the API on a configurable loopback port and
+  leaves the bundled Nginx service disabled unless explicitly selected.
 
 ### Changed
 
