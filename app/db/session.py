@@ -45,6 +45,13 @@ class PaymentConfirmation:
     activated: bool
 
 
+@dataclass(frozen=True)
+class StarsRefundClaim:
+    payment: Payment | None
+    telegram_id: int | None
+    claimed: bool
+
+
 async def init_db() -> None:
     async with session_scope() as session:
         await seed_plans(session)
@@ -647,19 +654,63 @@ async def mark_stars_payment_paid(
     return PaymentConfirmation(payment=payment, activated=True)
 
 
-async def mark_stars_payment_refunded(
+async def claim_stars_payment_refund(
     session: AsyncSession,
     payment_id: UUID,
-) -> PaymentConfirmation:
+) -> StarsRefundClaim:
     payment = await session.scalar(
         select(Payment).where(Payment.id == payment_id).with_for_update()
     )
     if payment is None or payment.provider != "telegram_stars" or payment.currency != "XTR":
-        return PaymentConfirmation(payment=None, activated=False)
+        return StarsRefundClaim(payment=None, telegram_id=None, claimed=False)
+    if payment.status in {"refund_pending", "refunded"}:
+        return StarsRefundClaim(payment=payment, telegram_id=None, claimed=False)
+    if payment.status != "paid" or not payment.provider_charge_id:
+        return StarsRefundClaim(payment=None, telegram_id=None, claimed=False)
+
+    user = await session.get(User, payment.user_id)
+    if user is None:
+        return StarsRefundClaim(payment=None, telegram_id=None, claimed=False)
+
+    payment.status = "refund_pending"
+    await record_webhook_event(
+        session,
+        provider="telegram_stars",
+        event_type="payment_refund_requested",
+        external_id=payment.provider_charge_id,
+        payload={"status": "refund_pending", "payment_id": str(payment.id)},
+        status="processing",
+    )
+    return StarsRefundClaim(payment=payment, telegram_id=user.telegram_id, claimed=True)
+
+
+async def release_stars_payment_refund(
+    session: AsyncSession,
+    payment_id: UUID,
+) -> bool:
+    payment = await session.scalar(
+        select(Payment).where(Payment.id == payment_id).with_for_update()
+    )
+    if payment is None or payment.status != "refund_pending":
+        return False
+    payment.status = "paid"
+    await record_webhook_event(
+        session,
+        provider="telegram_stars",
+        event_type="payment_refund_rejected",
+        external_id=payment.provider_charge_id,
+        payload={"status": "paid", "payment_id": str(payment.id)},
+        status="failed",
+    )
+    return True
+
+
+async def _finalize_stars_payment_refund(
+    session: AsyncSession,
+    payment: Payment,
+) -> PaymentConfirmation:
     if payment.status == "refunded":
         return PaymentConfirmation(payment=payment, activated=False)
-    if payment.status != "paid" or not payment.provider_charge_id:
-        return PaymentConfirmation(payment=None, activated=False)
 
     await session.get(User, payment.user_id, with_for_update=True)
     subscription = (
@@ -683,6 +734,47 @@ async def mark_stars_payment_refunded(
         status="processed",
     )
     return PaymentConfirmation(payment=payment, activated=True)
+
+
+async def mark_stars_payment_refunded(
+    session: AsyncSession,
+    payment_id: UUID,
+) -> PaymentConfirmation:
+    """Finalize an admin refund only after Telegram confirmed it."""
+    payment = await session.scalar(
+        select(Payment).where(Payment.id == payment_id).with_for_update()
+    )
+    if (
+        payment is None
+        or payment.provider != "telegram_stars"
+        or payment.currency != "XTR"
+        or payment.status not in {"refund_pending", "refunded"}
+        or not payment.provider_charge_id
+    ):
+        return PaymentConfirmation(payment=None, activated=False)
+    return await _finalize_stars_payment_refund(session, payment)
+
+
+async def mark_stars_payment_refunded_by_charge(
+    session: AsyncSession,
+    telegram_payment_charge_id: str,
+) -> PaymentConfirmation:
+    """Reconcile a Telegram refund service event with local payment state."""
+    payment = await session.scalar(
+        select(Payment)
+        .where(
+            Payment.provider == "telegram_stars",
+            Payment.provider_charge_id == telegram_payment_charge_id,
+        )
+        .with_for_update()
+    )
+    if (
+        payment is None
+        or payment.currency != "XTR"
+        or payment.status not in {"paid", "refund_pending", "refunded"}
+    ):
+        return PaymentConfirmation(payment=None, activated=False)
+    return await _finalize_stars_payment_refund(session, payment)
 
 
 async def mark_payment_paid(

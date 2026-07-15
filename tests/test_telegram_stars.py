@@ -8,11 +8,14 @@ from app.core.plans import PlanCode
 from app.db.models import Payment, Plan, Subscription
 from app.db.session import (
     active_plan_code,
+    claim_stars_payment_refund,
     create_stars_payment,
     get_or_create_user,
     init_db,
     mark_stars_payment_paid,
     mark_stars_payment_refunded,
+    mark_stars_payment_refunded_by_charge,
+    release_stars_payment_refund,
     session_scope,
     validate_stars_checkout,
 )
@@ -115,6 +118,10 @@ async def test_stars_refund_is_idempotent_and_returns_active_plan_to_free() -> N
         assert paid.activated
 
     async with session_scope() as session:
+        claim = await claim_stars_payment_refund(session, payment.id)
+        assert claim.claimed
+        assert claim.telegram_id == telegram_id
+    async with session_scope() as session:
         first = await mark_stars_payment_refunded(session, payment.id)
         assert first.activated
     async with session_scope() as session:
@@ -128,3 +135,50 @@ async def test_stars_refund_is_idempotent_and_returns_active_plan_to_free() -> N
         stored = await session.get(Payment, payment.id)
     assert stored is not None
     assert stored.status == "refunded"
+
+
+@pytest.mark.asyncio
+async def test_stars_refund_claim_is_not_sent_twice_and_can_be_released() -> None:
+    payment, telegram_id = await _create_stars_order(random.randint(1_700_000_000, 1_799_999_999))
+    charge_id = f"stars-refund-pending-{payment.id}"
+    async with session_scope() as session:
+        paid = await mark_stars_payment_paid(
+            session, payment.id, telegram_id, "XTR", 199, charge_id
+        )
+        assert paid.activated
+
+    async with session_scope() as session:
+        first = await claim_stars_payment_refund(session, payment.id)
+        assert first.claimed
+    async with session_scope() as session:
+        duplicate = await claim_stars_payment_refund(session, payment.id)
+        assert duplicate.payment is not None
+        assert duplicate.payment.status == "refund_pending"
+        assert not duplicate.claimed
+        assert duplicate.telegram_id is None
+        assert await release_stars_payment_refund(session, payment.id)
+    async with session_scope() as session:
+        retry = await claim_stars_payment_refund(session, payment.id)
+        assert retry.claimed
+
+
+@pytest.mark.asyncio
+async def test_stars_refund_service_event_recovers_pending_local_state() -> None:
+    payment, telegram_id = await _create_stars_order(random.randint(1_800_000_000, 1_899_999_999))
+    charge_id = f"stars-refund-event-{payment.id}"
+    async with session_scope() as session:
+        paid = await mark_stars_payment_paid(
+            session, payment.id, telegram_id, "XTR", 199, charge_id
+        )
+        assert paid.activated
+    async with session_scope() as session:
+        claim = await claim_stars_payment_refund(session, payment.id)
+        assert claim.claimed
+
+    async with session_scope() as session:
+        first = await mark_stars_payment_refunded_by_charge(session, charge_id)
+        assert first.activated
+    async with session_scope() as session:
+        duplicate = await mark_stars_payment_refunded_by_charge(session, charge_id)
+        assert duplicate.payment is not None
+        assert not duplicate.activated

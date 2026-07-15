@@ -30,6 +30,12 @@ The project follows Semantic Versioning.
 
 ### Fixed
 
+- Make Telegram Stars refunds recoverable across network and database failures with a committed
+  `refund_pending` claim, duplicate-send suppression, and `refunded_payment` reconciliation.
+- Reject unapproved tracked DOCX/PDF files in the secret gate and exclude binary documents from
+  Docker build contexts.
+- Add behavioral RBAC, CSRF, audit, idempotency, and ambiguous-failure tests for payment admin
+  operations.
 - Support the Robokassa shop's configured MD5, SHA-256, or SHA-512 algorithm with constant-time
   signature comparison, and restrict ResultURL activation by provider, currency, and payment state.
 - Ignore the local Robokassa credential document and preserve administrator-customized Stars prices

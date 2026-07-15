@@ -52,6 +52,7 @@ from app.db.session import (
     is_intake_enabled,
     list_recent_upload_jobs,
     mark_stars_payment_paid,
+    mark_stars_payment_refunded_by_charge,
     revoke_tiktok_accounts,
     session_scope,
     upsert_tiktok_account,
@@ -520,6 +521,19 @@ async def stars_payment_success(message: Message, state: FSMContext) -> None:
         )
     else:
         await message.answer(messages.PAYMENT_ALREADY_PROCESSED, reply_markup=main_menu())
+
+
+@router.message(F.refunded_payment)
+async def stars_payment_refunded(message: Message) -> None:
+    refunded_payment = message.refunded_payment
+    assert refunded_payment is not None
+    async with session_scope() as session:
+        confirmation = await mark_stars_payment_refunded_by_charge(
+            session,
+            refunded_payment.telegram_payment_charge_id,
+        )
+    if confirmation.payment is None:
+        logger.warning("Unknown Telegram Stars refund service event")
 
 
 @router.message(Command("paysupport"))

@@ -68,11 +68,12 @@ Detected inconsistencies must be logged with UTC timestamps, affected identifier
 
 Publication statuses must follow [Video Publication Lifecycle](video-lifecycle.md).
 
-Payment statuses must remain within the documented Robokassa states:
+Payment statuses must remain within the documented provider states:
 
 - `created`
 - `pending`
 - `paid`
+- `refund_pending` (Telegram Stars only)
 - `failed`
 - `cancelled`
 - `refunded`

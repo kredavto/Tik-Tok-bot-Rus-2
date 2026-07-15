@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
+import logging
 from pathlib import Path
 from typing import Literal
 from uuid import UUID
@@ -26,12 +27,14 @@ from app.db.models import (
 )
 from app.db.session import (
     anonymize_user,
+    claim_stars_payment_refund,
     create_payment,
     create_free_subscription,
     expire_active_subscriptions,
     get_or_create_user,
     mark_stars_payment_refunded,
     record_upload_job_event,
+    release_stars_payment_refund,
     session_scope,
 )
 from app.security.rbac import ROLE_PERMISSIONS, Permission, Role, assert_permission, normalize_role
@@ -45,6 +48,7 @@ from app.services.configuration import (
 from app.services.robokassa import build_payment_url
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+logger = logging.getLogger(__name__)
 
 MAX_PAGE_LIMIT = 200
 
@@ -637,48 +641,63 @@ async def refund_stars_payment(
     _: None = Depends(require_csrf),
 ) -> dict[str, str]:
     async with session_scope() as session:
-        payment = await session.scalar(
-            select(Payment).where(Payment.id == payment_id).with_for_update()
-        )
-        if payment is None:
+        claim = await claim_stars_payment_refund(session, payment_id)
+        if claim.payment is None:
             raise HTTPException(status_code=404, detail="Payment not found")
-        if payment.status == "refunded":
-            return {"status": "refunded", "payment_id": str(payment.id)}
-        if (
-            payment.provider != "telegram_stars"
-            or payment.currency != "XTR"
-            or payment.status != "paid"
-            or not payment.provider_charge_id
-        ):
+        if claim.payment.status == "refunded":
+            return {"status": "refunded", "payment_id": str(claim.payment.id)}
+        if claim.payment.status == "refund_pending" and not claim.claimed:
+            return {"status": "refund_pending", "payment_id": str(claim.payment.id)}
+        if not claim.claimed or claim.telegram_id is None or not claim.payment.provider_charge_id:
             raise HTTPException(status_code=409, detail="Payment is not refundable")
-        user = await session.get(User, payment.user_id)
-        if user is None:
-            raise HTTPException(status_code=409, detail="Payment user not found")
+        telegram_id = claim.telegram_id
+        provider_charge_id = claim.payment.provider_charge_id
+        await log_admin_action(
+            session,
+            admin,
+            "refund_stars_payment_requested",
+            "payment",
+            str(payment_id),
+            {"status": "refund_pending"},
+            request_ip(request),
+        )
 
-        bot = Bot(token=settings.bot_token)
-        try:
-            refunded = await bot.refund_star_payment(
-                user_id=user.telegram_id,
-                telegram_payment_charge_id=payment.provider_charge_id,
-            )
-        finally:
-            await bot.session.close()
-        if not refunded:
-            raise HTTPException(status_code=502, detail="Telegram did not confirm the refund")
+    bot = Bot(token=settings.bot_token)
+    try:
+        refunded = await bot.refund_star_payment(
+            user_id=telegram_id,
+            telegram_payment_charge_id=provider_charge_id,
+        )
+    except Exception as exc:
+        logger.exception(
+            "Telegram Stars refund result is unknown", extra={"payment_id": str(payment_id)}
+        )
+        raise HTTPException(
+            status_code=502,
+            detail="Telegram refund result is pending reconciliation",
+        ) from exc
+    finally:
+        await bot.session.close()
 
-        confirmation = await mark_stars_payment_refunded(session, payment.id)
+    if not refunded:
+        async with session_scope() as session:
+            await release_stars_payment_refund(session, payment_id)
+        raise HTTPException(status_code=502, detail="Telegram did not confirm the refund")
+
+    async with session_scope() as session:
+        confirmation = await mark_stars_payment_refunded(session, payment_id)
         if confirmation.payment is None:
-            raise HTTPException(status_code=409, detail="Payment refund state changed")
+            raise HTTPException(status_code=502, detail="Payment refund requires reconciliation")
         await log_admin_action(
             session,
             admin,
             "refund_stars_payment",
             "payment",
-            str(payment.id),
+            str(payment_id),
             {"status": "refunded"},
             request_ip(request),
         )
-    return {"status": "refunded", "payment_id": str(payment.id)}
+    return {"status": "refunded", "payment_id": str(payment_id)}
 
 
 @router.get("/upload-jobs")

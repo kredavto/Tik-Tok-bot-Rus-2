@@ -12,6 +12,11 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE = ROOT / ".secrets.baseline"
 BINARY_SUFFIXES = {".docx", ".pdf", ".png", ".jpg", ".jpeg", ".gif", ".ico"}
+SENSITIVE_BINARY_SUFFIXES = {".docx", ".pdf"}
+ALLOWED_BINARY_DOCUMENTS = {
+    "docs/final/Tik_Tok_Loader_Unified_Specification.docx",
+    "docs/final/Tik_Tok_Loader_Unified_Specification.pdf",
+}
 TELEGRAM_TOKEN = re.compile(r"\b\d{8,12}:[A-Za-z0-9_-]{30,}\b")
 PRIVATE_KEY = re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")
 
@@ -41,6 +46,17 @@ def high_risk_findings() -> list[tuple[str, int, str]]:
             if PRIVATE_KEY.search(line):
                 findings.append((str(path.relative_to(ROOT)), line_number, "private key"))
     return findings
+
+
+def unexpected_binary_documents() -> list[str]:
+    documents: list[str] = []
+    for path in candidate_files():
+        if path.suffix.lower() not in SENSITIVE_BINARY_SUFFIXES or not path.is_file():
+            continue
+        relative_path = path.relative_to(ROOT).as_posix()
+        if relative_path not in ALLOWED_BINARY_DOCUMENTS:
+            documents.append(relative_path)
+    return sorted(documents)
 
 
 def finding_keys(payload: dict[str, object]) -> set[tuple[str, int, str, str]]:
@@ -94,6 +110,9 @@ def detect_new_findings() -> set[tuple[str, int, str, str]]:
 
 def main() -> int:
     failures = 0
+    for filename in unexpected_binary_documents():
+        print(f"Unapproved binary document: {filename}")
+        failures += 1
     for filename, line_number, detector in high_risk_findings():
         print(f"High-risk secret detected: {filename}:{line_number} ({detector})")
         failures += 1

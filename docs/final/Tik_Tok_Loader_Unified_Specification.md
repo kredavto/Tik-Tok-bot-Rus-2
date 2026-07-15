@@ -804,7 +804,7 @@ a separately approved channel that complies with provider and platform rules.
 | `amount_rub` | INTEGER | RUB amount snapshot where applicable |
 | `amount_stars` | INTEGER | Telegram Stars amount where applicable |
 | `currency` | VARCHAR | `XTR` or `RUB` |
-| `status` | VARCHAR | `created`, `pending`, `paid`, `failed`, `cancelled`, `refunded` |
+| `status` | VARCHAR | `created`, `pending`, `paid`, `refund_pending`, `failed`, `cancelled`, `refunded` |
 | `paid_at` | TIMESTAMP WITH TIME ZONE | Payment confirmation time |
 | `created_at` | TIMESTAMP WITH TIME ZONE | Record creation time |
 
@@ -822,6 +822,8 @@ The current implementation may use internal names such as `provider_invoice_id` 
 - FREE does not create a payment record.
 - Only PRO and BUSINESS purchases create payment records.
 - Telegram Stars activation happens only after validated `successful_payment`.
+- Telegram Stars refund calls require a committed `refund_pending` claim; duplicate requests do not
+  repeat the provider call, and Telegram's service event reconciles ambiguous outcomes.
 - Robokassa activation happens only after verified ResultURL in an approved channel.
 - SuccessURL is informational and must not activate a subscription.
 - Repeated ResultURL notifications must be idempotent and must not activate the same subscription twice.
@@ -836,7 +838,8 @@ The current implementation may use internal names such as `provider_invoice_id` 
 - Verify currency when Robokassa provides it.
 - Verify `InvId` before changing payment status.
 - Do not log Robokassa passwords or raw secrets.
-- Execute payment and subscription changes in a single transaction.
+- Execute each local payment/subscription state transition atomically. External provider calls occur
+  between committed transition stages and must be recoverable and idempotent.
 
 ## 11.6. Development Requirement
 
@@ -1449,8 +1452,14 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 - Refunds must use Telegram's `refundStarPayment` method and update the immutable payment history to
   `refunded`; they must not be implemented as an undocumented manual balance adjustment.
 - ADMIN and SUPER_ADMIN perform eligible refunds through
-  `POST /api/v1/admin/payments/{payment_id}/refund-stars`. The operation is serialized by a database
-  row lock, recorded in the audit log, and returns the refunded active subscription to FREE.
+  `POST /api/v1/admin/payments/{payment_id}/refund-stars`. The operation first commits a
+  `refund_pending` claim under a database row lock, then calls Telegram outside the transaction.
+- A repeated request while `refund_pending` never sends a second refund. A definitive rejection
+  returns the payment to `paid`; an ambiguous network result stays pending for reconciliation.
+- Telegram's `refunded_payment` service event finalizes local payment and subscription state if the
+  provider refund succeeded but the API process failed before its final database commit.
+- Requested and completed refund stages are recorded in the administrator audit log. A completed
+  refund returns the affected active subscription to FREE.
 
 ## 21.5. Acceptance Criteria
 
@@ -1461,6 +1470,8 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 - PRO and BUSINESS Stars prices can be changed without a source-code release.
 - RUB and XTR revenue are reported separately.
 - Repeated Stars refund requests do not call Telegram or alter subscription state twice.
+- Ambiguous refund results remain recoverable and are finalized idempotently from Telegram's service
+  event.
 
 # 22. Robokassa Setup
 
@@ -1647,7 +1658,8 @@ Payment administration adds:
 
 - `POST /api/v1/admin/payments/robokassa/orders` to create an audited external-channel checkout.
 - `POST /api/v1/admin/payments/{payment_id}/refund-stars` to refund a paid Stars transaction through
-  Telegram and persist the `refunded` status.
+  Telegram. It returns `refund_pending` without a second provider call while an earlier ambiguous
+  result awaits reconciliation, and persists `refunded` only after provider confirmation.
 
 Telegram webhook requests can use:
 
@@ -5349,6 +5361,10 @@ Automated PostgreSQL tests verify these invariants:
 - A paid ResultURL with malformed or mismatched amount cannot activate a subscription.
 - A Robokassa ResultURL cannot activate a Stars payment or a non-RUB payment record.
 - Stars refund state changes are idempotent and return the refunded active subscription to FREE.
+- Stars refund admin endpoints enforce RBAC and CSRF, suppress duplicate provider calls, preserve an
+  ambiguous result as `refund_pending`, and reconcile provider service events idempotently.
+- Robokassa order creation enforces RBAC and CSRF and records both payment and administrator audit
+  evidence.
 - Upload status history contains every accepted transition and terminal jobs cannot be reopened.
 - Redis leases prevent duplicate scheduler dispatch and upload worker execution.
 

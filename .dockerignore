@@ -17,3 +17,5 @@ __pycache__
 dist
 build
 Loader_bot_API.docx
+*.docx
+*.pdf

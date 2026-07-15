@@ -55,6 +55,10 @@ Automated PostgreSQL tests verify these invariants:
 - A paid ResultURL with malformed or mismatched amount cannot activate a subscription.
 - A Robokassa ResultURL cannot activate a Stars payment or a non-RUB payment record.
 - Stars refund state changes are idempotent and return the refunded active subscription to FREE.
+- Stars refund admin endpoints enforce RBAC and CSRF, suppress duplicate provider calls, preserve an
+  ambiguous result as `refund_pending`, and reconcile provider service events idempotently.
+- Robokassa order creation enforces RBAC and CSRF and records both payment and administrator audit
+  evidence.
 - Upload status history contains every accepted transition and terminal jobs cannot be reopened.
 - Redis leases prevent duplicate scheduler dispatch and upload worker execution.
 

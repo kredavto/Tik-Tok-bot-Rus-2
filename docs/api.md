@@ -92,7 +92,8 @@ Payment administration adds:
 
 - `POST /api/v1/admin/payments/robokassa/orders` to create an audited external-channel checkout.
 - `POST /api/v1/admin/payments/{payment_id}/refund-stars` to refund a paid Stars transaction through
-  Telegram and persist the `refunded` status.
+  Telegram. It returns `refund_pending` without a second provider call while an earlier ambiguous
+  result awaits reconciliation, and persists `refunded` only after provider confirmation.
 
 Telegram webhook requests can use:
 

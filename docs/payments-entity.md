@@ -19,7 +19,7 @@ a separately approved channel that complies with provider and platform rules.
 | `amount_rub` | INTEGER | RUB amount snapshot where applicable |
 | `amount_stars` | INTEGER | Telegram Stars amount where applicable |
 | `currency` | VARCHAR | `XTR` or `RUB` |
-| `status` | VARCHAR | `created`, `pending`, `paid`, `failed`, `cancelled`, `refunded` |
+| `status` | VARCHAR | `created`, `pending`, `paid`, `refund_pending`, `failed`, `cancelled`, `refunded` |
 | `paid_at` | TIMESTAMP WITH TIME ZONE | Payment confirmation time |
 | `created_at` | TIMESTAMP WITH TIME ZONE | Record creation time |
 
@@ -37,6 +37,8 @@ The current implementation may use internal names such as `provider_invoice_id` 
 - FREE does not create a payment record.
 - Only PRO and BUSINESS purchases create payment records.
 - Telegram Stars activation happens only after validated `successful_payment`.
+- Telegram Stars refund calls require a committed `refund_pending` claim; duplicate requests do not
+  repeat the provider call, and Telegram's service event reconciles ambiguous outcomes.
 - Robokassa activation happens only after verified ResultURL in an approved channel.
 - SuccessURL is informational and must not activate a subscription.
 - Repeated ResultURL notifications must be idempotent and must not activate the same subscription twice.
@@ -51,7 +53,8 @@ The current implementation may use internal names such as `provider_invoice_id` 
 - Verify currency when Robokassa provides it.
 - Verify `InvId` before changing payment status.
 - Do not log Robokassa passwords or raw secrets.
-- Execute payment and subscription changes in a single transaction.
+- Execute each local payment/subscription state transition atomically. External provider calls occur
+  between committed transition stages and must be recoverable and idempotent.
 
 ## Development Requirement
 

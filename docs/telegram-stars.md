@@ -42,8 +42,14 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 - Refunds must use Telegram's `refundStarPayment` method and update the immutable payment history to
   `refunded`; they must not be implemented as an undocumented manual balance adjustment.
 - ADMIN and SUPER_ADMIN perform eligible refunds through
-  `POST /api/v1/admin/payments/{payment_id}/refund-stars`. The operation is serialized by a database
-  row lock, recorded in the audit log, and returns the refunded active subscription to FREE.
+  `POST /api/v1/admin/payments/{payment_id}/refund-stars`. The operation first commits a
+  `refund_pending` claim under a database row lock, then calls Telegram outside the transaction.
+- A repeated request while `refund_pending` never sends a second refund. A definitive rejection
+  returns the payment to `paid`; an ambiguous network result stays pending for reconciliation.
+- Telegram's `refunded_payment` service event finalizes local payment and subscription state if the
+  provider refund succeeded but the API process failed before its final database commit.
+- Requested and completed refund stages are recorded in the administrator audit log. A completed
+  refund returns the affected active subscription to FREE.
 
 ## Acceptance Criteria
 
@@ -54,3 +60,5 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 - PRO and BUSINESS Stars prices can be changed without a source-code release.
 - RUB and XTR revenue are reported separately.
 - Repeated Stars refund requests do not call Telegram or alter subscription state twice.
+- Ambiguous refund results remain recoverable and are finalized idempotently from Telegram's service
+  event.
