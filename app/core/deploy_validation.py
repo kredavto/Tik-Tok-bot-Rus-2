@@ -161,8 +161,8 @@ def validate_environment(values: dict[str, str], environment: str) -> Validation
     require("ADMIN_CSRF_TOKEN", secret=True, minimum=32)
 
     require("ROBOKASSA_MERCHANT_LOGIN")
-    require("ROBOKASSA_PASSWORD_1", secret=True, minimum=16)
-    require("ROBOKASSA_PASSWORD_2", secret=True, minimum=16)
+    require("ROBOKASSA_PASSWORD_1")
+    require("ROBOKASSA_PASSWORD_2")
     hash_algorithm = values.get("ROBOKASSA_HASH_ALGORITHM", "md5").lower()
     if hash_algorithm not in {"md5", "sha256", "sha512"}:
         errors.append("ROBOKASSA_HASH_ALGORITHM: must be md5, sha256, or sha512")

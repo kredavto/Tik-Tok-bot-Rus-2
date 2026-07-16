@@ -122,6 +122,16 @@ def test_production_rejects_robokassa_test_mode() -> None:
     assert "ROBOKASSA_TEST_MODE: production requires false" in result.errors
 
 
+def test_provider_managed_robokassa_password_lengths_are_accepted() -> None:
+    values = valid_environment()
+    values["ROBOKASSA_PASSWORD_1"] = "rk1-test"
+    values["ROBOKASSA_PASSWORD_2"] = "rk2-test"
+
+    result = validate_environment(values, "production")
+
+    assert not any(error.startswith("ROBOKASSA_PASSWORD_") for error in result.errors)
+
+
 def test_invalid_robokassa_hash_algorithm_is_rejected() -> None:
     values = valid_environment()
     values["ROBOKASSA_HASH_ALGORITHM"] = "sha1"
