@@ -33,6 +33,8 @@ The project follows Semantic Versioning.
 
 ### Fixed
 
+- Prevent Robokassa callback signatures and other credentials from reaching application, Uvicorn,
+  or Nginx access logs; sanitize persisted callback payloads and scrub historical JSONB records.
 - Make Telegram Stars refunds recoverable across network and database failures with a committed
   `refund_pending` claim, duplicate-send suppression, and `refunded_payment` reconciliation.
 - Reject unapproved tracked DOCX/PDF files in the secret gate and exclude binary documents from

@@ -145,9 +145,10 @@ async def request_id_middleware(request: Request, call_next):
     request.state.correlation_id = correlation_id
     started = time.monotonic()
     response = await call_next(request)
+    response_time_ms = round((time.monotonic() - started) * 1000, 2)
     response.headers["X-Request-ID"] = request_id
     response.headers["X-Correlation-ID"] = correlation_id
-    response.headers["X-Response-Time-ms"] = str(round((time.monotonic() - started) * 1000, 2))
+    response.headers["X-Response-Time-ms"] = str(response_time_ms)
     if request.url.path.startswith("/admin-ui"):
         response.headers["Cache-Control"] = "no-store"
         response.headers["Content-Security-Policy"] = (
@@ -157,6 +158,17 @@ async def request_id_middleware(request: Request, call_next):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-Content-Type-Options"] = "nosniff"
     METRICS["http_requests_total"] += 1
+    logger.info(
+        "HTTP request",
+        extra={
+            "request_id": request_id,
+            "correlation_id": correlation_id,
+            "method": request.method,
+            "path": request.url.path,
+            "status_code": response.status_code,
+            "response_time_ms": response_time_ms,
+        },
+    )
     return response
 
 
@@ -506,7 +518,8 @@ async def robokassa_result(
             )
         raise HTTPException(status_code=400, detail="Invalid Robokassa signature")
 
-    if not _robokassa_output_currency_is_valid(payload):
+    audit_payload = _sanitize_robokassa_payload(payload)
+    if not _robokassa_output_currency_is_valid(audit_payload):
         raise HTTPException(status_code=400, detail="Invalid payment currency")
 
     async with session_scope() as session:
@@ -515,7 +528,7 @@ async def robokassa_result(
             provider="robokassa",
             event_type="payment_result",
             external_id=inv_id,
-            payload=payload,
+            payload=audit_payload,
         )
         if event is None:
             payment = await session.scalar(
@@ -533,7 +546,7 @@ async def robokassa_result(
             session,
             int(inv_id),
             out_sum,
-            raw_payload=payload,
+            raw_payload=audit_payload,
         )
         payment = confirmation.payment
         user = await session.get(User, payment.user_id) if payment else None
@@ -552,6 +565,10 @@ async def robokassa_result(
                 extra={"payment_id": str(payment.id)},
             )
     return f"OK{inv_id}"
+
+
+def _sanitize_robokassa_payload(payload: Mapping[str, object]) -> dict[str, object]:
+    return {key: value for key, value in payload.items() if key.lower() != "signaturevalue"}
 
 
 def _robokassa_output_currency_is_valid(payload: Mapping[str, object]) -> bool:

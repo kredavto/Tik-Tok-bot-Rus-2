@@ -214,8 +214,19 @@ async def test_result_url_http_contract_validates_and_is_idempotent(
                 WebhookEvent.external_id == str(payment.id),
             )
         )
+        result_event = await session.scalar(
+            select(WebhookEvent).where(
+                WebhookEvent.provider == "robokassa",
+                WebhookEvent.event_type == "payment_result",
+                WebhookEvent.external_id == str(inv_id),
+            )
+        )
     assert stored is not None
     assert stored.status == "paid"
+    assert stored.raw_payload is not None
+    assert "SignatureValue" not in stored.raw_payload
+    assert result_event is not None
+    assert "SignatureValue" not in result_event.payload
     assert active_count == 1
     assert pending_notification_count == 1
 

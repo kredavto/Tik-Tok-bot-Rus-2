@@ -1,3 +1,10 @@
+log_format safe_access escape=json
+    '{"timestamp":"$time_iso8601","remote_addr":"$remote_addr",'
+    '"request_id":"$request_id","method":"$request_method",'
+    '"path":"$uri","status":$status,"bytes":$body_bytes_sent,'
+    '"request_time":$request_time}';
+access_log /dev/stdout safe_access;
+
 server {
     listen 80;
     server_name ${DOMAIN};
