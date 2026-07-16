@@ -11,6 +11,7 @@ The worker layer handles:
 - Temporary file cleanup.
 - Subscription expiration checks.
 - Return to FREE plan after paid subscription expiration.
+- Delivery of durable payment-success notifications.
 
 ## Queue Rules
 
@@ -35,9 +36,16 @@ The current periodic tasks are:
 - Expire due PRO and BUSINESS subscriptions and create the replacement FREE subscription.
 - Refresh TikTok access tokens before their expiry.
 - Remove temporary files and expired operational records according to the retention policy.
+- Redispatch pending payment-success notification outbox events.
 
 Subscription selection uses PostgreSQL `FOR UPDATE SKIP LOCKED`. Expiration notifications use a
 per-subscription Redis lock and a durable `expiration_notified_at` marker.
+
+Robokassa activation creates a `payment_success_notification` outbox event in the same PostgreSQL
+transaction as the paid subscription. A per-event Redis lock prevents concurrent delivery. The
+event becomes `processed` only after Telegram accepts the message. Pending payment outbox events
+are excluded from retention cleanup and remain recoverable after broker, worker, or Telegram
+outages.
 
 ## Retryable Errors
 
@@ -68,6 +76,8 @@ Do not retry automatically for:
 - Policy or authorization rejection from an official external API.
 - TikTok refresh-token rejection or another permanent OAuth error. The account is marked as
   refresh-blocked until the user reconnects it through the official OAuth flow.
+- Telegram `Forbidden`, `Bad Request`, or `Not Found` responses for a payment recipient. The
+  affected outbox event becomes `rejected` so it cannot starve newer notifications.
 
 ## Status Updates
 

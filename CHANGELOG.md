@@ -58,6 +58,10 @@ The project follows Semantic Versioning.
 - Extract and scan text from the approved generated DOCX/PDF artifacts for high-risk secrets.
 - Exercise Robokassa ResultURL end to end over HTTP, including signature, currency, duplicate
   delivery, subscription activation, and `OK{InvId}` response behavior.
+- Persist Robokassa payment-success notifications in a transactional PostgreSQL outbox so callback
+  acknowledgement is independent of Redis and Telegram availability.
+- Protect pending payment notifications from retention cleanup and prevent permanently rejected
+  Telegram recipients from starving newer outbox events.
 
 ## [0.2.0-rc.1] - 2026-07-14
 

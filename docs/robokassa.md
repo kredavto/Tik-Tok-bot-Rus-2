@@ -69,6 +69,11 @@ The backend validates:
 
 Robokassa merchant credentials must stay only in `.env`.
 
+Payment activation and the payment-success notification outbox are committed atomically. ResultURL
+returns `OK{InvId}` after the payment transaction commits even if Redis or Telegram is temporarily
+unavailable. The scheduler retries pending notification events; permanent recipient errors become
+terminal `rejected` events and do not block later deliveries.
+
 ## Sandbox Acceptance
 
 1. Use the dedicated test Password #1 and Password #2 and set `ROBOKASSA_TEST_MODE=true`.
@@ -79,6 +84,9 @@ Robokassa merchant credentials must stay only in `.env`.
    subscription is active, and a duplicate callback does not activate another subscription.
 6. Store only sanitized evidence: timestamp, release SHA, invoice ID, amount, HTTP outcome, payment
    status, active-subscription count, and webhook status.
+
+The current sanitized acceptance record is stored in
+[Robokassa sandbox acceptance evidence](test-evidence/robokassa-sandbox-2026-07-16.md).
 
 Production passwords and `ROBOKASSA_TEST_MODE=false` may be installed only after this scenario
 passes against the same release candidate.
