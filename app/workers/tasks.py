@@ -1,8 +1,11 @@
 import asyncio
+from collections.abc import Coroutine
 import logging
+import threading
 import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any, TypeVar
 from uuid import UUID
 
 from aiogram import Bot
@@ -66,55 +69,83 @@ PERMANENT_TELEGRAM_DELIVERY_ERRORS = (
     TelegramNotFound,
 )
 
+T = TypeVar("T")
+_worker_loop: asyncio.AbstractEventLoop | None = None
+_worker_loop_thread: threading.Thread | None = None
+_worker_loop_lock = threading.Lock()
+
+
+def _run_worker_coroutine(coroutine: Coroutine[Any, Any, T]) -> T:
+    loop = _get_worker_event_loop()
+    return asyncio.run_coroutine_threadsafe(coroutine, loop).result()
+
+
+def _get_worker_event_loop() -> asyncio.AbstractEventLoop:
+    global _worker_loop, _worker_loop_thread
+    with _worker_loop_lock:
+        if (
+            _worker_loop is None
+            or _worker_loop_thread is None
+            or not _worker_loop_thread.is_alive()
+        ):
+            _worker_loop = asyncio.new_event_loop()
+            _worker_loop_thread = threading.Thread(
+                target=_worker_loop.run_forever,
+                name="dramatiq-async-runtime",
+                daemon=True,
+            )
+            _worker_loop_thread.start()
+        return _worker_loop
+
 
 @dramatiq.actor(max_retries=0)
 def process_upload(upload_id: str, user_id: str) -> None:
-    asyncio.run(_process_upload(upload_id, user_id))
+    _run_worker_coroutine(_process_upload(upload_id, user_id))
 
 
 @dramatiq.actor(max_retries=1)
 def cleanup_retention() -> None:
-    asyncio.run(_cleanup_retention())
+    _run_worker_coroutine(_cleanup_retention())
 
 
 @dramatiq.actor(max_retries=2)
 def check_publish_status(upload_id: str, user_id: str, attempt: int = 0) -> None:
-    asyncio.run(_check_publish_status(upload_id, user_id, attempt))
+    _run_worker_coroutine(_check_publish_status(upload_id, user_id, attempt))
 
 
 @dramatiq.actor(max_retries=3)
 def notify_upload_status(telegram_id: int, status: str) -> None:
-    asyncio.run(_notify_upload_status(telegram_id, status))
+    _run_worker_coroutine(_notify_upload_status(telegram_id, status))
 
 
 @dramatiq.actor(max_retries=2)
 def expire_subscriptions() -> None:
-    asyncio.run(_expire_subscriptions())
+    _run_worker_coroutine(_expire_subscriptions())
 
 
 @dramatiq.actor(max_retries=0)
 def refresh_expiring_tiktok_tokens() -> None:
-    asyncio.run(_refresh_expiring_tiktok_tokens())
+    _run_worker_coroutine(_refresh_expiring_tiktok_tokens())
 
 
 @dramatiq.actor(max_retries=1)
 def reconcile_processing_uploads() -> None:
-    asyncio.run(_reconcile_processing_uploads())
+    _run_worker_coroutine(_reconcile_processing_uploads())
 
 
 @dramatiq.actor(max_retries=3)
 def notify_subscription_expired(subscription_id: str, telegram_id: int) -> None:
-    asyncio.run(_notify_subscription_expired(subscription_id, telegram_id))
+    _run_worker_coroutine(_notify_subscription_expired(subscription_id, telegram_id))
 
 
 @dramatiq.actor(max_retries=3)
 def notify_payment_success(event_id: str) -> None:
-    asyncio.run(_notify_payment_success(event_id))
+    _run_worker_coroutine(_notify_payment_success(event_id))
 
 
 @dramatiq.actor(max_retries=1)
 def dispatch_payment_notifications() -> None:
-    asyncio.run(_dispatch_payment_notifications())
+    _run_worker_coroutine(_dispatch_payment_notifications())
 
 
 async def _process_upload(upload_id: str, user_id: str) -> None:

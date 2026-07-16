@@ -1,4 +1,6 @@
 from collections.abc import AsyncIterator
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, call
@@ -6,6 +8,22 @@ from unittest.mock import AsyncMock, MagicMock, call
 import pytest
 
 from app.workers import tasks
+
+
+def test_worker_threads_share_one_persistent_event_loop() -> None:
+    async def identify_loop() -> int:
+        await asyncio.sleep(0.01)
+        return id(asyncio.get_running_loop())
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        loop_ids = list(
+            executor.map(
+                lambda _: tasks._run_worker_coroutine(identify_loop()),
+                range(8),
+            )
+        )
+
+    assert len(set(loop_ids)) == 1
 
 
 @pytest.mark.asyncio
