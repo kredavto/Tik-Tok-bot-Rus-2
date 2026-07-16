@@ -3,8 +3,10 @@ import random
 from urllib.parse import parse_qs, urlparse
 
 import pytest
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import func, select
 
+from app.api import main as api_main
 from app.core.plans import PlanCode
 from app.db.models import Payment, Subscription, User
 from app.db.session import (
@@ -17,6 +19,17 @@ from app.db.session import (
     session_scope,
 )
 from app.services import robokassa
+
+
+class FakeRedis:
+    async def incr(self, _: str) -> int:
+        return 1
+
+    async def expire(self, _: str, __: int) -> None:
+        return None
+
+    async def aclose(self) -> None:
+        return None
 
 
 @pytest.mark.parametrize(
@@ -136,6 +149,64 @@ async def test_result_url_confirmation_is_idempotent_under_concurrency() -> None
     assert stored_user is not None
     async with session_scope() as session:
         assert await active_plan_code(session, stored_user) == PlanCode.PRO.value
+
+
+@pytest.mark.asyncio
+async def test_result_url_http_contract_validates_and_is_idempotent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    await init_db()
+    telegram_id = random.randint(1_000_000_000, 1_099_999_999)
+    async with session_scope() as session:
+        user = await get_or_create_user(session, telegram_id, "payment_http")
+        payment = await create_payment(session, user.id, PlanCode.PRO.value)
+        inv_id = payment.provider_invoice_id
+        user_id = user.id
+
+    password = "result-url-test-password"
+    monkeypatch.setattr(robokassa.settings, "robokassa_password2", password)
+    monkeypatch.setattr(robokassa.settings, "robokassa_hash_algorithm", "sha256")
+    monkeypatch.setattr(api_main, "get_redis", lambda: FakeRedis())
+
+    async def no_notification(_: int, __: str) -> None:
+        return None
+
+    monkeypatch.setattr(api_main, "_notify_payment_success", no_notification)
+    out_sum = "499.00"
+    signature = robokassa._signature(out_sum, str(inv_id), password)
+    payload = {
+        "OutSum": out_sum,
+        "InvId": str(inv_id),
+        "SignatureValue": signature,
+        "OutCurrLabel": "RUB",
+    }
+    transport = ASGITransport(app=api_main.app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        first = await client.post("/api/v1/payments/robokassa/result", data=payload)
+        duplicate = await client.post("/api/v1/payments/robokassa/result", data=payload)
+        invalid = await client.post(
+            "/api/v1/payments/robokassa/result",
+            data={**payload, "SignatureValue": "invalid"},
+        )
+
+    assert first.status_code == 200
+    assert first.text == f"OK{inv_id}"
+    assert duplicate.status_code == 200
+    assert duplicate.text == f"OK{inv_id}"
+    assert invalid.status_code == 400
+    async with session_scope() as session:
+        stored = await session.scalar(
+            select(Payment).where(Payment.provider_invoice_id == inv_id)
+        )
+        active_count = await session.scalar(
+            select(func.count(Subscription.id)).where(
+                Subscription.user_id == user_id,
+                Subscription.status == "active",
+            )
+        )
+    assert stored is not None
+    assert stored.status == "paid"
+    assert active_count == 1
 
 
 @pytest.mark.asyncio

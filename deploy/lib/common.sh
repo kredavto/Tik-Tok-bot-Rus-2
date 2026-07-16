@@ -26,7 +26,13 @@ require_file() {
 }
 
 compose() {
-  docker compose --env-file "$ENV_FILE" "$@"
+  local ingress
+  local compose_files=(-f docker-compose.yml)
+  ingress="$(env_value DEPLOY_INGRESS)"
+  if [[ "${ingress:-nginx}" == "cloudflared" ]]; then
+    compose_files+=(-f deploy/docker-compose.cloudflared.yml)
+  fi
+  docker compose --env-file "$ENV_FILE" "${compose_files[@]}" "$@"
 }
 
 env_value() {
@@ -59,6 +65,7 @@ validate_deploy_environment() {
 
 validate_tls_files() {
   local template cert_dir
+  [[ "$(env_value DEPLOY_INGRESS)" != "cloudflared" ]] || return 0
   template="$(env_value NGINX_TEMPLATE)"
   [[ "$template" == "https.conf.template" ]] || return 0
   cert_dir="$(tls_cert_dir)"
@@ -77,6 +84,7 @@ tls_cert_dir() {
 
 validate_tls_certificate() {
   local template cert_dir cert_file key_file domain minimum_seconds cert_fingerprint key_fingerprint
+  [[ "$(env_value DEPLOY_INGRESS)" != "cloudflared" ]] || return 0
   template="$(env_value NGINX_TEMPLATE)"
   [[ "$template" == "https.conf.template" ]] || return 0
 

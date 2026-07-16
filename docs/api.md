@@ -79,8 +79,10 @@ Admin endpoints require:
 
 ```text
 Authorization: Bearer <ADMIN_API_TOKEN>
-X-Admin-Telegram-Id: <telegram_id>
 ```
+
+The bearer token is bound server-side to `ADMIN_API_TELEGRAM_ID`. Client-controlled identity
+headers are ignored and must not be used for authorization.
 
 Mutating admin requests also require:
 
@@ -94,6 +96,9 @@ Payment administration adds:
 - `POST /api/v1/admin/payments/{payment_id}/refund-stars` to refund a paid Stars transaction through
   Telegram. It returns `refund_pending` without a second provider call while an earlier ambiguous
   result awaits reconciliation, and persists `refunded` only after provider confirmation.
+- `POST /api/v1/admin/payments/{payment_id}/reconcile-stars-refund` with outcome `refunded` or
+  `not_refunded` after a provider-side check. This guarded operation finalizes or releases a pending
+  refund and records the decision in `admin_actions`.
 
 Telegram webhook requests can use:
 
@@ -119,8 +124,7 @@ List upload jobs:
 
 ```bash
 curl "https://your-domain.example/api/v1/admin/upload-jobs?limit=50&offset=0" \
-  -H "Authorization: Bearer $ADMIN_API_TOKEN" \
-  -H "X-Admin-Telegram-Id: $ADMIN_TELEGRAM_ID"
+  -H "Authorization: Bearer $ADMIN_API_TOKEN"
 ```
 
 ## Admin API

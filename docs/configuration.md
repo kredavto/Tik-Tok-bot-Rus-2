@@ -10,6 +10,9 @@ Use separate files for development, staging, and production, then copy the selec
 
 Application: `APP_ENV`, `APP_VERSION`, `APP_HOST`, `APP_PORT`, `PUBLIC_BASE_URL`, `TIMEZONE`.
 
+Ingress: `DEPLOY_INGRESS` is `nginx` for direct TLS termination or `cloudflared` when a dedicated
+Cloudflare Tunnel publishes the loopback API port.
+
 Telegram: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_ADMIN_IDS`.
 
 Database: `DATABASE_URL`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`.
@@ -34,7 +37,9 @@ Robokassa: `ROBOKASSA_MERCHANT_LOGIN`, `ROBOKASSA_PASSWORD_1`, `ROBOKASSA_PASSWO
 `ROBOKASSA_TEST_MODE`, and `ROBOKASSA_HASH_ALGORITHM`. The hash algorithm must be `md5`, `sha256`,
 or `sha512` and must match the shop's technical settings.
 
-Security: `TOKEN_ENCRYPTION_KEY`, `ADMIN_API_TOKEN`, `ADMIN_CSRF_TOKEN`.
+Security: `TOKEN_ENCRYPTION_KEY`, `ADMIN_API_TOKEN`, `ADMIN_API_TELEGRAM_ID`,
+`ADMIN_CSRF_TOKEN`. The API principal ID must be numeric, included in `TELEGRAM_ADMIN_IDS`, and
+provisioned in PostgreSQL with a non-USER administrative role.
 
 Scheduler: `SCHEDULER_TICK_SECONDS`, `SUBSCRIPTION_SWEEP_SECONDS`,
 `TOKEN_REFRESH_SWEEP_SECONDS`, `RETENTION_SWEEP_SECONDS`, `STATUS_RECONCILE_SECONDS`,

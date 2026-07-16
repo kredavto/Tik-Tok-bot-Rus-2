@@ -14,6 +14,7 @@ def valid_environment() -> dict[str, str]:
         "NGINX_TEMPLATE": "https.conf.template",
         "TLS_CERT_DIR": "./deploy/nginx/certs",
         "APP_IMAGE": "tik-tok-loader",
+        "DEPLOY_INGRESS": "nginx",
         "TELEGRAM_DELIVERY_MODE": "webhook",
         "TELEGRAM_BOT_TOKEN": "12345678" + ":" + "A" * 35,
         "TELEGRAM_WEBHOOK_SECRET": "telegram-" + "a" * 32,
@@ -27,6 +28,7 @@ def valid_environment() -> dict[str, str]:
         "REDIS_URL": "redis://redis:6379/0",
         "TOKEN_ENCRYPTION_KEY": base64.urlsafe_b64encode(b"k" * 32).decode(),
         "ADMIN_API_TOKEN": "admin-api-" + "c" * 32,
+        "ADMIN_API_TELEGRAM_ID": "123456789",
         "ADMIN_CSRF_TOKEN": "admin-csrf-" + "d" * 32,
         "ROBOKASSA_MERCHANT_LOGIN": "merchant",
         "ROBOKASSA_PASSWORD_1": "robokassa-one-" + "e" * 20,
@@ -43,6 +45,25 @@ def valid_environment() -> dict[str, str]:
 def test_valid_production_environment_passes() -> None:
     result = validate_environment(valid_environment(), "production")
     assert result.is_valid
+
+
+def test_cloudflared_environment_does_not_require_local_tls_files() -> None:
+    values = valid_environment()
+    values.update({"DEPLOY_INGRESS": "cloudflared", "NGINX_TEMPLATE": "http.conf.template"})
+    values.pop("TLS_CERT_DIR")
+
+    result = validate_environment(values, "production")
+
+    assert result.is_valid
+
+
+def test_admin_api_principal_must_be_allowlisted() -> None:
+    values = valid_environment()
+    values["ADMIN_API_TELEGRAM_ID"] = "111111111"
+
+    result = validate_environment(values, "production")
+
+    assert "ADMIN_API_TELEGRAM_ID: must be listed in TELEGRAM_ADMIN_IDS" in result.errors
 
 
 def test_placeholder_and_insecure_callback_are_rejected() -> None:

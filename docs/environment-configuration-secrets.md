@@ -43,6 +43,8 @@ Development, staging, and production must have separate values for:
 - PostgreSQL and Redis credentials.
 - Token encryption keys.
 - Administrative API and CSRF secrets.
+- The fixed administrative API principal ID; it must be allowlisted and must not be accepted from a
+  client-controlled identity header.
 - Public base URL.
 
 ## Release Compliance Check

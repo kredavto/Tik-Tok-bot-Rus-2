@@ -9,16 +9,20 @@ only; it does not use local or session storage.
 Admin API access requires:
 
 - `ADMIN_API_TOKEN`
+- `ADMIN_API_TELEGRAM_ID`, bound on the server to that token
 - `ADMIN_CSRF_TOKEN` for mutating requests
-- Telegram ID listed in `ADMIN_TELEGRAM_IDS`
+- the same Telegram ID listed in `TELEGRAM_ADMIN_IDS` and provisioned as an unblocked admin user
 
 Required headers:
 
 ```text
 Authorization: Bearer <ADMIN_API_TOKEN>
-X-Admin-Telegram-Id: <telegram_id>
 X-CSRF-Token: <ADMIN_CSRF_TOKEN>
 ```
+
+The caller cannot select an administrator identity in an HTTP header. The bearer credential is
+resolved only to `ADMIN_API_TELEGRAM_ID`; blocked users, non-admin users, and the `USER` role are
+rejected even when the bearer token is valid.
 
 Do not expose secrets, TikTok tokens, Robokassa passwords, or raw OAuth credentials in the UI.
 
@@ -72,6 +76,8 @@ Admins can:
 - Review RUB and Telegram Stars revenue separately.
 - Create audited Robokassa checkout links for an approved external sales channel.
 - Refund eligible Stars payments through Telegram's official refund method.
+- Reconcile an ambiguous Stars refund after checking the provider, choosing either `refunded` or
+  `not_refunded`; the operation is permission checked and audited.
 
 SUPER_ADMIN can assign roles. Every mutating operation requires the CSRF token and is recorded
 with the request source IP when available.

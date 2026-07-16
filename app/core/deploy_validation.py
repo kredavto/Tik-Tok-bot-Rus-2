@@ -104,9 +104,13 @@ def validate_environment(values: dict[str, str], environment: str) -> Validation
     domain = require("DOMAIN")
     if domain and public_host and domain != public_host:
         errors.append("DOMAIN: must match PUBLIC_BASE_URL host")
-    if values.get("NGINX_TEMPLATE") != "https.conf.template":
-        errors.append("NGINX_TEMPLATE: production-style deploy requires https.conf.template")
-    require("TLS_CERT_DIR")
+    deploy_ingress = values.get("DEPLOY_INGRESS", "nginx").strip().lower()
+    if deploy_ingress not in {"nginx", "cloudflared"}:
+        errors.append("DEPLOY_INGRESS: must be nginx or cloudflared")
+    if deploy_ingress == "nginx":
+        if values.get("NGINX_TEMPLATE") != "https.conf.template":
+            errors.append("NGINX_TEMPLATE: nginx deploy requires https.conf.template")
+        require("TLS_CERT_DIR")
     require("APP_IMAGE")
 
     if values.get("TELEGRAM_DELIVERY_MODE") != "webhook":
@@ -127,6 +131,13 @@ def validate_environment(values: dict[str, str], environment: str) -> Validation
     admin_ids = require("TELEGRAM_ADMIN_IDS")
     if admin_ids and not all(item.strip().isdigit() for item in admin_ids.split(",")):
         errors.append("TELEGRAM_ADMIN_IDS: expected comma-separated numeric IDs")
+    admin_api_telegram_id = require("ADMIN_API_TELEGRAM_ID")
+    if admin_api_telegram_id and not admin_api_telegram_id.isdigit():
+        errors.append("ADMIN_API_TELEGRAM_ID: expected a numeric Telegram ID")
+    elif admin_api_telegram_id and admin_ids:
+        allowed_admin_ids = {item.strip() for item in admin_ids.split(",")}
+        if admin_api_telegram_id not in allowed_admin_ids:
+            errors.append("ADMIN_API_TELEGRAM_ID: must be listed in TELEGRAM_ADMIN_IDS")
 
     database_url = require("DATABASE_URL")
     if database_url and not database_url.startswith("postgresql+asyncpg://"):

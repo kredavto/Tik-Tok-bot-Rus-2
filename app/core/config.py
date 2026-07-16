@@ -77,6 +77,7 @@ class Settings(BaseSettings):
 
     token_encryption_key: str = Field("", alias="TOKEN_ENCRYPTION_KEY")
     admin_api_token: str = Field("", alias="ADMIN_API_TOKEN")
+    admin_api_telegram_id: int | None = Field(None, alias="ADMIN_API_TELEGRAM_ID")
     admin_csrf_token: str = Field("", alias="ADMIN_CSRF_TOKEN")
 
     rate_limit_per_minute: int = Field(120, alias="RATE_LIMIT_PER_MINUTE")

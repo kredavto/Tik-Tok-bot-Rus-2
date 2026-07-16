@@ -18,6 +18,7 @@ The project follows Semantic Versioning.
   Stars refunds.
 - A Cloudflare Tunnel Compose override that exposes only the API on a configurable loopback port and
   leaves the bundled Nginx service disabled unless explicitly selected.
+- An audited Stars refund reconciliation endpoint for unresolved provider outcomes.
 
 ### Changed
 
@@ -48,6 +49,15 @@ The project follows Semantic Versioning.
 - Persist TikTok acceptance, publication status, and daily quota before local cache,
   notification, queue, or file-cleanup side effects, preventing accepted posts from being
   reclassified as failed when infrastructure is temporarily unavailable.
+- Bind each administrative API token to a server-configured Telegram principal, reject blocked or
+  unprovisioned admins, and remove client-controlled RBAC identity headers.
+- Reject delayed Stars success events after refund initiation or completion, classify definitive
+  refund rejections, and provide an audited recovery path for ambiguous outcomes.
+- Apply the Cloudflare Compose override automatically in checked preflight, deploy, and rollback
+  flows when `DEPLOY_INGRESS=cloudflared`.
+- Extract and scan text from the approved generated DOCX/PDF artifacts for high-risk secrets.
+- Exercise Robokassa ResultURL end to end over HTTP, including signature, currency, duplicate
+  delivery, subscription activation, and `OK{InvId}` response behavior.
 
 ## [0.2.0-rc.1] - 2026-07-14
 

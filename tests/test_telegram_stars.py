@@ -108,6 +108,44 @@ async def test_stars_confirmation_rejects_reused_charge_id() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("terminal_status", ["refund_pending", "refunded"])
+async def test_stars_confirmation_cannot_reactivate_refund_state(terminal_status: str) -> None:
+    payment, telegram_id = await _create_stars_order(
+        random.randint(1_500_000_000, 1_599_999_999)
+    )
+    charge_id = f"stars-terminal-{payment.id}"
+    async with session_scope() as session:
+        paid = await mark_stars_payment_paid(
+            session, payment.id, telegram_id, "XTR", 199, charge_id
+        )
+        assert paid.activated
+    async with session_scope() as session:
+        claim = await claim_stars_payment_refund(session, payment.id)
+        assert claim.claimed
+        if terminal_status == "refunded":
+            refunded = await mark_stars_payment_refunded(session, payment.id)
+            assert refunded.activated
+
+    async with session_scope() as session:
+        replay = await mark_stars_payment_paid(
+            session, payment.id, telegram_id, "XTR", 199, charge_id
+        )
+        assert replay.payment is None
+        assert not replay.activated
+    async with session_scope() as session:
+        stored = await session.get(Payment, payment.id)
+        active_count = await session.scalar(
+            select(func.count(Subscription.id)).where(
+                Subscription.user_id == payment.user_id,
+                Subscription.status == "active",
+            )
+        )
+    assert stored is not None
+    assert stored.status == terminal_status
+    assert active_count == 1
+
+
+@pytest.mark.asyncio
 async def test_stars_refund_is_idempotent_and_returns_active_plan_to_free() -> None:
     payment, telegram_id = await _create_stars_order(random.randint(1_600_000_000, 1_699_999_999))
     charge_id = f"stars-refund-{payment.id}"

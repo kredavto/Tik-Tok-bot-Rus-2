@@ -1,11 +1,18 @@
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
+import hmac
 import logging
 from pathlib import Path
 from typing import Literal
 from uuid import UUID
 
 from aiogram import Bot
+from aiogram.exceptions import (
+    TelegramBadRequest,
+    TelegramForbiddenError,
+    TelegramNotFound,
+    TelegramUnauthorizedError,
+)
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
@@ -31,7 +38,6 @@ from app.db.session import (
     create_payment,
     create_free_subscription,
     expire_active_subscriptions,
-    get_or_create_user,
     mark_stars_payment_refunded,
     record_upload_job_event,
     release_stars_payment_refund,
@@ -77,6 +83,10 @@ class RobokassaOrderCreate(BaseModel):
     plan_id: Literal["pro", "business"]
 
 
+class StarsRefundReconciliation(BaseModel):
+    outcome: Literal["refunded", "not_refunded"]
+
+
 class ConfigurationImport(BaseModel):
     payload: dict
 
@@ -97,31 +107,26 @@ RETRYABLE_UPLOAD_ERROR_MARKERS = (
 
 async def require_admin(
     authorization: str | None = Header(default=None),
-    x_admin_telegram_id: int | None = Header(default=None),
 ) -> User:
-    if not settings.admin_api_token:
+    if not settings.admin_api_token or settings.admin_api_telegram_id is None:
         raise HTTPException(status_code=503, detail="Admin API is not configured")
-    if authorization != f"Bearer {settings.admin_api_token}":
+    supplied_token = authorization.removeprefix("Bearer ") if authorization else ""
+    if not hmac.compare_digest(supplied_token, settings.admin_api_token):
         raise HTTPException(status_code=401, detail="Invalid admin token")
-    if x_admin_telegram_id is None:
-        raise HTTPException(status_code=401, detail="Missing admin Telegram ID")
 
     allowed_ids = {item.strip() for item in settings.admin_telegram_ids.split(",") if item.strip()}
-    if str(x_admin_telegram_id) not in allowed_ids:
+    if str(settings.admin_api_telegram_id) not in allowed_ids:
         raise HTTPException(status_code=403, detail="Admin is not allowed")
 
     async with session_scope() as session:
-        admin = await get_or_create_user(session, x_admin_telegram_id, None)
-        admin.is_admin = True
-        if normalize_role(admin.role) == Role.USER:
-            admin.role = Role.SUPER_ADMIN.value
-        admin_id = admin.id
-
-    async with session_scope() as session:
-        loaded_admin = await session.get(User, admin_id)
-        if not loaded_admin:
+        admin = await session.scalar(
+            select(User).where(User.telegram_id == settings.admin_api_telegram_id)
+        )
+        if not admin:
             raise HTTPException(status_code=401, detail="Admin was not found")
-        return loaded_admin
+        if admin.is_blocked or not admin.is_admin or normalize_role(admin.role) == Role.USER:
+            raise HTTPException(status_code=403, detail="Admin access is disabled")
+        return admin
 
 
 def require_permission(permission: Permission) -> Callable:
@@ -668,6 +673,24 @@ async def refund_stars_payment(
             user_id=telegram_id,
             telegram_payment_charge_id=provider_charge_id,
         )
+    except (
+        TelegramBadRequest,
+        TelegramForbiddenError,
+        TelegramNotFound,
+        TelegramUnauthorizedError,
+    ) as exc:
+        async with session_scope() as session:
+            await release_stars_payment_refund(session, payment_id)
+            await log_admin_action(
+                session,
+                admin,
+                "refund_stars_payment_rejected",
+                "payment",
+                str(payment_id),
+                {"status": "paid", "error_type": type(exc).__name__},
+                request_ip(request),
+            )
+        raise HTTPException(status_code=502, detail="Telegram rejected the refund") from exc
     except Exception as exc:
         logger.exception(
             "Telegram Stars refund result is unknown", extra={"payment_id": str(payment_id)}
@@ -698,6 +721,37 @@ async def refund_stars_payment(
             request_ip(request),
         )
     return {"status": "refunded", "payment_id": str(payment_id)}
+
+
+@router.post("/payments/{payment_id}/reconcile-stars-refund")
+async def reconcile_stars_refund(
+    payment_id: UUID,
+    payload: StarsRefundReconciliation,
+    request: Request,
+    admin: User = Depends(require_permission(Permission.MANAGE_PAYMENTS)),
+    _: None = Depends(require_csrf),
+) -> dict[str, str]:
+    async with session_scope() as session:
+        if payload.outcome == "refunded":
+            confirmation = await mark_stars_payment_refunded(session, payment_id)
+            if confirmation.payment is None:
+                raise HTTPException(status_code=409, detail="Refund cannot be finalized")
+            status = "refunded"
+        else:
+            released = await release_stars_payment_refund(session, payment_id)
+            if not released:
+                raise HTTPException(status_code=409, detail="Refund cannot be released")
+            status = "paid"
+        await log_admin_action(
+            session,
+            admin,
+            "reconcile_stars_refund",
+            "payment",
+            str(payment_id),
+            {"provider_outcome": payload.outcome, "status": status},
+            request_ip(request),
+        )
+    return {"status": status, "payment_id": str(payment_id)}
 
 
 @router.get("/upload-jobs")

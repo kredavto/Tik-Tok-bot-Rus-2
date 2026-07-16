@@ -3,6 +3,8 @@
 ## Access Requirements
 
 - All administrative endpoints require authentication.
+- The bearer token maps to `ADMIN_API_TELEGRAM_ID` on the server; callers cannot select their RBAC
+  identity through a request header.
 - Role and permission checks are enforced on the server.
 - Mutating requests require CSRF protection where applicable.
 - Every administrative request should have a Request ID.
@@ -32,6 +34,7 @@ API version lifecycle and compatibility rules are documented in [API Versioning 
 | GET | `/api/v1/admin/payments` | Provider-neutral payment list with RUB/XTR amounts |
 | POST | `/api/v1/admin/payments/robokassa/orders` | Create an audited external Robokassa checkout |
 | POST | `/api/v1/admin/payments/{id}/refund-stars` | Refund a paid Stars transaction through Telegram |
+| POST | `/api/v1/admin/payments/{id}/reconcile-stars-refund` | Audit and resolve an ambiguous Stars refund |
 | GET | `/api/v1/admin/upload-jobs` | Publication queue |
 | GET | `/api/v1/admin/errors` | Failed publications |
 | POST | `/api/v1/admin/upload-jobs/{id}/retry` | Retry an eligible temporary failure |
@@ -53,7 +56,7 @@ Mutating operations must be transactional:
 - Manual subscription changes.
 - Safe task restart.
 - Configuration import.
-- Robokassa order creation and Telegram Stars refunds.
+- Robokassa order creation, Telegram Stars refunds, and refund reconciliation.
 
 The safe retry endpoint rejects jobs already accepted by TikTok and any error that is not explicitly
 classified as temporary. It also verifies that the local source file still exists.

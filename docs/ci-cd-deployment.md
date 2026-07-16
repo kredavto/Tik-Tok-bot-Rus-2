@@ -28,6 +28,10 @@ and cancels superseded runs for the same branch or pull request.
 fail CI and report only the file, line, and detector type. A second non-baselined check always
 rejects Telegram bot token patterns and private-key blocks.
 
+The two approved generated specification artifacts are not opaque exceptions: the gate extracts
+text from DOCX and PDF and applies the same high-risk token and private-key checks. Every other
+tracked DOCX or PDF is rejected.
+
 Baseline changes require code review. A finding must never be added to the baseline to conceal a
 real credential. Rotate any credential that has appeared in chat, source, a pull request, logs, or
 CI output before using the project in staging or production.
@@ -39,7 +43,8 @@ CI output before using the project in staging or production.
 - Git, Python 3, curl, and SSH key access.
 - A domain pointing to the server.
 - A real environment file at `.env`, readable only by the deployment operator.
-- TLS files at `${TLS_CERT_DIR}/fullchain.pem` and `${TLS_CERT_DIR}/privkey.pem`.
+- For `DEPLOY_INGRESS=nginx`, TLS files at `${TLS_CERT_DIR}/fullchain.pem` and
+  `${TLS_CERT_DIR}/privkey.pem`; Cloudflare ingress validates the dedicated tunnel separately.
 
 Run the configuration gate before a release:
 

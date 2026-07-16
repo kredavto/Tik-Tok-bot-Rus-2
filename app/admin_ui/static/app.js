@@ -99,7 +99,6 @@ async function api(path, options = {}) {
   if (!state.credentials) throw new Error("Требуется авторизация");
   const headers = {
     Authorization: `Bearer ${state.credentials.apiToken}`,
-    "X-Admin-Telegram-Id": state.credentials.telegramId,
     ...(options.headers || {}),
   };
   if (options.method && options.method !== "GET") {
@@ -378,7 +377,6 @@ loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const form = new FormData(loginForm);
   state.credentials = {
-    telegramId: String(form.get("telegram_id")).trim(),
     apiToken: String(form.get("api_token")),
     csrfToken: String(form.get("csrf_token")),
   };

@@ -1,4 +1,5 @@
 from pathlib import Path
+import random
 import re
 from types import SimpleNamespace
 
@@ -6,8 +7,11 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.api import main as api_main
+from app.api import admin as admin_api
 from app.api.admin import upload_job_is_retryable
 from app.core.upload_status import UploadStatus
+from app.db.session import get_or_create_user, init_db, session_scope
+from app.security.rbac import Role
 
 
 class FakeRedis:
@@ -45,6 +49,62 @@ def test_admin_routes_are_available_under_versioned_api() -> None:
     assert "/api/v1/admin/audit-actions" in paths
     assert "/api/v1/admin/payments/robokassa/orders" in paths
     assert "/api/v1/admin/payments/{payment_id}/refund-stars" in paths
+    assert "/api/v1/admin/payments/{payment_id}/reconcile-stars-refund" in paths
+
+
+@pytest.mark.asyncio
+async def test_admin_api_identity_is_bound_to_server_configuration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    await init_db()
+    telegram_id = random.randint(2_300_000_000, 2_399_999_999)
+    async with session_scope() as session:
+        admin = await get_or_create_user(session, telegram_id, "bound_admin")
+        admin.is_admin = True
+        admin.role = Role.ADMIN.value
+
+    monkeypatch.setattr(api_main, "get_redis", lambda: FakeRedis())
+    monkeypatch.setattr(admin_api.settings, "admin_api_token", "bound-admin-token")
+    monkeypatch.setattr(admin_api.settings, "admin_api_telegram_id", telegram_id)
+    monkeypatch.setattr(admin_api.settings, "admin_telegram_ids", str(telegram_id))
+    transport = ASGITransport(app=api_main.app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get(
+            "/api/v1/admin/session",
+            headers={
+                "Authorization": "Bearer bound-admin-token",
+                "X-Admin-Telegram-Id": str(telegram_id + 1),
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.json()["telegram_id"] == telegram_id
+
+
+@pytest.mark.asyncio
+async def test_blocked_admin_cannot_use_valid_api_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    await init_db()
+    telegram_id = random.randint(2_400_000_000, 2_499_999_999)
+    async with session_scope() as session:
+        admin = await get_or_create_user(session, telegram_id, "blocked_admin")
+        admin.is_admin = True
+        admin.role = Role.SUPER_ADMIN.value
+        admin.is_blocked = True
+
+    monkeypatch.setattr(api_main, "get_redis", lambda: FakeRedis())
+    monkeypatch.setattr(admin_api.settings, "admin_api_token", "blocked-admin-token")
+    monkeypatch.setattr(admin_api.settings, "admin_api_telegram_id", telegram_id)
+    monkeypatch.setattr(admin_api.settings, "admin_telegram_ids", str(telegram_id))
+    transport = ASGITransport(app=api_main.app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get(
+            "/api/v1/admin/session",
+            headers={"Authorization": "Bearer blocked-admin-token"},
+        )
+
+    assert response.status_code == 403
 
 
 @pytest.mark.asyncio

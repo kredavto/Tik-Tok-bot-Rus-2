@@ -31,15 +31,18 @@ docker compose logs -f api bot worker scheduler
 ```
 
 When the host already uses ports 80/443 and Cloudflare Tunnel provides HTTPS, keep the application
-on an isolated loopback port and omit the bundled Nginx service:
+on an isolated loopback port and omit the bundled Nginx service. Set:
 
-```bash
-docker compose -f docker-compose.yml -f deploy/docker-compose.cloudflared.yml up -d
+```dotenv
+DEPLOY_INGRESS=cloudflared
+API_HOST_PORT=8081
 ```
 
 The override publishes only the API on `127.0.0.1:${API_HOST_PORT:-8081}` and places `nginx` behind
 an explicit profile. Configure the tunnel hostname to `http://localhost:8081`. PostgreSQL and Redis
-remain unexposed. Use a different `API_HOST_PORT` for every stack on the same server.
+remain unexposed. Use a different `API_HOST_PORT` for every stack on the same server. The checked
+`preflight`, `deploy`, and `rollback` scripts read `DEPLOY_INGRESS` and apply the override
+automatically.
 
 For staging and production, use the checked automation instead of running these commands
 individually:
@@ -79,9 +82,10 @@ After HTTPS is active, open the administrative console at:
 https://your-domain.example/admin-ui/
 ```
 
-Access requires a Telegram ID listed in `TELEGRAM_ADMIN_IDS`, `ADMIN_API_TOKEN`, and
-`ADMIN_CSRF_TOKEN`. Generate independent high-entropy values for production. The browser console
-does not persist them after the page is reloaded or closed.
+Access requires `ADMIN_API_TOKEN`, `ADMIN_CSRF_TOKEN`, and a server-bound
+`ADMIN_API_TELEGRAM_ID` listed in `TELEGRAM_ADMIN_IDS`. Provision that database user with an
+administrative role before first access. Generate independent high-entropy values for production.
+The browser console does not persist credentials after the page is reloaded or closed.
 
 The API image contains `alembic.ini` and the complete `alembic/` migration tree. The scheduler
 healthcheck reads its Redis heartbeat; an unhealthy scheduler means subscription expiry, token
@@ -131,5 +135,8 @@ Use separate files outside Git for each environment:
 
 Copy the selected file to `.env` on the server. Never commit real `.env` files.
 
-Staging and production use `NGINX_TEMPLATE=https.conf.template`, set `DOMAIN` to the
-`PUBLIC_BASE_URL` host, and provide `fullchain.pem` and `privkey.pem` under `TLS_CERT_DIR`.
+With `DEPLOY_INGRESS=nginx`, staging and production use
+`NGINX_TEMPLATE=https.conf.template`, set `DOMAIN` to the `PUBLIC_BASE_URL` host, and provide
+`fullchain.pem` and `privkey.pem` under `TLS_CERT_DIR`. With `DEPLOY_INGRESS=cloudflared`, the
+dedicated tunnel terminates public TLS and the checked deploy scripts skip local certificate-file
+validation while keeping the API bound to loopback.

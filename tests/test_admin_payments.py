@@ -2,6 +2,8 @@ import random
 from uuid import UUID
 
 import pytest
+from aiogram.exceptions import TelegramBadRequest
+from aiogram.methods import RefundStarPayment
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import func, select
 
@@ -250,3 +252,68 @@ async def test_stars_refund_definitive_rejection_restores_paid_state(
         stored = await session.get(Payment, payment.id)
     assert stored is not None
     assert stored.status == "paid"
+
+
+@pytest.mark.asyncio
+async def test_stars_refund_definitive_exception_restores_paid_state(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    admin, _, payment = await _paid_stars_payment()
+    _configure_http(monkeypatch, admin)
+    FakeBot.result = TelegramBadRequest(
+        RefundStarPayment(user_id=1, telegram_payment_charge_id="test-charge"),
+        "provider rejected the refund",
+    )
+    monkeypatch.setattr(admin_api, "Bot", FakeBot)
+    transport = ASGITransport(app=api_main.app)
+
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            f"/api/v1/admin/payments/{payment.id}/refund-stars",
+            headers={"X-CSRF-Token": "csrf-test-token"},
+        )
+
+    assert response.status_code == 502
+    async with session_scope() as session:
+        stored = await session.get(Payment, payment.id)
+    assert stored is not None
+    assert stored.status == "paid"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("provider_outcome", "expected_status"),
+    [("not_refunded", "paid"), ("refunded", "refunded")],
+)
+async def test_stars_refund_manual_reconciliation_is_audited(
+    monkeypatch: pytest.MonkeyPatch,
+    provider_outcome: str,
+    expected_status: str,
+) -> None:
+    admin, _, payment = await _paid_stars_payment()
+    async with session_scope() as session:
+        claim = await admin_api.claim_stars_payment_refund(session, payment.id)
+        assert claim.claimed
+    _configure_http(monkeypatch, admin)
+    transport = ASGITransport(app=api_main.app)
+
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            f"/api/v1/admin/payments/{payment.id}/reconcile-stars-refund",
+            json={"outcome": provider_outcome},
+            headers={"X-CSRF-Token": "csrf-test-token"},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == expected_status
+    async with session_scope() as session:
+        stored = await session.get(Payment, payment.id)
+        audit_count = await session.scalar(
+            select(func.count(AdminAction.id)).where(
+                AdminAction.action == "reconcile_stars_refund",
+                AdminAction.target_id == str(payment.id),
+            )
+        )
+    assert stored is not None
+    assert stored.status == expected_status
+    assert audit_count == 1

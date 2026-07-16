@@ -4,7 +4,7 @@
 
 - **Версия:** 0.9.1
 - **Репозиторий:** `kredavto/Tik-Tok-bot-Rus-2`
-- **Дата сборки:** 2026-07-15
+- **Дата сборки:** 2026-07-16
 - **Статус:** проектная спецификация для реализации
 
 > Публикация TikTok в проекте проектируется только через официальный TikTok Content Posting API и OAuth 2.0. Неофициальные API, автоматизация интерфейса и методы обхода ограничений не входят в допустимую архитектуру.
@@ -1143,16 +1143,20 @@ only; it does not use local or session storage.
 Admin API access requires:
 
 - `ADMIN_API_TOKEN`
+- `ADMIN_API_TELEGRAM_ID`, bound on the server to that token
 - `ADMIN_CSRF_TOKEN` for mutating requests
-- Telegram ID listed in `ADMIN_TELEGRAM_IDS`
+- the same Telegram ID listed in `TELEGRAM_ADMIN_IDS` and provisioned as an unblocked admin user
 
 Required headers:
 
 ```text
 Authorization: Bearer <ADMIN_API_TOKEN>
-X-Admin-Telegram-Id: <telegram_id>
 X-CSRF-Token: <ADMIN_CSRF_TOKEN>
 ```
+
+The caller cannot select an administrator identity in an HTTP header. The bearer credential is
+resolved only to `ADMIN_API_TELEGRAM_ID`; blocked users, non-admin users, and the `USER` role are
+rejected even when the bearer token is valid.
 
 Do not expose secrets, TikTok tokens, Robokassa passwords, or raw OAuth credentials in the UI.
 
@@ -1206,6 +1210,8 @@ Admins can:
 - Review RUB and Telegram Stars revenue separately.
 - Create audited Robokassa checkout links for an approved external sales channel.
 - Refund eligible Stars payments through Telegram's official refund method.
+- Reconcile an ambiguous Stars refund after checking the provider, choosing either `refunded` or
+  `not_refunded`; the operation is permission checked and audited.
 
 SUPER_ADMIN can assign roles. Every mutating operation requires the CSRF token and is recorded
 with the request source IP when available.
@@ -1458,6 +1464,11 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
   returns the payment to `paid`; an ambiguous network result stays pending for reconciliation.
 - Telegram's `refunded_payment` service event finalizes local payment and subscription state if the
   provider refund succeeded but the API process failed before its final database commit.
+- If a network result remains ambiguous and no service event arrives, an ADMIN can perform a
+  provider-side check and use the guarded reconciliation endpoint to finalize `refunded` or restore
+  `paid`; the decision is recorded in `admin_actions`.
+- A delayed duplicate `successful_payment` is accepted only while the local payment is `created`;
+  it can never reactivate `refund_pending` or `refunded` state.
 - Requested and completed refund stages are recorded in the administrator audit log. A completed
   refund returns the affected active subscription to FREE.
 
@@ -1471,7 +1482,7 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 - RUB and XTR revenue are reported separately.
 - Repeated Stars refund requests do not call Telegram or alter subscription state twice.
 - Ambiguous refund results remain recoverable and are finalized idempotently from Telegram's service
-  event.
+  event or through permission-checked, CSRF-protected, audited manual reconciliation.
 
 # 22. Robokassa Setup
 
@@ -1645,8 +1656,10 @@ Admin endpoints require:
 
 ```text
 Authorization: Bearer <ADMIN_API_TOKEN>
-X-Admin-Telegram-Id: <telegram_id>
 ```
+
+The bearer token is bound server-side to `ADMIN_API_TELEGRAM_ID`. Client-controlled identity
+headers are ignored and must not be used for authorization.
 
 Mutating admin requests also require:
 
@@ -1660,6 +1673,9 @@ Payment administration adds:
 - `POST /api/v1/admin/payments/{payment_id}/refund-stars` to refund a paid Stars transaction through
   Telegram. It returns `refund_pending` without a second provider call while an earlier ambiguous
   result awaits reconciliation, and persists `refunded` only after provider confirmation.
+- `POST /api/v1/admin/payments/{payment_id}/reconcile-stars-refund` with outcome `refunded` or
+  `not_refunded` after a provider-side check. This guarded operation finalizes or releases a pending
+  refund and records the decision in `admin_actions`.
 
 Telegram webhook requests can use:
 
@@ -1685,8 +1701,7 @@ List upload jobs:
 
 ```bash
 curl "https://your-domain.example/api/v1/admin/upload-jobs?limit=50&offset=0" \
-  -H "Authorization: Bearer $ADMIN_API_TOKEN" \
-  -H "X-Admin-Telegram-Id: $ADMIN_TELEGRAM_ID"
+  -H "Authorization: Bearer $ADMIN_API_TOKEN"
 ```
 
 ## 23.7. Admin API
@@ -1926,6 +1941,8 @@ Internal implementation details, stack traces, tokens, secrets, SQL errors, and 
 ## 27.1. Access Requirements
 
 - All administrative endpoints require authentication.
+- The bearer token maps to `ADMIN_API_TELEGRAM_ID` on the server; callers cannot select their RBAC
+  identity through a request header.
 - Role and permission checks are enforced on the server.
 - Mutating requests require CSRF protection where applicable.
 - Every administrative request should have a Request ID.
@@ -1955,6 +1972,7 @@ API version lifecycle and compatibility rules are documented in [API Versioning 
 | GET | `/api/v1/admin/payments` | Provider-neutral payment list with RUB/XTR amounts |
 | POST | `/api/v1/admin/payments/robokassa/orders` | Create an audited external Robokassa checkout |
 | POST | `/api/v1/admin/payments/{id}/refund-stars` | Refund a paid Stars transaction through Telegram |
+| POST | `/api/v1/admin/payments/{id}/reconcile-stars-refund` | Audit and resolve an ambiguous Stars refund |
 | GET | `/api/v1/admin/upload-jobs` | Publication queue |
 | GET | `/api/v1/admin/errors` | Failed publications |
 | POST | `/api/v1/admin/upload-jobs/{id}/retry` | Retry an eligible temporary failure |
@@ -1976,7 +1994,7 @@ Mutating operations must be transactional:
 - Manual subscription changes.
 - Safe task restart.
 - Configuration import.
-- Robokassa order creation and Telegram Stars refunds.
+- Robokassa order creation, Telegram Stars refunds, and refund reconciliation.
 
 The safe retry endpoint rejects jobs already accepted by TikTok and any error that is not explicitly
 classified as temporary. It also verifies that the local source file still exists.
@@ -2467,6 +2485,8 @@ Development, staging, and production must have separate values for:
 - PostgreSQL and Redis credentials.
 - Token encryption keys.
 - Administrative API and CSRF secrets.
+- The fixed administrative API principal ID; it must be allowlisted and must not be accepted from a
+  client-controlled identity header.
 - Public base URL.
 
 ## 33.5. Release Compliance Check
@@ -2508,6 +2528,9 @@ Use separate files for development, staging, and production, then copy the selec
 
 Application: `APP_ENV`, `APP_VERSION`, `APP_HOST`, `APP_PORT`, `PUBLIC_BASE_URL`, `TIMEZONE`.
 
+Ingress: `DEPLOY_INGRESS` is `nginx` for direct TLS termination or `cloudflared` when a dedicated
+Cloudflare Tunnel publishes the loopback API port.
+
 Telegram: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_ADMIN_IDS`.
 
 Database: `DATABASE_URL`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`.
@@ -2532,7 +2555,9 @@ Robokassa: `ROBOKASSA_MERCHANT_LOGIN`, `ROBOKASSA_PASSWORD_1`, `ROBOKASSA_PASSWO
 `ROBOKASSA_TEST_MODE`, and `ROBOKASSA_HASH_ALGORITHM`. The hash algorithm must be `md5`, `sha256`,
 or `sha512` and must match the shop's technical settings.
 
-Security: `TOKEN_ENCRYPTION_KEY`, `ADMIN_API_TOKEN`, `ADMIN_CSRF_TOKEN`.
+Security: `TOKEN_ENCRYPTION_KEY`, `ADMIN_API_TOKEN`, `ADMIN_API_TELEGRAM_ID`,
+`ADMIN_CSRF_TOKEN`. The API principal ID must be numeric, included in `TELEGRAM_ADMIN_IDS`, and
+provisioned in PostgreSQL with a non-USER administrative role.
 
 Scheduler: `SCHEDULER_TICK_SECONDS`, `SUBSCRIPTION_SWEEP_SECONDS`,
 `TOKEN_REFRESH_SWEEP_SECONDS`, `RETENTION_SWEEP_SECONDS`, `STATUS_RECONCILE_SECONDS`,
@@ -2575,8 +2600,7 @@ Environment-specific `.env` and secret management rules are documented in [Envir
 
 ```bash
 curl https://your-domain.example/admin/configuration/export \
-  -H "Authorization: Bearer $ADMIN_API_TOKEN" \
-  -H "X-Admin-Telegram-Id: $ADMIN_TELEGRAM_ID"
+  -H "Authorization: Bearer $ADMIN_API_TOKEN"
 ```
 
 The export contains no secret-like keys such as passwords, tokens, keys, or secrets.
@@ -2586,7 +2610,6 @@ The export contains no secret-like keys such as passwords, tokens, keys, or secr
 ```bash
 curl -X POST https://your-domain.example/admin/configuration/import \
   -H "Authorization: Bearer $ADMIN_API_TOKEN" \
-  -H "X-Admin-Telegram-Id: $ADMIN_TELEGRAM_ID" \
   -H "X-CSRF-Token: $ADMIN_CSRF_TOKEN" \
   -H "Content-Type: application/json" \
   -d @runtime-config.json
@@ -2648,15 +2671,18 @@ docker compose logs -f api bot worker scheduler
 ```
 
 When the host already uses ports 80/443 and Cloudflare Tunnel provides HTTPS, keep the application
-on an isolated loopback port and omit the bundled Nginx service:
+on an isolated loopback port and omit the bundled Nginx service. Set:
 
-```bash
-docker compose -f docker-compose.yml -f deploy/docker-compose.cloudflared.yml up -d
+```dotenv
+DEPLOY_INGRESS=cloudflared
+API_HOST_PORT=8081
 ```
 
 The override publishes only the API on `127.0.0.1:${API_HOST_PORT:-8081}` and places `nginx` behind
 an explicit profile. Configure the tunnel hostname to `http://localhost:8081`. PostgreSQL and Redis
-remain unexposed. Use a different `API_HOST_PORT` for every stack on the same server.
+remain unexposed. Use a different `API_HOST_PORT` for every stack on the same server. The checked
+`preflight`, `deploy`, and `rollback` scripts read `DEPLOY_INGRESS` and apply the override
+automatically.
 
 For staging and production, use the checked automation instead of running these commands
 individually:
@@ -2696,9 +2722,10 @@ After HTTPS is active, open the administrative console at:
 https://your-domain.example/admin-ui/
 ```
 
-Access requires a Telegram ID listed in `TELEGRAM_ADMIN_IDS`, `ADMIN_API_TOKEN`, and
-`ADMIN_CSRF_TOKEN`. Generate independent high-entropy values for production. The browser console
-does not persist them after the page is reloaded or closed.
+Access requires `ADMIN_API_TOKEN`, `ADMIN_CSRF_TOKEN`, and a server-bound
+`ADMIN_API_TELEGRAM_ID` listed in `TELEGRAM_ADMIN_IDS`. Provision that database user with an
+administrative role before first access. Generate independent high-entropy values for production.
+The browser console does not persist credentials after the page is reloaded or closed.
 
 The API image contains `alembic.ini` and the complete `alembic/` migration tree. The scheduler
 healthcheck reads its Redis heartbeat; an unhealthy scheduler means subscription expiry, token
@@ -2748,8 +2775,11 @@ Use separate files outside Git for each environment:
 
 Copy the selected file to `.env` on the server. Never commit real `.env` files.
 
-Staging and production use `NGINX_TEMPLATE=https.conf.template`, set `DOMAIN` to the
-`PUBLIC_BASE_URL` host, and provide `fullchain.pem` and `privkey.pem` under `TLS_CERT_DIR`.
+With `DEPLOY_INGRESS=nginx`, staging and production use
+`NGINX_TEMPLATE=https.conf.template`, set `DOMAIN` to the `PUBLIC_BASE_URL` host, and provide
+`fullchain.pem` and `privkey.pem` under `TLS_CERT_DIR`. With `DEPLOY_INGRESS=cloudflared`, the
+dedicated tunnel terminates public TLS and the checked deploy scripts skip local certificate-file
+validation while keeping the API bound to loopback.
 
 # 37. CI/CD and Deployment Automation
 
@@ -2784,6 +2814,10 @@ and cancels superseded runs for the same branch or pull request.
 fail CI and report only the file, line, and detector type. A second non-baselined check always
 rejects Telegram bot token patterns and private-key blocks.
 
+The two approved generated specification artifacts are not opaque exceptions: the gate extracts
+text from DOCX and PDF and applies the same high-risk token and private-key checks. Every other
+tracked DOCX or PDF is rejected.
+
 Baseline changes require code review. A finding must never be added to the baseline to conceal a
 real credential. Rotate any credential that has appeared in chat, source, a pull request, logs, or
 CI output before using the project in staging or production.
@@ -2795,7 +2829,8 @@ CI output before using the project in staging or production.
 - Git, Python 3, curl, and SSH key access.
 - A domain pointing to the server.
 - A real environment file at `.env`, readable only by the deployment operator.
-- TLS files at `${TLS_CERT_DIR}/fullchain.pem` and `${TLS_CERT_DIR}/privkey.pem`.
+- For `DEPLOY_INGRESS=nginx`, TLS files at `${TLS_CERT_DIR}/fullchain.pem` and
+  `${TLS_CERT_DIR}/privkey.pem`; Cloudflare ingress validates the dedicated tunnel separately.
 
 Run the configuration gate before a release:
 

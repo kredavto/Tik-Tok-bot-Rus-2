@@ -15,8 +15,7 @@ Environment-specific `.env` and secret management rules are documented in [Envir
 
 ```bash
 curl https://your-domain.example/admin/configuration/export \
-  -H "Authorization: Bearer $ADMIN_API_TOKEN" \
-  -H "X-Admin-Telegram-Id: $ADMIN_TELEGRAM_ID"
+  -H "Authorization: Bearer $ADMIN_API_TOKEN"
 ```
 
 The export contains no secret-like keys such as passwords, tokens, keys, or secrets.
@@ -26,7 +25,6 @@ The export contains no secret-like keys such as passwords, tokens, keys, or secr
 ```bash
 curl -X POST https://your-domain.example/admin/configuration/import \
   -H "Authorization: Bearer $ADMIN_API_TOKEN" \
-  -H "X-Admin-Telegram-Id: $ADMIN_TELEGRAM_ID" \
   -H "X-CSRF-Token: $ADMIN_CSRF_TOKEN" \
   -H "Content-Type: application/json" \
   -d @runtime-config.json

@@ -7,6 +7,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from zipfile import BadZipFile, ZipFile
+
+from pypdf import PdfReader
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -57,6 +60,42 @@ def unexpected_binary_documents() -> list[str]:
         if relative_path not in ALLOWED_BINARY_DOCUMENTS:
             documents.append(relative_path)
     return sorted(documents)
+
+
+def extract_document_text(path: Path) -> str:
+    if path.suffix.lower() == ".docx":
+        try:
+            with ZipFile(path) as archive:
+                xml = " ".join(
+                    archive.read(name).decode("utf-8", errors="replace")
+                    for name in archive.namelist()
+                    if name.startswith("word/") and name.endswith(".xml")
+                )
+        except (BadZipFile, OSError) as exc:
+            raise RuntimeError(f"could not inspect DOCX {path}: {exc}") from exc
+        return re.sub(r"<[^>]+>", "", xml)
+    if path.suffix.lower() == ".pdf":
+        try:
+            return "\n".join(page.extract_text() or "" for page in PdfReader(path).pages)
+        except Exception as exc:
+            raise RuntimeError(f"could not inspect PDF {path}: {exc}") from exc
+    return ""
+
+
+def sensitive_binary_findings() -> list[tuple[str, str]]:
+    findings: list[tuple[str, str]] = []
+    for path in candidate_files():
+        if path.suffix.lower() not in SENSITIVE_BINARY_SUFFIXES or not path.is_file():
+            continue
+        relative_path = path.relative_to(ROOT).as_posix()
+        if relative_path not in ALLOWED_BINARY_DOCUMENTS:
+            continue
+        text = extract_document_text(path)
+        if TELEGRAM_TOKEN.search(text):
+            findings.append((relative_path, "Telegram bot token"))
+        if PRIVATE_KEY.search(text):
+            findings.append((relative_path, "private key"))
+    return findings
 
 
 def finding_keys(payload: dict[str, object]) -> set[tuple[str, int, str, str]]:
@@ -115,6 +154,14 @@ def main() -> int:
         failures += 1
     for filename, line_number, detector in high_risk_findings():
         print(f"High-risk secret detected: {filename}:{line_number} ({detector})")
+        failures += 1
+    try:
+        binary_findings = sensitive_binary_findings()
+    except RuntimeError as exc:
+        print(f"Binary document scan could not run: {exc}")
+        return 2
+    for filename, detector in binary_findings:
+        print(f"High-risk secret detected in binary document: {filename} ({detector})")
         failures += 1
 
     try:

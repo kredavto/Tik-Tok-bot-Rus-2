@@ -615,6 +615,8 @@ async def mark_stars_payment_paid(
         if payment.provider_charge_id == telegram_payment_charge_id:
             return PaymentConfirmation(payment=payment, activated=False)
         return PaymentConfirmation(payment=None, activated=False)
+    if payment.status != "created":
+        return PaymentConfirmation(payment=None, activated=False)
     if (
         currency != "XTR"
         or payment.currency != "XTR"

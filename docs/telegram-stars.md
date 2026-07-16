@@ -48,6 +48,11 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
   returns the payment to `paid`; an ambiguous network result stays pending for reconciliation.
 - Telegram's `refunded_payment` service event finalizes local payment and subscription state if the
   provider refund succeeded but the API process failed before its final database commit.
+- If a network result remains ambiguous and no service event arrives, an ADMIN can perform a
+  provider-side check and use the guarded reconciliation endpoint to finalize `refunded` or restore
+  `paid`; the decision is recorded in `admin_actions`.
+- A delayed duplicate `successful_payment` is accepted only while the local payment is `created`;
+  it can never reactivate `refund_pending` or `refunded` state.
 - Requested and completed refund stages are recorded in the administrator audit log. A completed
   refund returns the affected active subscription to FREE.
 
@@ -61,4 +66,4 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 - RUB and XTR revenue are reported separately.
 - Repeated Stars refund requests do not call Telegram or alter subscription state twice.
 - Ambiguous refund results remain recoverable and are finalized idempotently from Telegram's service
-  event.
+  event or through permission-checked, CSRF-protected, audited manual reconciliation.

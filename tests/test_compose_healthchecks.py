@@ -17,3 +17,10 @@ def test_cloudflared_override_exposes_only_api_on_loopback() -> None:
     assert "postgres:" not in override
     assert "redis:" not in override
     assert "profiles:" in override
+
+
+def test_deploy_helper_applies_cloudflared_override_from_environment() -> None:
+    helper = (Path(__file__).parents[1] / "deploy" / "lib" / "common.sh").read_text()
+
+    assert 'ingress="$(env_value DEPLOY_INGRESS)"' in helper
+    assert "deploy/docker-compose.cloudflared.yml" in helper
