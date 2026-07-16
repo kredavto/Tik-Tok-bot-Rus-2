@@ -13,7 +13,7 @@ def test_json_formatter_redacts_callback_signatures_and_credentials() -> None:
         lineno=1,
         msg=(
             "GET /success?SignatureValue=callback-signature&access_token=oauth-token "
-            'payload={"client_secret":"client-credential"}'
+            'payload={"client_secret":"client-credential"}'  # pragma: allowlist secret
         ),
         args=(),
         exc_info=None,
