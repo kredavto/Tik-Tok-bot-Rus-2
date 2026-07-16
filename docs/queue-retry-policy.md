@@ -23,6 +23,9 @@ The worker layer handles:
 - Redis locks are used to prevent duplicate processing.
 - PostgreSQL stores the durable task state.
 - Redis may cache short-lived status and coordination data.
+- All actor coroutines in one Dramatiq process run on one persistent asyncio event loop. Worker
+  threads submit coroutines to that loop so the shared SQLAlchemy async pool is never reused across
+  incompatible event loops.
 
 ## Periodic Maintenance
 

@@ -2,7 +2,7 @@
 
 Date: 2026-07-16 (UTC)  
 Environment: staging  
-Application revision: `177638d046800eceeac15b67190cd79da7d19ebf`
+Application revision: `3a04e6ebf4352cf9c55b071d3247fa27341de5d3`
 
 ## Scope
 
@@ -26,7 +26,8 @@ and rejection of invalid callback signatures. No real funds were charged.
 | Webhook idempotency | PASS | Exactly one claimed `payment_result` event exists for invoice `1003`. |
 | Notification recovery | PASS | A durable `payment_success_notification` outbox event remained `pending` while the Telegram token was invalid. |
 | Automated tests and migrations | PASS | GitHub Actions CI run #47 completed successfully. |
-| Independent code review | PASS | No P0-P2 findings remained for revision `177638d`. |
+| Independent code review | PASS | No P0-P2 findings remained for revision `3a04e6e`. |
+| Concurrent worker runtime | PASS | 24 idempotent DB maintenance actors completed on four Dramatiq threads without asyncpg or cross-event-loop errors. |
 
 ## Deployment verification
 
@@ -34,6 +35,8 @@ The deployment created a PostgreSQL backup, built the application image,
 applied Alembic migrations, and started the API, bot, worker, scheduler,
 PostgreSQL, and Redis containers. Public health, readiness, metrics, OpenAPI,
 and Content-Security-Policy checks passed at `https://loader.invest-lend.ru`.
+The worker was then exercised with 24 concurrent maintenance actors; all database
+operations ran through the persistent worker event loop without pool contention.
 The pre-existing `tiktokbot` stack and its Cloudflare tunnel remained active and
 were not modified.
 

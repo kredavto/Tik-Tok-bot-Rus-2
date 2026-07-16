@@ -62,6 +62,8 @@ The project follows Semantic Versioning.
   acknowledgement is independent of Redis and Telegram availability.
 - Protect pending payment notifications from retention cleanup and prevent permanently rejected
   Telegram recipients from starving newer outbox events.
+- Run all Dramatiq actor coroutines on one persistent event loop per worker process, preventing
+  asyncpg connection-pool races between Dramatiq threads.
 
 ## [0.2.0-rc.1] - 2026-07-14
 
