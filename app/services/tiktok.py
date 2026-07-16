@@ -6,7 +6,7 @@ import hmac
 from pathlib import Path
 from urllib.parse import urlencode
 
-import aiofiles  # type: ignore
+import aiofiles  # type: ignore[import-untyped]
 import aiohttp
 
 from app.core.config import settings

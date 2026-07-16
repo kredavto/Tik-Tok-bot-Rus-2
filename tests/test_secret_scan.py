@@ -43,3 +43,24 @@ def test_allowed_docx_is_scanned_for_high_risk_secrets(
     assert check_secrets.sensitive_binary_findings() == [
         ("docs/final/Tik_Tok_Loader_Unified_Specification.docx", "Telegram bot token")
     ]
+
+
+def test_allowed_docx_is_scanned_with_general_secret_detectors(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    document = tmp_path / "docs/final/Tik_Tok_Loader_Unified_Specification.docx"
+    document.parent.mkdir(parents=True)
+    label = "ROBOKASSA_" + "PASSWORD_1"
+    value = "".join(["A7fj", "K92n", "Qp4L", "z8Vm", "W3xR"])
+    with ZipFile(document, "w") as archive:
+        archive.writestr(
+            "word/document.xml",
+            f'<w:document><w:t>{label}="{value}"</w:t></w:document>',
+        )
+    monkeypatch.setattr(check_secrets, "ROOT", tmp_path)
+    monkeypatch.setattr(check_secrets, "candidate_files", lambda: [document])
+
+    assert check_secrets.sensitive_binary_findings() == [
+        ("docs/final/Tik_Tok_Loader_Unified_Specification.docx", "Secret Keyword")
+    ]

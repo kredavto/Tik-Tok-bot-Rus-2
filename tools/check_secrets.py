@@ -9,6 +9,8 @@ import sys
 import tempfile
 from zipfile import BadZipFile, ZipFile
 
+from detect_secrets.core.scan import scan_file
+from detect_secrets.settings import default_settings
 from pypdf import PdfReader
 
 
@@ -82,6 +84,23 @@ def extract_document_text(path: Path) -> str:
     return ""
 
 
+def detect_secrets_in_text(text: str) -> set[str]:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        extracted = Path(temp_dir) / "extracted-document.txt"
+        extracted.write_text(text, encoding="utf-8")
+        with default_settings():
+            return {finding.type for finding in scan_file(str(extracted))}
+
+
+def canonical_detector_name(detector: str) -> str:
+    normalized = detector.casefold()
+    if "telegram" in normalized and "token" in normalized:
+        return "Telegram bot token"
+    if "private key" in normalized:
+        return "private key"
+    return detector
+
+
 def sensitive_binary_findings() -> list[tuple[str, str]]:
     findings: list[tuple[str, str]] = []
     for path in candidate_files():
@@ -91,10 +110,12 @@ def sensitive_binary_findings() -> list[tuple[str, str]]:
         if relative_path not in ALLOWED_BINARY_DOCUMENTS:
             continue
         text = extract_document_text(path)
+        detectors = {canonical_detector_name(detector) for detector in detect_secrets_in_text(text)}
         if TELEGRAM_TOKEN.search(text):
-            findings.append((relative_path, "Telegram bot token"))
+            detectors.add("Telegram bot token")
         if PRIVATE_KEY.search(text):
-            findings.append((relative_path, "private key"))
+            detectors.add("private key")
+        findings.extend((relative_path, detector) for detector in sorted(detectors))
     return findings
 
 

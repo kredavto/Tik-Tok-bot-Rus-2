@@ -7,12 +7,6 @@ from typing import Literal
 from uuid import UUID
 
 from aiogram import Bot
-from aiogram.exceptions import (
-    TelegramBadRequest,
-    TelegramForbiddenError,
-    TelegramNotFound,
-    TelegramUnauthorizedError,
-)
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
@@ -673,28 +667,20 @@ async def refund_stars_payment(
             user_id=telegram_id,
             telegram_payment_charge_id=provider_charge_id,
         )
-    except (
-        TelegramBadRequest,
-        TelegramForbiddenError,
-        TelegramNotFound,
-        TelegramUnauthorizedError,
-    ) as exc:
-        async with session_scope() as session:
-            await release_stars_payment_refund(session, payment_id)
-            await log_admin_action(
-                session,
-                admin,
-                "refund_stars_payment_rejected",
-                "payment",
-                str(payment_id),
-                {"status": "paid", "error_type": type(exc).__name__},
-                request_ip(request),
-            )
-        raise HTTPException(status_code=502, detail="Telegram rejected the refund") from exc
     except Exception as exc:
         logger.exception(
             "Telegram Stars refund result is unknown", extra={"payment_id": str(payment_id)}
         )
+        async with session_scope() as session:
+            await log_admin_action(
+                session,
+                admin,
+                "refund_stars_payment_pending_reconciliation",
+                "payment",
+                str(payment_id),
+                {"status": "refund_pending", "error_type": type(exc).__name__},
+                request_ip(request),
+            )
         raise HTTPException(
             status_code=502,
             detail="Telegram refund result is pending reconciliation",
@@ -704,7 +690,21 @@ async def refund_stars_payment(
 
     if not refunded:
         async with session_scope() as session:
-            await release_stars_payment_refund(session, payment_id)
+            released = await release_stars_payment_refund(session, payment_id)
+            if not released:
+                raise HTTPException(
+                    status_code=502,
+                    detail="Telegram refund result is pending reconciliation",
+                )
+            await log_admin_action(
+                session,
+                admin,
+                "refund_stars_payment_rejected",
+                "payment",
+                str(payment_id),
+                {"status": "paid", "provider_result": False},
+                request_ip(request),
+            )
         raise HTTPException(status_code=502, detail="Telegram did not confirm the refund")
 
     async with session_scope() as session:

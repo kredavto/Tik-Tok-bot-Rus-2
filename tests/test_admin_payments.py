@@ -255,7 +255,7 @@ async def test_stars_refund_definitive_rejection_restores_paid_state(
 
 
 @pytest.mark.asyncio
-async def test_stars_refund_definitive_exception_restores_paid_state(
+async def test_stars_refund_provider_exception_stays_pending_for_reconciliation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     admin, _, payment = await _paid_stars_payment()
@@ -277,7 +277,7 @@ async def test_stars_refund_definitive_exception_restores_paid_state(
     async with session_scope() as session:
         stored = await session.get(Payment, payment.id)
     assert stored is not None
-    assert stored.status == "paid"
+    assert stored.status == "refund_pending"
 
 
 @pytest.mark.asyncio
