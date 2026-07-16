@@ -34,6 +34,7 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
+from reportlab.platypus.tableofcontents import TableOfContents
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -684,6 +685,16 @@ class PageNumCanvasDoc(BaseDocTemplate):
         canvas.drawCentredString(LETTER[0] / 2, 0.55 * inch, f"Страница {doc.page}")
         canvas.restoreState()
 
+    def afterFlowable(self, flowable: Flowable) -> None:
+        level = getattr(flowable, "toc_level", None)
+        key = getattr(flowable, "bookmark_key", None)
+        if level is None or key is None or not isinstance(flowable, Paragraph):
+            return
+        title = flowable.getPlainText()
+        self.canv.bookmarkPage(key)
+        self.canv.addOutlineEntry(title, key, level=level, closed=False)
+        self.notify("TOCEntry", (level, title, self.page, key))
+
 
 def register_pdf_fonts() -> None:
     candidates = [
@@ -830,6 +841,15 @@ def build_pdf(markdown: str, output_path: Path) -> None:
         bottomMargin=0.82 * inch,
     )
     story: list[Flowable] = []
+    heading_number = 0
+
+    def heading(text: str, style_name: str, level: int) -> Paragraph:
+        nonlocal heading_number
+        heading_number += 1
+        item = Paragraph(clean_pdf_text(text), styles[style_name])
+        item.toc_level = level
+        item.bookmark_key = f"section-{heading_number}"
+        return item
 
     story.extend(
         [
@@ -853,10 +873,41 @@ def build_pdf(markdown: str, output_path: Path) -> None:
             Paragraph("Оглавление", styles["h1"]),
         ]
     )
-    for number, source in enumerate(SOURCE_DOCS, start=1):
-        title = read_title(DOCS / source.path)
-        story.append(Paragraph(f"{number}. {clean_pdf_text(title)}", styles["toc"]))
-    story.extend([PageBreak(), Paragraph("Список сокращений и терминов", styles["h1"])])
+    toc = TableOfContents()
+    toc.levelStyles = [
+        ParagraphStyle(
+            "SpecTocLevel1",
+            fontName="ArialUnicode",
+            fontSize=8.4,
+            leading=10.5,
+            leftIndent=0,
+            firstLineIndent=0,
+            spaceBefore=2,
+        ),
+        ParagraphStyle(
+            "SpecTocLevel2",
+            fontName="ArialUnicode",
+            fontSize=8,
+            leading=10,
+            leftIndent=14,
+            firstLineIndent=0,
+        ),
+        ParagraphStyle(
+            "SpecTocLevel3",
+            fontName="ArialUnicode",
+            fontSize=7.6,
+            leading=9.5,
+            leftIndent=28,
+            firstLineIndent=0,
+        ),
+    ]
+    story.extend(
+        [
+            toc,
+            PageBreak(),
+            heading("Список сокращений и терминов", "h1", 0),
+        ]
+    )
 
     abbrev_data = [["Сокращение / термин", "Описание"], *ABBREVIATIONS]
     story.append(
@@ -955,11 +1006,11 @@ def build_pdf(markdown: str, output_path: Path) -> None:
                 first_h1 = False
             else:
                 story.append(PageBreak())
-            story.append(Paragraph(clean_pdf_text(line[2:].strip()), styles["h1"]))
+            story.append(heading(line[2:].strip(), "h1", 0))
         elif line.startswith("## "):
-            story.append(Paragraph(clean_pdf_text(line[3:].strip()), styles["h2"]))
+            story.append(heading(line[3:].strip(), "h2", 1))
         elif line.startswith("### "):
-            story.append(Paragraph(clean_pdf_text(line[4:].strip()), styles["h3"]))
+            story.append(heading(line[4:].strip(), "h3", 2))
         elif line.startswith("#### "):
             story.append(Paragraph(f"<b>{clean_pdf_text(line[5:].strip())}</b>", styles["body"]))
         elif line.startswith("- "):
@@ -972,7 +1023,7 @@ def build_pdf(markdown: str, output_path: Path) -> None:
             story.append(Paragraph(clean_pdf_text(line), styles["body"]))
     flush_table()
     flush_code()
-    doc.build(story)
+    doc.multiBuild(story)
 
 
 def main() -> None:

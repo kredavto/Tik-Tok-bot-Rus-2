@@ -22,6 +22,8 @@ The project follows Semantic Versioning.
 
 ### Changed
 
+- Generate the unified PDF specification with a multi-level table of contents, page numbers, and
+  clickable document outline entries.
 - In-bot paid-plan checkout now follows Telegram's digital-goods requirement and no longer exposes
   Robokassa links as an alternative to Stars.
 - Payment records and administrator views now distinguish provider, currency, RUB amount, Stars

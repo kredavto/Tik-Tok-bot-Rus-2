@@ -1558,6 +1558,11 @@ The backend validates:
 
 Robokassa merchant credentials must stay only in `.env`.
 
+Payment activation and the payment-success notification outbox are committed atomically. ResultURL
+returns `OK{InvId}` after the payment transaction commits even if Redis or Telegram is temporarily
+unavailable. The scheduler retries pending notification events; permanent recipient errors become
+terminal `rejected` events and do not block later deliveries.
+
 ## 22.5. Sandbox Acceptance
 
 1. Use the dedicated test Password #1 and Password #2 and set `ROBOKASSA_TEST_MODE=true`.
@@ -1568,6 +1573,9 @@ Robokassa merchant credentials must stay only in `.env`.
    subscription is active, and a duplicate callback does not activate another subscription.
 6. Store only sanitized evidence: timestamp, release SHA, invoice ID, amount, HTTP outcome, payment
    status, active-subscription count, and webhook status.
+
+The current sanitized acceptance record is stored in
+[Robokassa sandbox acceptance evidence](../test-evidence/robokassa-sandbox-2026-07-16.md).
 
 Production passwords and `ROBOKASSA_TEST_MODE=false` may be installed only after this scenario
 passes against the same release candidate.
@@ -3938,6 +3946,7 @@ The worker layer handles:
 - Temporary file cleanup.
 - Subscription expiration checks.
 - Return to FREE plan after paid subscription expiration.
+- Delivery of durable payment-success notifications.
 
 ## 51.2. Queue Rules
 
@@ -3949,6 +3958,9 @@ The worker layer handles:
 - Redis locks are used to prevent duplicate processing.
 - PostgreSQL stores the durable task state.
 - Redis may cache short-lived status and coordination data.
+- All actor coroutines in one Dramatiq process run on one persistent asyncio event loop. Worker
+  threads submit coroutines to that loop so the shared SQLAlchemy async pool is never reused across
+  incompatible event loops.
 
 ## 51.3. Periodic Maintenance
 
@@ -3962,9 +3974,16 @@ The current periodic tasks are:
 - Expire due PRO and BUSINESS subscriptions and create the replacement FREE subscription.
 - Refresh TikTok access tokens before their expiry.
 - Remove temporary files and expired operational records according to the retention policy.
+- Redispatch pending payment-success notification outbox events.
 
 Subscription selection uses PostgreSQL `FOR UPDATE SKIP LOCKED`. Expiration notifications use a
 per-subscription Redis lock and a durable `expiration_notified_at` marker.
+
+Robokassa activation creates a `payment_success_notification` outbox event in the same PostgreSQL
+transaction as the paid subscription. A per-event Redis lock prevents concurrent delivery. The
+event becomes `processed` only after Telegram accepts the message. Pending payment outbox events
+are excluded from retention cleanup and remain recoverable after broker, worker, or Telegram
+outages.
 
 ## 51.4. Retryable Errors
 
@@ -3995,6 +4014,8 @@ Do not retry automatically for:
 - Policy or authorization rejection from an official external API.
 - TikTok refresh-token rejection or another permanent OAuth error. The account is marked as
   refresh-blocked until the user reconnects it through the official OAuth flow.
+- Telegram `Forbidden`, `Bad Request`, or `Not Found` responses for a payment recipient. The
+  affected outbox event becomes `rejected` so it cannot starve newer notifications.
 
 ## 51.6. Status Updates
 
