@@ -43,7 +43,7 @@ from app.services.tiktok import (
     build_oauth_url,
     validate_webhook_signature,
 )
-from app.workers.tasks import notify_upload_status
+from app.workers.tasks import notify_payment_success, notify_upload_status
 
 configure_logging()
 logger = logging.getLogger(__name__)
@@ -543,12 +543,12 @@ async def robokassa_result(
 
     if not payment or payment.status != "paid":
         raise HTTPException(status_code=400, detail="Payment was not accepted")
-    if user and confirmation.activated:
+    if user and confirmation.activated and confirmation.notification_event_id:
         try:
-            await _notify_payment_success(user.telegram_id, payment.plan_id)
+            notify_payment_success.send(str(confirmation.notification_event_id))
         except Exception:
             logger.exception(
-                "Robokassa payment notification failed after activation",
+                "Robokassa payment notification enqueue failed; durable retry remains pending",
                 extra={"payment_id": str(payment.id)},
             )
     return f"OK{inv_id}"
@@ -571,16 +571,3 @@ async def robokassa_success() -> dict[str, str]:
 @app.get("/payments/robokassa/fail")
 async def robokassa_fail() -> dict[str, str]:
     return {"status": "failed", "message": "Payment was not completed. Return to Telegram bot."}
-
-
-async def _notify_payment_success(telegram_id: int, plan_id: str) -> None:
-    if not settings.bot_token:
-        return
-    bot = Bot(token=settings.bot_token)
-    try:
-        await bot.send_message(
-            telegram_id,
-            bot_text("payment_success", plan=plan_id.upper()),
-        )
-    finally:
-        await bot.session.close()

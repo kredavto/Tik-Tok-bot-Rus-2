@@ -92,3 +92,20 @@ async def subscription_notification_lock(subscription_id: str) -> AsyncIterator[
         if acquired:
             await lock.release()
         await redis.aclose()
+
+
+@asynccontextmanager
+async def payment_notification_lock(event_id: str) -> AsyncIterator[bool]:
+    redis = get_redis()
+    lock = redis.lock(
+        f"lock:payment_notification:{event_id}",
+        timeout=120,
+        blocking_timeout=0,
+    )
+    acquired = await lock.acquire()
+    try:
+        yield acquired
+    finally:
+        if acquired:
+            await lock.release()
+        await redis.aclose()

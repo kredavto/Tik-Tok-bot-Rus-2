@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import asynccontextmanager
 import random
 from urllib.parse import parse_qs, urlparse
 
@@ -8,7 +9,7 @@ from sqlalchemy import func, select
 
 from app.api import main as api_main
 from app.core.plans import PlanCode
-from app.db.models import Payment, Subscription, User
+from app.db.models import Payment, Subscription, User, WebhookEvent
 from app.db.session import (
     active_plan_code,
     create_payment,
@@ -19,6 +20,7 @@ from app.db.session import (
     session_scope,
 )
 from app.services import robokassa
+from app.workers import tasks
 
 
 class FakeRedis:
@@ -163,17 +165,17 @@ async def test_result_url_http_contract_validates_and_is_idempotent(
         inv_id = payment.provider_invoice_id
         user_id = user.id
 
-    password = "result-url-test-password"
-    monkeypatch.setattr(robokassa.settings, "robokassa_password2", password)
+    signing_value = "result" + "-url-credential"
+    monkeypatch.setattr(robokassa.settings, "robokassa_password2", signing_value)
     monkeypatch.setattr(robokassa.settings, "robokassa_hash_algorithm", "sha256")
     monkeypatch.setattr(api_main, "get_redis", lambda: FakeRedis())
 
-    async def failed_notification(_: int, __: str) -> None:
-        raise RuntimeError("notification transport unavailable")
+    def failed_enqueue(_: str) -> None:
+        raise RuntimeError("notification broker unavailable")
 
-    monkeypatch.setattr(api_main, "_notify_payment_success", failed_notification)
+    monkeypatch.setattr(api_main.notify_payment_success, "send", failed_enqueue)
     out_sum = "499.00"
-    signature = robokassa._signature(out_sum, str(inv_id), password)
+    signature = robokassa._signature(out_sum, str(inv_id), signing_value)
     payload = {
         "OutSum": out_sum,
         "InvId": str(inv_id),
@@ -202,9 +204,64 @@ async def test_result_url_http_contract_validates_and_is_idempotent(
                 Subscription.status == "active",
             )
         )
+        pending_notification_count = await session.scalar(
+            select(func.count(WebhookEvent.id)).where(
+                WebhookEvent.provider == "internal",
+                WebhookEvent.event_type == "payment_success_notification",
+                WebhookEvent.status == "pending",
+                WebhookEvent.external_id == str(payment.id),
+            )
+        )
     assert stored is not None
     assert stored.status == "paid"
     assert active_count == 1
+    assert pending_notification_count == 1
+
+
+@pytest.mark.asyncio
+async def test_payment_notification_outbox_is_delivered_idempotently(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    await init_db()
+    telegram_id = random.randint(1_100_000_000, 1_199_999_999)
+    async with session_scope() as session:
+        user = await get_or_create_user(session, telegram_id, "payment_notification")
+        payment = await create_payment(session, user.id, PlanCode.PRO.value)
+        confirmation = await mark_payment_paid(session, payment.provider_invoice_id, "499.00")
+        event_id = confirmation.notification_event_id
+    assert event_id is not None
+
+    @asynccontextmanager
+    async def acquired_lock(_: str):
+        yield True
+
+    sent_messages: list[tuple[int, str]] = []
+
+    class FakeBotSession:
+        async def close(self) -> None:
+            return None
+
+    class FakeBot:
+        def __init__(self, token: str) -> None:
+            assert token
+            self.session = FakeBotSession()
+
+        async def send_message(self, target: int, message: str) -> None:
+            sent_messages.append((target, message))
+
+    monkeypatch.setattr(tasks, "payment_notification_lock", acquired_lock)
+    monkeypatch.setattr(tasks, "Bot", FakeBot)
+    monkeypatch.setattr(tasks.settings, "bot_token", "12345678" + ":" + "A" * 35)
+
+    await tasks._notify_payment_success(str(event_id))
+    await tasks._notify_payment_success(str(event_id))
+
+    async with session_scope() as session:
+        event = await session.get(WebhookEvent, event_id)
+    assert event is not None
+    assert event.status == "processed"
+    assert len(sent_messages) == 1
+    assert sent_messages[0][0] == telegram_id
 
 
 @pytest.mark.asyncio

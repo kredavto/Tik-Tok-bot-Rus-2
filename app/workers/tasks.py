@@ -17,6 +17,7 @@ from app.bot.messages import text as bot_text
 from app.core.config import settings
 from app.core.redis import (
     get_redis,
+    payment_notification_lock,
     subscription_notification_lock,
     upload_job_lock,
     user_limit_lock,
@@ -24,6 +25,7 @@ from app.core.redis import (
 from app.core.upload_status import UploadStatus
 from app.db.models import (
     AdminAction,
+    Payment,
     Subscription,
     TikTokAccount,
     UploadJob,
@@ -96,6 +98,16 @@ def reconcile_processing_uploads() -> None:
 @dramatiq.actor(max_retries=3)
 def notify_subscription_expired(subscription_id: str, telegram_id: int) -> None:
     asyncio.run(_notify_subscription_expired(subscription_id, telegram_id))
+
+
+@dramatiq.actor(max_retries=3)
+def notify_payment_success(event_id: str) -> None:
+    asyncio.run(_notify_payment_success(event_id))
+
+
+@dramatiq.actor(max_retries=1)
+def dispatch_payment_notifications() -> None:
+    asyncio.run(_dispatch_payment_notifications())
 
 
 async def _process_upload(upload_id: str, user_id: str) -> None:
@@ -469,6 +481,72 @@ async def _notify_subscription_expired(subscription_id: str, telegram_id: int) -
 
         async with session_scope() as session:
             await mark_subscription_expiration_notified(session, subscription_uuid)
+
+
+async def _dispatch_payment_notifications() -> None:
+    async with session_scope() as session:
+        event_ids = list(
+            await session.scalars(
+                select(WebhookEvent.id)
+                .where(
+                    WebhookEvent.provider == "internal",
+                    WebhookEvent.event_type == "payment_success_notification",
+                    WebhookEvent.status == "pending",
+                )
+                .order_by(WebhookEvent.created_at)
+                .limit(settings.maintenance_batch_size)
+            )
+        )
+    for event_id in event_ids:
+        notify_payment_success.send(str(event_id))
+
+
+async def _notify_payment_success(event_id: str) -> None:
+    async with payment_notification_lock(event_id) as acquired:
+        if not acquired:
+            return
+
+        event_uuid = UUID(event_id)
+        async with session_scope() as session:
+            event = await session.get(WebhookEvent, event_uuid)
+            if (
+                event is None
+                or event.provider != "internal"
+                or event.event_type != "payment_success_notification"
+                or event.status != "pending"
+            ):
+                return
+            try:
+                payment_id = UUID(str(event.payload["payment_id"]))
+            except (KeyError, TypeError, ValueError):
+                event.status = "rejected"
+                event.processed_at = datetime.now(UTC)
+                return
+            payment = await session.get(Payment, payment_id)
+            user = await session.get(User, payment.user_id) if payment else None
+            if payment is None or payment.status != "paid" or user is None:
+                event.status = "rejected"
+                event.processed_at = datetime.now(UTC)
+                return
+            telegram_id = user.telegram_id
+            plan_id = payment.plan_id
+
+        if not settings.bot_token:
+            raise RuntimeError("Telegram bot token is unavailable")
+        bot = Bot(token=settings.bot_token)
+        try:
+            await bot.send_message(
+                telegram_id,
+                bot_text("payment_success", plan=plan_id.upper()),
+            )
+        finally:
+            await bot.session.close()
+
+        async with session_scope() as session:
+            event = await session.get(WebhookEvent, event_uuid)
+            if event and event.status == "pending":
+                event.status = "processed"
+                event.processed_at = datetime.now(UTC)
 
 
 async def _refresh_expiring_tiktok_tokens() -> None:

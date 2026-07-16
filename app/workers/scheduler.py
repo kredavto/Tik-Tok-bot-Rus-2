@@ -12,6 +12,7 @@ from app.core.logging import configure_logging
 from app.core.redis import get_redis
 from app.workers.tasks import (
     cleanup_retention,
+    dispatch_payment_notifications,
     expire_subscriptions,
     reconcile_processing_uploads,
     refresh_expiring_tiktok_tokens,
@@ -49,6 +50,11 @@ def periodic_dispatches() -> tuple[PeriodicDispatch, ...]:
             "reconcile_processing_uploads",
             settings.status_reconcile_seconds,
             reconcile_processing_uploads.send,
+        ),
+        PeriodicDispatch(
+            "payment_notifications",
+            settings.status_reconcile_seconds,
+            dispatch_payment_notifications.send,
         ),
     )
 

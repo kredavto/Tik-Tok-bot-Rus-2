@@ -43,6 +43,7 @@ class SubscriptionExpirationNotice:
 class PaymentConfirmation:
     payment: Payment | None
     activated: bool
+    notification_event_id: UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -839,7 +840,19 @@ async def mark_payment_paid(
         payload={"status": "paid", "subscription_id": str(subscription.id)},
         status="processed",
     )
-    return PaymentConfirmation(payment=payment, activated=True)
+    notification_event = await record_webhook_event(
+        session,
+        provider="internal",
+        event_type="payment_success_notification",
+        external_id=str(payment.id),
+        payload={"payment_id": str(payment.id)},
+        status="pending",
+    )
+    return PaymentConfirmation(
+        payment=payment,
+        activated=True,
+        notification_event_id=notification_event.id,
+    )
 
 
 async def record_webhook_event(
