@@ -168,10 +168,10 @@ async def test_result_url_http_contract_validates_and_is_idempotent(
     monkeypatch.setattr(robokassa.settings, "robokassa_hash_algorithm", "sha256")
     monkeypatch.setattr(api_main, "get_redis", lambda: FakeRedis())
 
-    async def no_notification(_: int, __: str) -> None:
-        return None
+    async def failed_notification(_: int, __: str) -> None:
+        raise RuntimeError("notification transport unavailable")
 
-    monkeypatch.setattr(api_main, "_notify_payment_success", no_notification)
+    monkeypatch.setattr(api_main, "_notify_payment_success", failed_notification)
     out_sum = "499.00"
     signature = robokassa._signature(out_sum, str(inv_id), password)
     payload = {

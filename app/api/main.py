@@ -544,7 +544,13 @@ async def robokassa_result(
     if not payment or payment.status != "paid":
         raise HTTPException(status_code=400, detail="Payment was not accepted")
     if user and confirmation.activated:
-        await _notify_payment_success(user.telegram_id, payment.plan_id)
+        try:
+            await _notify_payment_success(user.telegram_id, payment.plan_id)
+        except Exception:
+            logger.exception(
+                "Robokassa payment notification failed after activation",
+                extra={"payment_id": str(payment.id)},
+            )
     return f"OK{inv_id}"
 
 
