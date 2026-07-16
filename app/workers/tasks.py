@@ -10,7 +10,7 @@ import aiohttp
 import dramatiq
 from dramatiq.brokers.redis import RedisBroker
 from redis.asyncio import Redis
-from sqlalchemy import select
+from sqlalchemy import and_, not_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.messages import text as bot_text
@@ -731,8 +731,18 @@ async def _cleanup_retention() -> None:
         for job in terminal_jobs:
             await cleanup_temp_file(job.local_path)
 
+        pending_payment_notification = and_(
+            WebhookEvent.provider == "internal",
+            WebhookEvent.event_type == "payment_success_notification",
+            WebhookEvent.status == "pending",
+        )
         old_webhooks = (
-            await session.scalars(select(WebhookEvent).where(WebhookEvent.created_at < log_cutoff))
+            await session.scalars(
+                select(WebhookEvent).where(
+                    WebhookEvent.created_at < log_cutoff,
+                    not_(pending_payment_notification),
+                )
+            )
         ).all()
         for webhook_event in old_webhooks:
             await session.delete(webhook_event)

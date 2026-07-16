@@ -1,6 +1,8 @@
 import asyncio
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime, timedelta
 import random
+from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import pytest
@@ -262,6 +264,51 @@ async def test_payment_notification_outbox_is_delivered_idempotently(
     assert event.status == "processed"
     assert len(sent_messages) == 1
     assert sent_messages[0][0] == telegram_id
+
+
+@pytest.mark.asyncio
+async def test_retention_preserves_pending_payment_notification(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    await init_db()
+    telegram_id = random.randint(1_200_000_000, 1_299_999_999)
+    async with session_scope() as session:
+        user = await get_or_create_user(session, telegram_id, "payment_retention")
+        payment = await create_payment(session, user.id, PlanCode.PRO.value)
+        confirmation = await mark_payment_paid(session, payment.provider_invoice_id, "499.00")
+        pending_event_id = confirmation.notification_event_id
+        assert pending_event_id is not None
+        pending_event = await session.get(WebhookEvent, pending_event_id)
+        assert pending_event is not None
+        pending_event.created_at = datetime.now(UTC) - timedelta(days=2)
+        terminal_event = WebhookEvent(
+            provider="internal",
+            event_type="payment_success_notification",
+            external_id="terminal-event",
+            payload={"payment_id": str(payment.id)},
+            status="processed",
+            created_at=datetime.now(UTC) - timedelta(days=2),
+            processed_at=datetime.now(UTC) - timedelta(days=2),
+        )
+        session.add(terminal_event)
+        await session.flush()
+        terminal_event_id = terminal_event.id
+
+    async def zero_retention(*_: object) -> int:
+        return 0
+
+    monkeypatch.setattr(tasks, "get_int_setting", zero_retention)
+    monkeypatch.setattr(tasks.settings, "backup_dir", str(tmp_path))
+
+    await tasks._cleanup_retention()
+
+    async with session_scope() as session:
+        pending_event = await session.get(WebhookEvent, pending_event_id)
+        terminal_event = await session.get(WebhookEvent, terminal_event_id)
+    assert pending_event is not None
+    assert pending_event.status == "pending"
+    assert terminal_event is None
 
 
 @pytest.mark.asyncio
