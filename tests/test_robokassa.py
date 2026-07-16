@@ -195,9 +195,7 @@ async def test_result_url_http_contract_validates_and_is_idempotent(
     assert duplicate.text == f"OK{inv_id}"
     assert invalid.status_code == 400
     async with session_scope() as session:
-        stored = await session.scalar(
-            select(Payment).where(Payment.provider_invoice_id == inv_id)
-        )
+        stored = await session.scalar(select(Payment).where(Payment.provider_invoice_id == inv_id))
         active_count = await session.scalar(
             select(func.count(Subscription.id)).where(
                 Subscription.user_id == user_id,

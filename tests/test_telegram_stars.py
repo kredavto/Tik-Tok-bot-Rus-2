@@ -110,9 +110,7 @@ async def test_stars_confirmation_rejects_reused_charge_id() -> None:
 @pytest.mark.asyncio
 @pytest.mark.parametrize("terminal_status", ["refund_pending", "refunded"])
 async def test_stars_confirmation_cannot_reactivate_refund_state(terminal_status: str) -> None:
-    payment, telegram_id = await _create_stars_order(
-        random.randint(1_500_000_000, 1_599_999_999)
-    )
+    payment, telegram_id = await _create_stars_order(random.randint(1_500_000_000, 1_599_999_999))
     charge_id = f"stars-terminal-{payment.id}"
     async with session_scope() as session:
         paid = await mark_stars_payment_paid(
