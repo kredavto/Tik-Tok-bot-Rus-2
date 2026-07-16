@@ -2,8 +2,13 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import sys
 
-from app.core.deploy_validation import parse_env_file, validate_environment
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from app.core.deploy_validation import parse_env_file, validate_environment  # noqa: E402
 
 
 def main() -> int:

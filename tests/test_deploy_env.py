@@ -1,9 +1,25 @@
 import base64
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
 from app.core.deploy_validation import parse_env_file, validate_environment
+
+
+def test_deploy_validator_bootstraps_repository_imports(tmp_path: Path) -> None:
+    script = Path(__file__).parents[1] / "tools" / "validate_deploy_env.py"
+
+    result = subprocess.run(
+        [sys.executable, "-I", "-S", str(script), "--help"],
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 def valid_environment() -> dict[str, str]:
