@@ -6,6 +6,7 @@ from pathlib import Path
 from uuid import UUID
 
 from aiogram import Bot
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramNotFound
 import aiohttp
 import dramatiq
 from dramatiq.brokers.redis import RedisBroker
@@ -58,6 +59,12 @@ redis_broker = RedisBroker(url=settings.redis_url)
 dramatiq.set_broker(redis_broker)
 
 logger = logging.getLogger(__name__)
+
+PERMANENT_TELEGRAM_DELIVERY_ERRORS = (
+    TelegramBadRequest,
+    TelegramForbiddenError,
+    TelegramNotFound,
+)
 
 
 @dramatiq.actor(max_retries=0)
@@ -539,14 +546,36 @@ async def _notify_payment_success(event_id: str) -> None:
                 telegram_id,
                 bot_text("payment_success", plan=plan_id.upper()),
             )
+        except PERMANENT_TELEGRAM_DELIVERY_ERRORS as exc:
+            logger.warning(
+                "Payment notification permanently rejected by Telegram",
+                extra={"event_id": event_id, "error_type": type(exc).__name__},
+            )
+            await _finish_payment_notification(
+                event_uuid,
+                status="rejected",
+                delivery_error=type(exc).__name__,
+            )
+            return
         finally:
             await bot.session.close()
 
-        async with session_scope() as session:
-            event = await session.get(WebhookEvent, event_uuid)
-            if event and event.status == "pending":
-                event.status = "processed"
-                event.processed_at = datetime.now(UTC)
+        await _finish_payment_notification(event_uuid, status="processed")
+
+
+async def _finish_payment_notification(
+    event_id: UUID,
+    *,
+    status: str,
+    delivery_error: str | None = None,
+) -> None:
+    async with session_scope() as session:
+        event = await session.get(WebhookEvent, event_id)
+        if event and event.status == "pending":
+            event.status = status
+            event.processed_at = datetime.now(UTC)
+            if delivery_error:
+                event.payload = {**event.payload, "delivery_error": delivery_error}
 
 
 async def _refresh_expiring_tiktok_tokens() -> None:

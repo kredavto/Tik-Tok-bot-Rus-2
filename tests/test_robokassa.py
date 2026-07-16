@@ -267,6 +267,71 @@ async def test_payment_notification_outbox_is_delivered_idempotently(
 
 
 @pytest.mark.asyncio
+async def test_permanent_telegram_error_rejects_only_affected_notification(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    await init_db()
+    first_telegram_id = random.randint(1_300_000_000, 1_349_999_999)
+    second_telegram_id = random.randint(1_350_000_000, 1_399_999_999)
+    async with session_scope() as session:
+        first_user = await get_or_create_user(session, first_telegram_id, "payment_blocked")
+        first_payment = await create_payment(session, first_user.id, PlanCode.PRO.value)
+        first_confirmation = await mark_payment_paid(
+            session, first_payment.provider_invoice_id, "499.00"
+        )
+        second_user = await get_or_create_user(session, second_telegram_id, "payment_reachable")
+        second_payment = await create_payment(session, second_user.id, PlanCode.PRO.value)
+        second_confirmation = await mark_payment_paid(
+            session, second_payment.provider_invoice_id, "499.00"
+        )
+        first_event_id = first_confirmation.notification_event_id
+        second_event_id = second_confirmation.notification_event_id
+    assert first_event_id is not None
+    assert second_event_id is not None
+
+    @asynccontextmanager
+    async def acquired_lock(_: str):
+        yield True
+
+    class PermanentDeliveryError(Exception):
+        pass
+
+    delivered_to: list[int] = []
+
+    class FakeBotSession:
+        async def close(self) -> None:
+            return None
+
+    class FakeBot:
+        def __init__(self, token: str) -> None:
+            assert token
+            self.session = FakeBotSession()
+
+        async def send_message(self, target: int, _: str) -> None:
+            if target == first_telegram_id:
+                raise PermanentDeliveryError
+            delivered_to.append(target)
+
+    monkeypatch.setattr(tasks, "payment_notification_lock", acquired_lock)
+    monkeypatch.setattr(tasks, "PERMANENT_TELEGRAM_DELIVERY_ERRORS", (PermanentDeliveryError,))
+    monkeypatch.setattr(tasks, "Bot", FakeBot)
+    monkeypatch.setattr(tasks.settings, "bot_token", "12345678" + ":" + "A" * 35)
+
+    await tasks._notify_payment_success(str(first_event_id))
+    await tasks._notify_payment_success(str(second_event_id))
+
+    async with session_scope() as session:
+        first_event = await session.get(WebhookEvent, first_event_id)
+        second_event = await session.get(WebhookEvent, second_event_id)
+    assert first_event is not None
+    assert first_event.status == "rejected"
+    assert first_event.payload["delivery_error"] == "PermanentDeliveryError"
+    assert second_event is not None
+    assert second_event.status == "processed"
+    assert delivered_to == [second_telegram_id]
+
+
+@pytest.mark.asyncio
 async def test_retention_preserves_pending_payment_notification(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
