@@ -59,6 +59,17 @@ def validate_semver(value: str) -> str:
     return value
 
 
+def validate_release_target(version: str, target_environment: str) -> None:
+    """Reject release channels that are not allowed in the target environment."""
+    version_match = SEMVER_PATTERN.fullmatch(validate_semver(version))
+    if version_match is None:  # pragma: no cover - guarded by validate_semver
+        raise ReleaseCandidateError(f"Invalid SemVer version: {version}")
+    if target_environment == "production" and version_match.group(4):
+        raise ReleaseCandidateError(
+            "Prerelease versions cannot be deployed to the production environment"
+        )
+
+
 def _assignment_string(path: Path, variable_name: str, *, class_name: str | None = None) -> str:
     tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     body: Iterable[ast.stmt] = tree.body
@@ -194,17 +205,14 @@ def build_release_manifest(
     version_report = collect_version_report(root, env_file=env_file)
     files, tree_digest = digest_source_files(root, tracked_paths)
     heads, migration_count = alembic_heads(root)
-    version_match = SEMVER_PATTERN.fullmatch(version_report.version)
-    if version_match is None:
-        raise ReleaseCandidateError(f"Invalid SemVer version: {version_report.version}")
-    prerelease = version_match.group(4)
     target_environment = "unspecified"
     if env_file is not None:
         target_environment = parse_env_file(env_file).get("APP_ENV", "") or "unspecified"
-        if target_environment == "production" and prerelease:
-            raise ReleaseCandidateError(
-                "Prerelease versions cannot be deployed to the production environment"
-            )
+    validate_release_target(version_report.version, target_environment)
+    version_match = SEMVER_PATTERN.fullmatch(version_report.version)
+    if version_match is None:  # pragma: no cover - guarded by validate_release_target
+        raise ReleaseCandidateError(f"Invalid SemVer version: {version_report.version}")
+    prerelease = version_match.group(4)
     return {
         "schema_version": 1,
         "project": "Tik_Tok_Loader",

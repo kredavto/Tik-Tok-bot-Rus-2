@@ -13,6 +13,7 @@ from app.core.release_candidate import (
     collect_version_report,
     digest_source_files,
     serialize_manifest,
+    validate_release_target,
     validate_semver,
 )
 from app.db.models import Payment, SystemSetting, User
@@ -24,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_current_release_version_is_consistent() -> None:
     report = collect_version_report(ROOT)
 
-    assert report.version == "0.2.0-rc.1"
+    assert report.version == "0.2.0"
     assert set(report.sources.values()) == {report.version}
 
 
@@ -121,8 +122,8 @@ def test_manifest_is_deterministic_and_contains_no_file_contents() -> None:
     serialized = serialize_manifest(first)
 
     assert first == second
-    assert first["version"] == "0.2.0-rc.1"
-    assert first["release_channel"] == "candidate"
+    assert first["version"] == "0.2.0"
+    assert first["release_channel"] == "stable"
     assert first["database"]["alembic_heads"] == ["0010_scrub_robokassa_signatures"]
     assert first["required_quality_gates"] == list(REQUIRED_QUALITY_GATES)
     assert "replace_me" not in serialized
@@ -140,18 +141,6 @@ def test_manifest_rejects_invalid_git_sha() -> None:
         )
 
 
-def test_prerelease_cannot_target_production(tmp_path: Path) -> None:
-    env_file = tmp_path / ".env"
-    env_file.write_text(
-        "APP_ENV=production\nAPP_VERSION=0.2.0-rc.1\n",
-        encoding="utf-8",
-    )
-
+def test_prerelease_cannot_target_production() -> None:
     with pytest.raises(ReleaseCandidateError, match="cannot be deployed"):
-        build_release_manifest(
-            root=ROOT,
-            git_sha="a" * 40,
-            commit_timestamp="2026-07-14T09:00:00+03:00",
-            tracked_paths=["pyproject.toml"],
-            env_file=env_file,
-        )
+        validate_release_target("0.2.0-rc.1", "production")

@@ -6,6 +6,8 @@ The project follows Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-17
+
 ### Added
 
 - Public Tik_Tok_Loader service page, Terms of Service, Privacy Policy, hardened response headers,

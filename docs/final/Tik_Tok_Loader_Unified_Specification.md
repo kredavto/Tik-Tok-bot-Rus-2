@@ -410,9 +410,9 @@ Current implementation status: stages 1 through 9 pass the repository's automate
 Stage 10 infrastructure is active on the Netherlands server: domain and HTTPS, isolated Compose
 networking, Telegram webhook delivery, PostgreSQL backup, public smoke checks, Robokassa sandbox
 acceptance, production Robokassa configuration, and a real Telegram Stars payment/refund scenario
-have been verified. TikTok OAuth/publication acceptance remains pending. Release candidate
-`0.2.0-rc.1` remains a prerelease and must be promoted to stable SemVer only after that provider
-gate passes.
+have been verified. Stable release `0.2.0` is the production baseline. TikTok publication remains
+disabled until the official OAuth, Sandbox, application review, and publication acceptance gates
+pass.
 
 ## 5.3. Control Points
 
@@ -5039,16 +5039,17 @@ The release candidate manifest is deterministic, secret-free evidence that ident
 source tree proposed for staging. It complements CI results and provider-backed acceptance records;
 it does not replace either of them.
 
-## 64.1. Current Candidate
+## 64.1. Current Release
 
-The current prerelease version is `0.2.0-rc.1`. The version is synchronized across
+The current stable production version is `0.2.0`. The version is synchronized across
 `pyproject.toml`, `app.__version__`, the application configuration default, and all environment
 templates. `CHANGELOG.md` contains a matching release heading.
 
-Prerelease versions may be built in CI and deployed to staging. The manifest builder rejects a
-prerelease when the supplied runtime environment contains `APP_ENV=production`. Production
-promotion requires a stable version such as `0.2.0`, a matching changelog heading, a new successful
-CI run, and explicit release approval.
+The release was promoted from `0.2.0-rc.1` after automated quality gates, production Robokassa
+acceptance, and a real Telegram Stars payment and refund scenario passed. TikTok publication stays
+disabled by configuration until official OAuth, Sandbox, and Content Posting acceptance are
+complete. The manifest builder continues to reject any prerelease when the supplied runtime
+environment contains `APP_ENV=production`.
 
 ## 64.2. Manifest Contents
 

@@ -4,16 +4,17 @@ The release candidate manifest is deterministic, secret-free evidence that ident
 source tree proposed for staging. It complements CI results and provider-backed acceptance records;
 it does not replace either of them.
 
-## Current Candidate
+## Current Release
 
-The current prerelease version is `0.2.0-rc.1`. The version is synchronized across
+The current stable production version is `0.2.0`. The version is synchronized across
 `pyproject.toml`, `app.__version__`, the application configuration default, and all environment
 templates. `CHANGELOG.md` contains a matching release heading.
 
-Prerelease versions may be built in CI and deployed to staging. The manifest builder rejects a
-prerelease when the supplied runtime environment contains `APP_ENV=production`. Production
-promotion requires a stable version such as `0.2.0`, a matching changelog heading, a new successful
-CI run, and explicit release approval.
+The release was promoted from `0.2.0-rc.1` after automated quality gates, production Robokassa
+acceptance, and a real Telegram Stars payment and refund scenario passed. TikTok publication stays
+disabled by configuration until official OAuth, Sandbox, and Content Posting acceptance are
+complete. The manifest builder continues to reject any prerelease when the supplied runtime
+environment contains `APP_ENV=production`.
 
 ## Manifest Contents
 
