@@ -2,9 +2,9 @@
 
 **Unified Technical Specification**
 
-- **Версия:** 0.9.1
+- **Версия:** 0.9.2
 - **Репозиторий:** `kredavto/Tik-Tok-bot-Rus-2`
-- **Дата сборки:** 2026-07-16
+- **Дата сборки:** 2026-07-17
 - **Статус:** проектная спецификация для реализации
 
 > Публикация TikTok в проекте проектируется только через официальный TikTok Content Posting API и OAuth 2.0. Неофициальные API, автоматизация интерфейса и методы обхода ограничений не входят в допустимую архитектуру.
@@ -406,13 +406,13 @@ This document is the final implementation roadmap for Tik_Tok_Loader. It can be 
 
 ## 5.2. Current Status
 
-Current implementation status: stages 1 through 9 are represented in the repository and automated
-quality gates. Stage 10 automation is implemented: strict preflight, TLS validation, explicit
-Telegram webhook management, public smoke checks, and the staging acceptance runbook are present.
-External staging acceptance and production activation remain pending until rotated credentials,
-approved provider applications, domain, HTTPS, backup destination, and server access are available.
-Release candidate `0.2.0-rc.1` adds deterministic source evidence and cannot be deployed to
-production until it is accepted in staging and promoted to a stable version.
+Current implementation status: stages 1 through 9 pass the repository's automated quality gates.
+Stage 10 infrastructure is active on the Netherlands server: domain and HTTPS, isolated Compose
+networking, Telegram webhook delivery, PostgreSQL backup, public smoke checks, Robokassa sandbox
+acceptance, and production Robokassa configuration have been verified. TikTok OAuth/publication
+acceptance and a real Telegram Stars acceptance scenario remain pending. Release candidate
+`0.2.0-rc.1` remains a prerelease and must be promoted to stable SemVer only after those provider
+gates pass.
 
 ## 5.3. Control Points
 
@@ -3133,9 +3133,9 @@ public HTTPS URL. Then perform these provider-backed scenarios:
 3. Confirm FREE plan is assigned.
 4. Start TikTok OAuth connection.
 5. Confirm TikTok OAuth callback succeeds.
-6. Generate a PRO payment link.
-7. Complete a Robokassa test payment.
-8. Confirm ResultURL activates PRO.
+6. Create a PRO Telegram Stars invoice and complete the in-bot acceptance scenario.
+7. Through the separately approved external channel, generate a Robokassa PRO payment link.
+8. Complete a Robokassa test payment and confirm ResultURL activates PRO exactly once.
 9. Upload one test video.
 10. Confirm validation, preparation, queueing, worker processing, and TikTok API submission.
 11. Confirm admin metrics and logs are visible.
@@ -5560,18 +5560,18 @@ Each functional requirement must have a stable identifier and a visible link to 
 | `REQ-003` | Paid plans in Telegram | Telegram Stars | `QA-PAY-001`; Stars validation and idempotency tests | [Payments](#11-payments-entity), [Telegram Stars](#21-telegram-stars-payments) | Implemented at 199/499 XTR; staging pending |
 | `REQ-004` | Video publication | Worker / TikTok | `QA-UPL-001`; FSM, video, worker, and lifecycle tests | [Upload Jobs](#12-upload-jobs-entity), [Lifecycle](#19-video-publication-lifecycle) | Implemented; staging pending |
 | `REQ-005` | Daily limits | Usage service | `QA-LIMIT-001`; quota concurrency tests | [Daily Usage](#13-daily-usage-entity) | Implemented |
-| `NFR-001` | Core NFR controls | Cross-cutting | CI quality, coverage, migration, container | [NFR](#6-non-functional-requirements), [Tests](#68-test-strategy-and-quality-gates) | Implemented; production evidence pending |
+| `NFR-001` | Core NFR controls | Cross-cutting | CI quality, coverage, migration, container, production smoke | [NFR](#6-non-functional-requirements), [Tests](#68-test-strategy-and-quality-gates) | Implemented; provider completion pending |
 | `NFR-002` | Security audit | Audit | Admin, tracing, webhook, secret scan | [Security Audit](#31-security-logging-and-audit) | Implemented |
-| `NFR-003` | Infrastructure dependencies | Operations | Container and post-update checks | [Infrastructure](#61-infrastructure-dependency-management) | Implemented; staging pending |
+| `NFR-003` | Infrastructure dependencies | Operations | Container build, production health, backup and post-update checks | [Infrastructure](#61-infrastructure-dependency-management) | Implemented |
 | `NFR-004` | Confidential data | Security | Encryption and secret-scan tests | [Data Policy](#32-confidential-data-policy) | Implemented |
 | `DOC-001` | Documentation maintenance | Documentation | Unified build and release review | [Spec Index](#72-specification-index) | Implemented |
 | `CFG-001` | Environment and secrets | Configuration | Config and deploy-validator tests | [Environment](#33-environment-configuration-and-secrets-control) | Implemented |
 | `TD-001` | Technical debt | Development | Release readiness review | [Technical Debt](#59-technical-debt-management) | Process defined |
 | `DEP-001` | Licenses and components | Dependencies | Dependency and release review | [Licenses](#62-license-and-third-party-component-management) | Process defined |
 | `API-001` | API compatibility | REST / OpenAPI | OpenAPI checker and API tests | [API Versioning](#25-api-versioning-and-client-compatibility) | Implemented |
-| `ROAD-001` | Implementation roadmap | Delivery | Preflight, smoke, and roadmap control points | [Roadmap](#5-implementation-roadmap), [Staging Runbook](#39-staging-acceptance-runbook) | Stage 10 automation done; external acceptance pending |
-| `OPS-001` | Controlled production launch | Operations | Deploy validator and webhook-management tests | [Production Launch](#40-production-launch-plan), [Staging Runbook](#39-staging-acceptance-runbook) | Implemented; provider evidence pending |
-| `REL-001` | Reproducible release candidate | Release | Manifest determinism, version, migration, and prerelease tests | [Release Candidate](#64-release-candidate-manifest), [Release](#65-release-management) | Implemented; staging evidence pending |
+| `ROAD-001` | Implementation roadmap | Delivery | Preflight, smoke, Robokassa acceptance and roadmap control points | [Roadmap](#5-implementation-roadmap), [Staging Runbook](#39-staging-acceptance-runbook) | Stage 10 infrastructure active; TikTok and Stars acceptance pending |
+| `OPS-001` | Controlled production launch | Operations | Deploy validator, webhook verification, backup and production smoke | [Production Launch](#40-production-launch-plan), [Staging Runbook](#39-staging-acceptance-runbook) | Infrastructure and Robokassa verified; TikTok provider evidence pending |
+| `REL-001` | Reproducible release candidate | Release | Manifest determinism, version, migration, CI run #59 and provider evidence | [Release Candidate](#64-release-candidate-manifest), [Release](#65-release-management) | RC deployed for acceptance; stable promotion pending |
 
 ## 70.3. Maintenance Rules
 

@@ -1,8 +1,9 @@
 # Robokassa sandbox acceptance evidence
 
-Date: 2026-07-16 (UTC)  
-Environment: staging  
-Application revision: `3a04e6ebf4352cf9c55b071d3247fa27341de5d3`
+- Date: 2026-07-16 (UTC)
+- Environment: production-hosted release candidate using Robokassa sandbox
+- Payment revision: `08957a9fd2c906a35b58497ad90b474b95ebb0bb`
+- Accepted remediation revision: `598cc22ec1ec4da871465fde64ff0a8f130f8b8a`
 
 ## Scope
 
@@ -17,23 +18,27 @@ and rejection of invalid callback signatures. No real funds were charged.
 | --- | --- | --- |
 | Robokassa sandbox checkout opens | PASS | Test checkout displayed the expected merchant and PRO amount of 499 RUB. |
 | Sandbox card operation | PASS | Robokassa test UI completed the operation with the successful test outcome. |
-| Automatic provider ResultURL | BLOCKED | The provider did not call the configured public endpoint. The merchant test profile must be updated in Robokassa. |
+| Automatic provider ResultURL | PASS | Robokassa delivered invoice `1004` to the public ResultURL, which returned HTTP 200. |
 | Direct HTTPS ResultURL, first delivery | PASS | Fresh staging invoice `1003` returned HTTP 200 and `OK1003`. |
 | Direct HTTPS ResultURL, duplicate delivery | PASS | Duplicate delivery returned HTTP 200 and `OK1003` without a second activation. |
 | Invalid ResultURL signature | PASS | Callback returned HTTP 400 with public error code `PAY_400`. |
-| Payment status | PASS | Invoice `1003` is `paid`. |
-| Subscription integrity | PASS | Exactly one active subscription remained after processing. |
-| Webhook idempotency | PASS | Exactly one claimed `payment_result` event exists for invoice `1003`. |
-| Notification recovery | PASS | A durable `payment_success_notification` outbox event remained `pending` while the Telegram token was invalid. |
-| Automated tests and migrations | PASS | GitHub Actions CI run #47 completed successfully. |
+| Payment status | PASS | Provider invoice `1004` is `paid` for PRO at 499 RUB. |
+| Subscription integrity | PASS | Exactly one active 30-day PRO subscription is linked to invoice `1004`. |
+| Webhook idempotency | PASS | Exactly one claimed `payment_result` event exists for invoice `1004`; duplicate-delivery coverage also passed in CI. |
+| Telegram notification | PASS | The durable `payment_success_notification` event for invoice `1004` reached `processed`. |
+| Stored payload sanitization | PASS | Migration `0010` removed callback signatures from payment and webhook JSONB payloads; both residual counts are zero. |
+| Access-log sanitization | PASS | A marker query was absent from API logs; structured logs contain only the callback path without query parameters. |
+| Production credential switch | PASS | Production Password #1 and #2 are installed, `ROBOKASSA_TEST_MODE=false`, and generated checkout parameters omit `IsTest`. |
+| Automated tests and migrations | PASS | [GitHub Actions CI run #59](https://github.com/kredavto/Tik-Tok-bot-Rus-2/actions/runs/29538855376) passed all jobs with 159 tests and 61.42% coverage. |
 | Independent code review | PASS | No P0-P2 findings remained for revision `3a04e6e`. |
 | Concurrent worker runtime | PASS | 24 idempotent DB maintenance actors completed on four Dramatiq threads without asyncpg or cross-event-loop errors. |
 
 ## Deployment verification
 
-The deployment created a PostgreSQL backup, built the application image,
-applied Alembic migrations, and started the API, bot, worker, scheduler,
-PostgreSQL, and Redis containers. Public health, readiness, metrics, OpenAPI,
+The deployment created verified PostgreSQL backup
+`tiktok_loader_20260716T221834Z.dump`, built the application image, applied Alembic migration
+`0010_scrub_robokassa_signatures`, and started the API, bot, worker, scheduler, PostgreSQL, and
+Redis containers. Public health, readiness, metrics, OpenAPI,
 and Content-Security-Policy checks passed at `https://loader.invest-lend.ru`.
 The worker was then exercised with 24 concurrent maintenance actors; all database
 operations ran through the persistent worker event loop without pool contention.
@@ -42,17 +47,13 @@ were not modified.
 
 ## Remaining gates
 
-1. Enter the Robokassa cabinet PIN and configure the test merchant profile:
-   - Result URL: `https://loader.invest-lend.ru/api/v1/payments/robokassa/result`
-   - Result method: `POST`
-   - Success URL: `https://loader.invest-lend.ru/api/v1/payments/robokassa/success`
-   - Fail URL: `https://loader.invest-lend.ru/api/v1/payments/robokassa/fail`
-2. Repeat a new sandbox checkout and confirm that Robokassa itself delivers the
-   first ResultURL notification.
-3. Replace the revoked Telegram token in the new stack, configure the webhook,
-   and verify that the pending outbox notification is delivered.
-4. Only after all sandbox gates pass, replace test Robokassa credentials with
-   production credentials and set `ROBOKASSA_TEST_MODE=false`.
+Robokassa sandbox acceptance is complete. No real funds were charged during this run. Remaining
+release gates belong to other provider-backed scenarios:
+
+1. Complete TikTok OAuth with an approved production application and test account.
+2. Publish a test video through the official TikTok Content Posting API and record its final status.
+3. Complete a Telegram Stars test purchase and refund/reconciliation scenario.
+4. Promote the accepted release candidate to stable SemVer only after the remaining provider gates pass.
 
 Robokassa documents that the merchant receives payment confirmation through
 ResultURL and that duplicate deliveries must be handled by the merchant:
@@ -61,5 +62,5 @@ ResultURL and that duplicate deliveries must be handled by the merchant:
 
 ## Secret handling
 
-Passwords, Telegram tokens, signatures, checkout URLs, user identifiers, and
+Passwords, Telegram tokens, signatures, complete checkout URLs, user identifiers, and
 raw callback payloads are intentionally excluded from this evidence file.

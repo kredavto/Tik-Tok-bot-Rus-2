@@ -45,9 +45,9 @@ public HTTPS URL. Then perform these provider-backed scenarios:
 3. Confirm FREE plan is assigned.
 4. Start TikTok OAuth connection.
 5. Confirm TikTok OAuth callback succeeds.
-6. Generate a PRO payment link.
-7. Complete a Robokassa test payment.
-8. Confirm ResultURL activates PRO.
+6. Create a PRO Telegram Stars invoice and complete the in-bot acceptance scenario.
+7. Through the separately approved external channel, generate a Robokassa PRO payment link.
+8. Complete a Robokassa test payment and confirm ResultURL activates PRO exactly once.
 9. Upload one test video.
 10. Confirm validation, preparation, queueing, worker processing, and TikTok API submission.
 11. Confirm admin metrics and logs are visible.

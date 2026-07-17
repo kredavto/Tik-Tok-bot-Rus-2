@@ -22,6 +22,9 @@ The project follows Semantic Versioning.
 
 ### Changed
 
+- Update the unified specification to revision `0.9.2` with completed Robokassa provider
+  acceptance, production infrastructure status, remaining TikTok/Stars gates, and corrected
+  in-bot versus external-channel payment flows.
 - Generate the unified PDF specification with a multi-level table of contents, page numbers, and
   clickable document outline entries.
 - In-bot paid-plan checkout now follows Telegram's digital-goods requirement and no longer exposes

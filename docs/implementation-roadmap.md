@@ -19,13 +19,13 @@ This document is the final implementation roadmap for Tik_Tok_Loader. It can be 
 
 ## Current Status
 
-Current implementation status: stages 1 through 9 are represented in the repository and automated
-quality gates. Stage 10 automation is implemented: strict preflight, TLS validation, explicit
-Telegram webhook management, public smoke checks, and the staging acceptance runbook are present.
-External staging acceptance and production activation remain pending until rotated credentials,
-approved provider applications, domain, HTTPS, backup destination, and server access are available.
-Release candidate `0.2.0-rc.1` adds deterministic source evidence and cannot be deployed to
-production until it is accepted in staging and promoted to a stable version.
+Current implementation status: stages 1 through 9 pass the repository's automated quality gates.
+Stage 10 infrastructure is active on the Netherlands server: domain and HTTPS, isolated Compose
+networking, Telegram webhook delivery, PostgreSQL backup, public smoke checks, Robokassa sandbox
+acceptance, and production Robokassa configuration have been verified. TikTok OAuth/publication
+acceptance and a real Telegram Stars acceptance scenario remain pending. Release candidate
+`0.2.0-rc.1` remains a prerelease and must be promoted to stable SemVer only after those provider
+gates pass.
 
 ## Control Points
 

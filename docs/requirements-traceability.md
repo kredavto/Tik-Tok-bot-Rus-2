@@ -13,18 +13,18 @@ Each functional requirement must have a stable identifier and a visible link to 
 | `REQ-003` | Paid plans in Telegram | Telegram Stars | `QA-PAY-001`; Stars validation and idempotency tests | [Payments](payments-entity.md), [Telegram Stars](telegram-stars.md) | Implemented at 199/499 XTR; staging pending |
 | `REQ-004` | Video publication | Worker / TikTok | `QA-UPL-001`; FSM, video, worker, and lifecycle tests | [Upload Jobs](upload-jobs-entity.md), [Lifecycle](video-lifecycle.md) | Implemented; staging pending |
 | `REQ-005` | Daily limits | Usage service | `QA-LIMIT-001`; quota concurrency tests | [Daily Usage](daily-usage-entity.md) | Implemented |
-| `NFR-001` | Core NFR controls | Cross-cutting | CI quality, coverage, migration, container | [NFR](non-functional-requirements.md), [Tests](test-strategy.md) | Implemented; production evidence pending |
+| `NFR-001` | Core NFR controls | Cross-cutting | CI quality, coverage, migration, container, production smoke | [NFR](non-functional-requirements.md), [Tests](test-strategy.md) | Implemented; provider completion pending |
 | `NFR-002` | Security audit | Audit | Admin, tracing, webhook, secret scan | [Security Audit](security-logging-audit.md) | Implemented |
-| `NFR-003` | Infrastructure dependencies | Operations | Container and post-update checks | [Infrastructure](infrastructure-dependency-management.md) | Implemented; staging pending |
+| `NFR-003` | Infrastructure dependencies | Operations | Container build, production health, backup and post-update checks | [Infrastructure](infrastructure-dependency-management.md) | Implemented |
 | `NFR-004` | Confidential data | Security | Encryption and secret-scan tests | [Data Policy](confidential-data-policy.md) | Implemented |
 | `DOC-001` | Documentation maintenance | Documentation | Unified build and release review | [Spec Index](specification-index.md) | Implemented |
 | `CFG-001` | Environment and secrets | Configuration | Config and deploy-validator tests | [Environment](environment-configuration-secrets.md) | Implemented |
 | `TD-001` | Technical debt | Development | Release readiness review | [Technical Debt](technical-debt-management.md) | Process defined |
 | `DEP-001` | Licenses and components | Dependencies | Dependency and release review | [Licenses](license-third-party-management.md) | Process defined |
 | `API-001` | API compatibility | REST / OpenAPI | OpenAPI checker and API tests | [API Versioning](api-versioning-compatibility.md) | Implemented |
-| `ROAD-001` | Implementation roadmap | Delivery | Preflight, smoke, and roadmap control points | [Roadmap](implementation-roadmap.md), [Staging Runbook](staging-acceptance-runbook.md) | Stage 10 automation done; external acceptance pending |
-| `OPS-001` | Controlled production launch | Operations | Deploy validator and webhook-management tests | [Production Launch](production-launch.md), [Staging Runbook](staging-acceptance-runbook.md) | Implemented; provider evidence pending |
-| `REL-001` | Reproducible release candidate | Release | Manifest determinism, version, migration, and prerelease tests | [Release Candidate](release-candidate.md), [Release](release.md) | Implemented; staging evidence pending |
+| `ROAD-001` | Implementation roadmap | Delivery | Preflight, smoke, Robokassa acceptance and roadmap control points | [Roadmap](implementation-roadmap.md), [Staging Runbook](staging-acceptance-runbook.md) | Stage 10 infrastructure active; TikTok and Stars acceptance pending |
+| `OPS-001` | Controlled production launch | Operations | Deploy validator, webhook verification, backup and production smoke | [Production Launch](production-launch.md), [Staging Runbook](staging-acceptance-runbook.md) | Infrastructure and Robokassa verified; TikTok provider evidence pending |
+| `REL-001` | Reproducible release candidate | Release | Manifest determinism, version, migration, CI run #59 and provider evidence | [Release Candidate](release-candidate.md), [Release](release.md) | RC deployed for acceptance; stable promotion pending |
 
 ## Maintenance Rules
 
