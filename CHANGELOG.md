@@ -22,9 +22,10 @@ The project follows Semantic Versioning.
 
 ### Changed
 
-- Update the unified specification to revision `0.9.3`; decouple Telegram Stars checkout from RUB
+- Update the unified specification to revision `0.9.4`; decouple Telegram Stars checkout from RUB
   pricing, use single-chat invoices, persist definitive invoice rejection, keep `/terms` available,
-  and surface pending refunds in the administrator payment view.
+  register the supported Telegram command menu, and surface pending refunds in the administrator
+  payment view.
 - Update the unified specification to revision `0.9.2` with completed Robokassa provider
   acceptance, production infrastructure status, remaining TikTok/Stars gates, and corrected
   in-bot versus external-channel payment flows.

@@ -265,6 +265,15 @@ async def test_terms_command_keeps_payment_terms_accessible() -> None:
     message.answer.assert_awaited_once_with(handlers.messages.AGREEMENT)
 
 
+@pytest.mark.asyncio
+async def test_help_command_is_available() -> None:
+    message = make_message("/help")
+
+    await handlers.help_message(message)  # type: ignore[arg-type]
+
+    message.answer.assert_awaited_once_with(handlers.messages.HELP)
+
+
 def test_fsm_contains_all_specified_states() -> None:
     expected = {
         "START",

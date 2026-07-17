@@ -27,6 +27,7 @@ class FakeBot:
         self.set_result = set_result
         self.delete_result = delete_result
         self.set_call: dict[str, object] | None = None
+        self.commands: list[object] | None = None
         self.delete_drop_pending: bool | None = None
         self.session = FakeSession()
 
@@ -50,6 +51,10 @@ class FakeBot:
 
     async def get_webhook_info(self) -> FakeWebhookInfo:
         return self.info
+
+    async def set_my_commands(self, commands: list[object]) -> bool:
+        self.commands = commands
+        return True
 
     async def delete_webhook(self, *, drop_pending_updates: bool) -> bool:
         self.delete_drop_pending = drop_pending_updates
@@ -109,6 +114,14 @@ async def test_configure_webhook_is_verified_without_dropping_updates() -> None:
         "allowed_updates": ["message", "callback_query"],
         "drop_pending_updates": False,
     }
+    assert [command.command for command in bot.commands or []] == [
+        "start",
+        "tariffs",
+        "status",
+        "terms",
+        "paysupport",
+        "help",
+    ]
 
 
 async def test_verify_webhook_rejects_configuration_drift() -> None:

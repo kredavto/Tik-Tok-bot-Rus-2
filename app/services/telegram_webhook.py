@@ -3,6 +3,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from aiogram import Bot
+from aiogram.types import BotCommand
+
+
+BOT_COMMANDS = (
+    BotCommand(command="start", description="Открыть главное меню"),
+    BotCommand(command="tariffs", description="Посмотреть тарифы"),
+    BotCommand(command="status", description="Проверить текущий тариф"),
+    BotCommand(command="terms", description="Прочитать пользовательское соглашение"),
+    BotCommand(command="paysupport", description="Получить помощь по платежу"),
+    BotCommand(command="help", description="Открыть справку"),
+)
 
 
 class TelegramWebhookError(RuntimeError):
@@ -65,6 +76,9 @@ async def configure_telegram_webhook(
     )
     if not configured:
         raise TelegramWebhookError("Telegram rejected the webhook configuration")
+    commands_configured = await bot.set_my_commands(list(BOT_COMMANDS))
+    if not commands_configured:
+        raise TelegramWebhookError("Telegram rejected the bot command configuration")
     return await verify_telegram_webhook(bot, expected_url=expected_url)
 
 

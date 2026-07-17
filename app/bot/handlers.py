@@ -601,6 +601,7 @@ async def cancel_current_operation(message: Message, state: FSMContext) -> None:
     await message.answer(messages.CANCELLED, reply_markup=main_menu())
 
 
+@router.message(Command("help"))
 @router.message(F.text == BTN_HELP)
 async def help_message(message: Message) -> None:
     await message.answer(messages.HELP)

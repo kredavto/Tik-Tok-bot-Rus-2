@@ -43,6 +43,8 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 - Never log Telegram bot tokens, payment credentials, or user banking data.
 - Keep `/paysupport` available and provide a safe support process.
 - Keep `/terms` available so users can review the accepted terms before and after checkout.
+- Register `/terms`, `/paysupport`, and the other supported commands in Telegram when configuring
+  the production webhook.
 - Refunds must use Telegram's `refundStarPayment` method and update the immutable payment history to
   `refunded`; they must not be implemented as an undocumented manual balance adjustment.
 - ADMIN and SUPER_ADMIN perform eligible refunds through

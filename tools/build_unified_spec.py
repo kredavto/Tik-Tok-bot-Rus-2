@@ -44,7 +44,7 @@ OUTPUT_DIR = DOCS / "final"
 PROJECT_TITLE = "Tik_Tok_Loader"
 DOC_TITLE_RU = "Единая техническая спецификация"
 DOC_TITLE_EN = "Unified Technical Specification"
-VERSION = "0.9.3"
+VERSION = "0.9.4"
 REPO = "kredavto/Tik-Tok-bot-Rus-2"
 
 
