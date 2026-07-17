@@ -13,7 +13,13 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import Update
 from fastapi import FastAPI, Form, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, PlainTextResponse, RedirectResponse, Response
+from fastapi.responses import (
+    FileResponse,
+    JSONResponse,
+    PlainTextResponse,
+    RedirectResponse,
+    Response,
+)
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 from sqlalchemy import func, select, text
@@ -76,7 +82,9 @@ app.include_router(admin_router, prefix="/api/v1")
 app.include_router(admin_router, include_in_schema=False)
 
 ADMIN_UI_DIR = Path(__file__).resolve().parents[1] / "admin_ui" / "static"
+PUBLIC_DIR = Path(__file__).resolve().parents[1] / "public"
 app.mount("/admin-ui", StaticFiles(directory=ADMIN_UI_DIR, html=True), name="admin-ui")
+app.mount("/assets", StaticFiles(directory=PUBLIC_DIR / "static"), name="public-assets")
 
 METRICS = {
     "http_requests_total": 0,
@@ -149,7 +157,7 @@ async def request_id_middleware(request: Request, call_next):
     response.headers["X-Request-ID"] = request_id
     response.headers["X-Correlation-ID"] = correlation_id
     response.headers["X-Response-Time-ms"] = str(response_time_ms)
-    if request.url.path.startswith("/admin-ui"):
+    if request.url.path.startswith(("/admin-ui", "/legal", "/assets")) or request.url.path == "/":
         response.headers["Cache-Control"] = "no-store"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; script-src 'self'; style-src 'self'; "
@@ -157,6 +165,7 @@ async def request_id_middleware(request: Request, call_next):
         )
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     METRICS["http_requests_total"] += 1
     logger.info(
         "HTTP request",
@@ -174,7 +183,8 @@ async def request_id_middleware(request: Request, call_next):
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
-    if request.url.path in {"/health", "/ready", "/metrics"}:
+    public_path = request.url.path == "/" or request.url.path.startswith(("/legal", "/assets"))
+    if request.url.path in {"/health", "/ready", "/metrics"} or public_path:
         return await call_next(request)
 
     client = _rate_limit_identity(request)
@@ -208,6 +218,21 @@ def _rate_limit_identity(request: Request) -> str:
         return str(ipaddress.ip_address(candidate))
     except ValueError:
         return peer
+
+
+@app.get("/", include_in_schema=False)
+async def public_home() -> FileResponse:
+    return FileResponse(PUBLIC_DIR / "index.html")
+
+
+@app.get("/legal/terms", include_in_schema=False)
+async def public_terms() -> FileResponse:
+    return FileResponse(PUBLIC_DIR / "terms.html")
+
+
+@app.get("/legal/privacy", include_in_schema=False)
+async def public_privacy() -> FileResponse:
+    return FileResponse(PUBLIC_DIR / "privacy.html")
 
 
 @app.get("/api/v1/health")

@@ -8,6 +8,39 @@
 - Keep `TIKTOK_REDIRECT_URI` synchronized with the production HTTPS callback URL.
 - Document every TikTok Developer Portal setting change in the operations journal or admin audit log.
 
+### Production portal values
+
+Use these exact public values for the production application:
+
+| Setting | Value |
+|---|---|
+| Application name | `Tik_Tok_loader` |
+| Web URL | `https://loader.invest-lend.ru/` |
+| Terms of Service URL | `https://loader.invest-lend.ru/legal/terms` |
+| Privacy Policy URL | `https://loader.invest-lend.ru/legal/privacy` |
+| Redirect URI | `https://loader.invest-lend.ru/api/v1/oauth/tiktok/callback` |
+| Webhook URL | `https://loader.invest-lend.ru/api/v1/webhooks/tiktok` |
+| Product | Content Posting API |
+| OAuth scopes | `user.info.basic`, `video.publish` |
+
+The application icon is stored at `app/public/static/app-icon.png`. It is an original 1024 x
+1024 PNG and does not use TikTok or Telegram trademarks.
+
+Recommended short description:
+
+> Telegram bot that lets users securely publish their own videos to TikTok through the official API.
+
+Recommended review explanation:
+
+> Tik_Tok_loader is a Telegram bot for users to publish videos they own to their TikTok account.
+> The user connects TikTok through OAuth 2.0 with user.info.basic and video.publish. Before upload,
+> the bot queries current creator information, shows the target account and available privacy,
+> interaction, and commercial-content settings, and requires explicit confirmation. A background
+> worker transfers the file through the official Content Posting API and reports processing and
+> final status. OAuth tokens are encrypted and users can disconnect at any time. The service does
+> not collect TikTok passwords and does not use unofficial APIs, interface automation, or regional
+> restriction bypasses.
+
 ## OAuth Settings
 
 Before release, verify:
@@ -46,6 +79,23 @@ Before every production release:
 7. Confirm refresh flow behavior.
 8. Confirm official Content Posting API behavior in staging or controlled production test.
 9. Confirm no bypass, browser automation, or unofficial API behavior exists.
+
+## Review Evidence
+
+The first review submission must include a demo video recorded with a Sandbox account. The demo
+must show the complete user-controlled flow:
+
+1. Start the Telegram bot and accept the service terms.
+2. Open TikTok OAuth and approve only the requested scopes.
+3. Return to the bot with the connected TikTok account displayed.
+4. Upload an owned test video and review creator information.
+5. Manually choose privacy and interaction settings with no preselected privacy value.
+6. Confirm content disclosures and the publication itself.
+7. Show the processing status and final private post in the test TikTok account.
+8. Disconnect TikTok and confirm that stored OAuth credentials are removed.
+
+Do not submit the application for review until the portal draft, Sandbox flow, and demo video have
+all been checked against the current production build.
 
 ## Required Direct Post UX
 

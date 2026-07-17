@@ -8,6 +8,10 @@ The project follows Semantic Versioning.
 
 ### Added
 
+- Public Tik_Tok_Loader service page, Terms of Service, Privacy Policy, hardened response headers,
+  and an original 1024 x 1024 application icon for TikTok Developer review.
+- Production TikTok Developer Portal values and a Sandbox demo/review evidence checklist.
+
 - Telegram Stars (`XTR`) invoice flow with pre-checkout validation, transactional subscription
   activation, unique charge tracking, duplicate-delivery protection, `/paysupport`, configurable
   plan prices, and separate Stars analytics.

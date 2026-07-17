@@ -35,7 +35,3 @@ End-to-end publication sequence is documented in [Sequence Flows](sequence-flows
 - Daily limit is consumed only after official TikTok API acceptance.
 - Authorization and platform restriction errors are not retried automatically.
 - Temporary failures can be retried by the queue system.
-
-Queue retry and duplicate-prevention rules are defined in [Queue and Retry Policy](queue-retry-policy.md).
-
-Temporary file handling is defined in [File Storage Policy](file-storage-policy.md).
