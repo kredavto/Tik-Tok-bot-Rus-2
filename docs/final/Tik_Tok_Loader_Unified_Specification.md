@@ -2,7 +2,7 @@
 
 **Unified Technical Specification**
 
-- **Версия:** 0.9.4
+- **Версия:** 0.9.5
 - **Репозиторий:** `kredavto/Tik-Tok-bot-Rus-2`
 - **Дата сборки:** 2026-07-17
 - **Статус:** проектная спецификация для реализации
@@ -409,10 +409,10 @@ This document is the final implementation roadmap for Tik_Tok_Loader. It can be 
 Current implementation status: stages 1 through 9 pass the repository's automated quality gates.
 Stage 10 infrastructure is active on the Netherlands server: domain and HTTPS, isolated Compose
 networking, Telegram webhook delivery, PostgreSQL backup, public smoke checks, Robokassa sandbox
-acceptance, and production Robokassa configuration have been verified. TikTok OAuth/publication
-acceptance and a real Telegram Stars acceptance scenario remain pending. Release candidate
-`0.2.0-rc.1` remains a prerelease and must be promoted to stable SemVer only after those provider
-gates pass.
+acceptance, production Robokassa configuration, and a real Telegram Stars payment/refund scenario
+have been verified. TikTok OAuth/publication acceptance remains pending. Release candidate
+`0.2.0-rc.1` remains a prerelease and must be promoted to stable SemVer only after that provider
+gate passes.
 
 ## 5.3. Control Points
 
@@ -1494,6 +1494,24 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 - Repeated Stars refund requests do not call Telegram or alter subscription state twice.
 - Ambiguous refund results remain recoverable and are finalized idempotently from Telegram's service
   event or through permission-checked, CSRF-protected, audited manual reconciliation.
+
+## 21.6. Production Acceptance Evidence
+
+The provider-backed Telegram Stars scenario was completed on 2026-07-17 against the production
+bot. The PRO Stars price was changed through the audited administrative API from the approved
+`199 XTR` value to a temporary `10 XTR` acceptance value; RUB pricing was not changed.
+
+- Telegram confirmed one `10 XTR` payment and the application persisted one unique provider charge.
+- The successful payment activated one PRO subscription; two independently created but unpaid
+  invoices remained non-activating records.
+- The official `refundStarPayment` operation returned success, the payment moved to `refunded`,
+  and the test PRO subscription moved to `cancelled`.
+- Exactly one FREE subscription became active after the refund.
+- The PRO Stars price was restored to `199 XTR` through the administrative API.
+- Price changes and both refund stages are present in `admin_actions`; provider charge identifiers
+  and personal data are intentionally excluded from this document.
+- Public health, readiness, metrics, OpenAPI, security-header, and Telegram webhook smoke checks
+  passed after the scenario.
 
 # 22. Robokassa Setup
 
@@ -5568,10 +5586,10 @@ Each functional requirement must have a stable identifier and a visible link to 
 | --- | --- | --- | --- | --- | --- |
 | `REQ-001` | User registration | Bot / DB | `QA-REG-001`; subscriptions and FSM tests | [Users](#8-users-entity), [QA](#67-qa-test-data-and-acceptance-scenarios) | Implemented |
 | `REQ-002` | TikTok OAuth | API / OAuth | `QA-OAUTH-001`; API and TikTok tests | [TikTok Config](#20-tiktok-developer-configuration), [Public API](#26-public-rest-api) | Implemented; staging pending |
-| `REQ-003` | Paid plans in Telegram | Telegram Stars | `QA-PAY-001`; Stars validation and idempotency tests | [Payments](#11-payments-entity), [Telegram Stars](#21-telegram-stars-payments) | Implemented at 199/499 XTR; staging pending |
+| `REQ-003` | Paid plans in Telegram | Telegram Stars | `QA-PAY-001`; automated Stars tests and provider-backed payment/refund acceptance | [Payments](#11-payments-entity), [Telegram Stars](#21-telegram-stars-payments) | Implemented at 199/499 XTR; production provider acceptance completed 2026-07-17 |
 | `REQ-004` | Video publication | Worker / TikTok | `QA-UPL-001`; FSM, video, worker, and lifecycle tests | [Upload Jobs](#12-upload-jobs-entity), [Lifecycle](#19-video-publication-lifecycle) | Implemented; staging pending |
 | `REQ-005` | Daily limits | Usage service | `QA-LIMIT-001`; quota concurrency tests | [Daily Usage](#13-daily-usage-entity) | Implemented |
-| `NFR-001` | Core NFR controls | Cross-cutting | CI quality, coverage, migration, container, production smoke | [NFR](#6-non-functional-requirements), [Tests](#68-test-strategy-and-quality-gates) | Implemented; provider completion pending |
+| `NFR-001` | Core NFR controls | Cross-cutting | CI quality, coverage, migration, container, production smoke | [NFR](#6-non-functional-requirements), [Tests](#68-test-strategy-and-quality-gates) | Implemented; TikTok provider completion pending |
 | `NFR-002` | Security audit | Audit | Admin, tracing, webhook, secret scan | [Security Audit](#31-security-logging-and-audit) | Implemented |
 | `NFR-003` | Infrastructure dependencies | Operations | Container build, production health, backup and post-update checks | [Infrastructure](#61-infrastructure-dependency-management) | Implemented |
 | `NFR-004` | Confidential data | Security | Encryption and secret-scan tests | [Data Policy](#32-confidential-data-policy) | Implemented |
@@ -5580,7 +5598,7 @@ Each functional requirement must have a stable identifier and a visible link to 
 | `TD-001` | Technical debt | Development | Release readiness review | [Technical Debt](#59-technical-debt-management) | Process defined |
 | `DEP-001` | Licenses and components | Dependencies | Dependency and release review | [Licenses](#62-license-and-third-party-component-management) | Process defined |
 | `API-001` | API compatibility | REST / OpenAPI | OpenAPI checker and API tests | [API Versioning](#25-api-versioning-and-client-compatibility) | Implemented |
-| `ROAD-001` | Implementation roadmap | Delivery | Preflight, smoke, Robokassa acceptance and roadmap control points | [Roadmap](#5-implementation-roadmap), [Staging Runbook](#39-staging-acceptance-runbook) | Stage 10 infrastructure active; TikTok and Stars acceptance pending |
+| `ROAD-001` | Implementation roadmap | Delivery | Preflight, smoke, Robokassa and Telegram Stars acceptance, and roadmap control points | [Roadmap](#5-implementation-roadmap), [Staging Runbook](#39-staging-acceptance-runbook) | Stage 10 infrastructure active; TikTok acceptance pending |
 | `OPS-001` | Controlled production launch | Operations | Deploy validator, webhook verification, backup and production smoke | [Production Launch](#40-production-launch-plan), [Staging Runbook](#39-staging-acceptance-runbook) | Infrastructure and Robokassa verified; TikTok provider evidence pending |
 | `REL-001` | Reproducible release candidate | Release | Manifest determinism, version, migration, CI run #59 and provider evidence | [Release Candidate](#64-release-candidate-manifest), [Release](#65-release-management) | RC deployed for acceptance; stable promotion pending |
 

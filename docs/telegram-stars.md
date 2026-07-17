@@ -74,3 +74,21 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 - Repeated Stars refund requests do not call Telegram or alter subscription state twice.
 - Ambiguous refund results remain recoverable and are finalized idempotently from Telegram's service
   event or through permission-checked, CSRF-protected, audited manual reconciliation.
+
+## Production Acceptance Evidence
+
+The provider-backed Telegram Stars scenario was completed on 2026-07-17 against the production
+bot. The PRO Stars price was changed through the audited administrative API from the approved
+`199 XTR` value to a temporary `10 XTR` acceptance value; RUB pricing was not changed.
+
+- Telegram confirmed one `10 XTR` payment and the application persisted one unique provider charge.
+- The successful payment activated one PRO subscription; two independently created but unpaid
+  invoices remained non-activating records.
+- The official `refundStarPayment` operation returned success, the payment moved to `refunded`,
+  and the test PRO subscription moved to `cancelled`.
+- Exactly one FREE subscription became active after the refund.
+- The PRO Stars price was restored to `199 XTR` through the administrative API.
+- Price changes and both refund stages are present in `admin_actions`; provider charge identifiers
+  and personal data are intentionally excluded from this document.
+- Public health, readiness, metrics, OpenAPI, security-header, and Telegram webhook smoke checks
+  passed after the scenario.

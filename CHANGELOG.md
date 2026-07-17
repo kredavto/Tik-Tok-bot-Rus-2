@@ -22,6 +22,9 @@ The project follows Semantic Versioning.
 
 ### Changed
 
+- Record the successful 2026-07-17 production Telegram Stars acceptance: an audited temporary
+  `10 XTR` PRO price, one confirmed payment and subscription, official refund, automatic FREE
+  restoration, and restoration of the approved `199 XTR` price.
 - Update the unified specification to revision `0.9.4`; decouple Telegram Stars checkout from RUB
   pricing, use single-chat invoices, persist definitive invoice rejection, keep `/terms` available,
   register the supported Telegram command menu, and surface pending refunds in the administrator
