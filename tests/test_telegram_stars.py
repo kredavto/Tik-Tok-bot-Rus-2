@@ -12,6 +12,7 @@ from app.db.session import (
     create_stars_payment,
     get_or_create_user,
     init_db,
+    mark_stars_payment_failed,
     mark_stars_payment_paid,
     mark_stars_payment_refunded,
     mark_stars_payment_refunded_by_charge,
@@ -41,6 +42,21 @@ async def test_stars_checkout_requires_exact_user_currency_and_amount() -> None:
         assert not await validate_stars_checkout(session, payment.id, telegram_id, "RUB", 199)
         assert not await validate_stars_checkout(session, payment.id, telegram_id, "XTR", 198)
         assert not await validate_stars_checkout(session, payment.id, telegram_id + 1, "XTR", 199)
+
+
+@pytest.mark.asyncio
+async def test_definitively_rejected_stars_invoice_cannot_be_paid() -> None:
+    payment, telegram_id = await _create_stars_order(random.randint(1_100_000_000, 1_199_999_999))
+
+    async with session_scope() as session:
+        assert await mark_stars_payment_failed(session, payment.id)
+    async with session_scope() as session:
+        assert not await mark_stars_payment_failed(session, payment.id)
+        assert not await validate_stars_checkout(session, payment.id, telegram_id, "XTR", 199)
+        stored = await session.get(Payment, payment.id)
+
+    assert stored is not None
+    assert stored.status == "failed"
 
 
 @pytest.mark.asyncio

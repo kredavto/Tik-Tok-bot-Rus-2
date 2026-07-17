@@ -595,6 +595,30 @@ async def validate_stars_checkout(
     )
 
 
+async def mark_stars_payment_failed(session: AsyncSession, payment_id: UUID) -> bool:
+    payment = await session.scalar(
+        select(Payment).where(Payment.id == payment_id).with_for_update()
+    )
+    if (
+        payment is None
+        or payment.provider != "telegram_stars"
+        or payment.currency != "XTR"
+        or payment.status != "created"
+    ):
+        return False
+
+    payment.status = "failed"
+    await record_webhook_event(
+        session,
+        provider="telegram_stars",
+        event_type="payment_status_changed",
+        external_id=str(payment.id),
+        payload={"status": "failed", "payment_id": str(payment.id)},
+        status="processed",
+    )
+    return True
+
+
 async def mark_stars_payment_paid(
     session: AsyncSession,
     payment_id: UUID,

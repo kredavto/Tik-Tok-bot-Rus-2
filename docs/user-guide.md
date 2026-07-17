@@ -29,6 +29,8 @@ Paid plans purchased in the bot are invoiced in Telegram Stars and activate only
 confirms `successful_payment`. Use `/paysupport` for payment support without sending passwords,
 one-time codes, or card details.
 
+Use `/terms` at any time to review the user agreement accepted during registration.
+
 ## TikTok Disconnect
 
 Open settings and tap `Отключить TikTok`. Stored OAuth tokens are deleted.

@@ -42,6 +42,8 @@ Open Telegram, start your bot, and use:
 - `/start` to see the menu.
 - `/tariffs` to view available plans.
 - `/status` to check the current plan and daily limit.
+- `/terms` to review the user agreement.
+- `/paysupport` for payment support.
 
 ## Required Environment
 

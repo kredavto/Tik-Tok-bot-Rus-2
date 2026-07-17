@@ -61,7 +61,7 @@ function statusClass(value) {
   const normalized = String(value || "").toLowerCase();
   if (["paid", "published", "active", "ok"].includes(normalized)) return "ok";
   if (["failed", "cancelled", "refunded", "blocked"].includes(normalized)) return "bad";
-  if (["created", "pending", "queued", "processing", "uploading", "new"].includes(normalized)) return "wait";
+  if (["created", "pending", "refund_pending", "queued", "processing", "uploading", "new"].includes(normalized)) return "wait";
   return "";
 }
 
@@ -290,7 +290,7 @@ async function renderPayments(statusFilter = "") {
   const params = new URLSearchParams({limit: "100"});
   if (statusFilter) params.set("status", statusFilter);
   const data = await api(`/payments?${params}`);
-  pageActions.innerHTML = `<select id="payment-status" aria-label="Статус платежа"><option value="">Все статусы</option>${["created", "pending", "paid", "failed", "cancelled", "refunded"].map((value) => `<option value="${value}" ${statusFilter === value ? "selected" : ""}>${value}</option>`).join("")}</select>`;
+  pageActions.innerHTML = `<select id="payment-status" aria-label="Статус платежа"><option value="">Все статусы</option>${["created", "pending", "paid", "refund_pending", "failed", "cancelled", "refunded"].map((value) => `<option value="${value}" ${statusFilter === value ? "selected" : ""}>${value}</option>`).join("")}</select>`;
   content.innerHTML = data.items.length ? smallPaymentsTable(data.items) : '<div class="empty">Платежей нет</div>';
   document.querySelector("#payment-status").addEventListener("change", (event) => renderPayments(event.target.value).catch(renderError));
 }

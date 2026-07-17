@@ -1,8 +1,10 @@
+from contextlib import asynccontextmanager
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import ANY, AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
+from aiogram.exceptions import TelegramBadRequest, TelegramNetworkError
 from aiogram.fsm.state import State
 from aiogram.types import CallbackQuery, Message
 
@@ -51,6 +53,41 @@ def make_callback(data: str) -> MagicMock:
     callback.message = make_message()
     callback.answer = AsyncMock()
     return callback
+
+
+def configure_stars_checkout(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    price_rub: int = 0,
+) -> tuple[object, object]:
+    plan = SimpleNamespace(
+        id="pro",
+        title="PRO",
+        is_active=True,
+        price_rub=price_rub,
+        price_stars=199,
+        duration_days=30,
+    )
+    payment = SimpleNamespace(id=uuid4(), amount_stars=199)
+
+    class FakeSession:
+        async def get(self, _model: object, _key: str) -> object:
+            return plan
+
+    @asynccontextmanager
+    async def fake_session_scope():
+        yield FakeSession()
+
+    async def fake_user(_session: object, _telegram_id: int, _username: str | None):
+        return SimpleNamespace(id=uuid4())
+
+    async def fake_payment(_session: object, _user_id: object, _plan_id: str):
+        return payment
+
+    monkeypatch.setattr(handlers, "session_scope", fake_session_scope)
+    monkeypatch.setattr(handlers, "get_or_create_user", fake_user)
+    monkeypatch.setattr(handlers, "create_stars_payment", fake_payment)
+    return plan, payment
 
 
 @pytest.mark.asyncio
@@ -159,6 +196,73 @@ async def test_cancel_cleans_pending_file_and_returns_to_main_menu(
     assert state.data == {}
     assert state.current == BotStates.MAIN_MENU
     message.answer.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_stars_invoice_is_independent_from_rub_and_single_chat(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, payment = configure_stars_checkout(monkeypatch, price_rub=0)
+    callback = make_callback("buy:pro")
+    bot = SimpleNamespace(send_invoice=AsyncMock())
+    state = FakeState()
+
+    await handlers.buy_callback(callback, bot, state)  # type: ignore[arg-type]
+
+    assert state.current == BotStates.PAYMENT_WAIT
+    call = bot.send_invoice.await_args.kwargs
+    assert call["currency"] == "XTR"
+    assert call["start_parameter"] == f"stars_{payment.id.hex}"
+    assert "provider_token" not in call
+
+
+@pytest.mark.asyncio
+async def test_definitive_invoice_rejection_marks_payment_failed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, payment = configure_stars_checkout(monkeypatch)
+    callback = make_callback("buy:pro")
+    bot = SimpleNamespace(
+        send_invoice=AsyncMock(side_effect=TelegramBadRequest(MagicMock(), "definitive rejection"))
+    )
+    mark_failed = AsyncMock(return_value=True)
+    monkeypatch.setattr(handlers, "mark_stars_payment_failed", mark_failed)
+    state = FakeState()
+
+    await handlers.buy_callback(callback, bot, state)  # type: ignore[arg-type]
+
+    assert state.current is None
+    mark_failed.assert_awaited_once_with(ANY, payment.id)
+    callback.answer.assert_awaited_once_with(handlers.messages.PAYMENT_ERROR, show_alert=True)
+
+
+@pytest.mark.asyncio
+async def test_ambiguous_invoice_delivery_remains_payable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    configure_stars_checkout(monkeypatch)
+    callback = make_callback("buy:pro")
+    bot = SimpleNamespace(
+        send_invoice=AsyncMock(side_effect=TelegramNetworkError(MagicMock(), "network failure"))
+    )
+    mark_failed = AsyncMock()
+    monkeypatch.setattr(handlers, "mark_stars_payment_failed", mark_failed)
+    state = FakeState()
+
+    await handlers.buy_callback(callback, bot, state)  # type: ignore[arg-type]
+
+    assert state.current is None
+    mark_failed.assert_not_awaited()
+    callback.answer.assert_awaited_once_with(handlers.messages.NETWORK_ERROR, show_alert=True)
+
+
+@pytest.mark.asyncio
+async def test_terms_command_keeps_payment_terms_accessible() -> None:
+    message = make_message("/terms")
+
+    await handlers.payment_terms(message)  # type: ignore[arg-type]
+
+    message.answer.assert_awaited_once_with(handlers.messages.AGREEMENT)
 
 
 def test_fsm_contains_all_specified_states() -> None:

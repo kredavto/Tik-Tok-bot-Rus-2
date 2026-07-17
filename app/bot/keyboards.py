@@ -43,8 +43,8 @@ def agreement_keyboard() -> InlineKeyboardMarkup:
 
 def tariffs_menu(plans: list[tuple[str, str, int, int | None]]) -> InlineKeyboardMarkup:
     rows = []
-    for plan_code, title, price_rub, price_stars in plans:
-        if price_rub <= 0:
+    for plan_code, title, _price_rub, price_stars in plans:
+        if plan_code == "free":
             continue
         if not price_stars:
             rows.append(

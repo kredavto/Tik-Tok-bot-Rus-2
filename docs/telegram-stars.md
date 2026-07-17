@@ -25,8 +25,8 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 1. The user selects PRO or BUSINESS.
 2. The backend creates a `payments` row with provider `telegram_stars`, currency `XTR`, and a unique
    payment UUID.
-3. The bot sends an invoice with currency `XTR`, an empty provider-token requirement, and the payment
-   UUID in the invoice payload.
+3. The bot sends a single-chat invoice with currency `XTR`, omits `provider_token`, and puts the
+   payment UUID in the invoice payload. Forwarded copies cannot be paid directly.
 4. The bot validates the `pre_checkout_query` user, currency, amount, plan, and payment status and
    answers within the Telegram deadline.
 5. A subscription is activated only after the bot receives `successful_payment`.
@@ -36,9 +36,13 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 ## Security and Support
 
 - Do not activate a plan from an invoice send result or pre-checkout request.
+- Stars availability and checkout must depend on `price_stars`, not on the independent RUB price.
+- A definitive Bot API rejection marks the local order `failed`. A transport-level ambiguous result
+  leaves it `created` so a delivered invoice can still pass pre-checkout validation.
 - Do not trust invoice payload, user ID, amount, or currency without a database comparison.
 - Never log Telegram bot tokens, payment credentials, or user banking data.
 - Keep `/paysupport` available and provide a safe support process.
+- Keep `/terms` available so users can review the accepted terms before and after checkout.
 - Refunds must use Telegram's `refundStarPayment` method and update the immutable payment history to
   `refunded`; they must not be implemented as an undocumented manual balance adjustment.
 - ADMIN and SUPER_ADMIN perform eligible refunds through
@@ -63,6 +67,7 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 - Reuse of a charge ID for another payment is rejected.
 - PRO is invoiced for `199 XTR` and BUSINESS for `499 XTR` by default.
 - PRO and BUSINESS Stars prices can be changed without a source-code release.
+- `/terms` and `/paysupport` remain available in production.
 - RUB and XTR revenue are reported separately.
 - Repeated Stars refund requests do not call Telegram or alter subscription state twice.
 - Ambiguous refund results remain recoverable and are finalized idempotently from Telegram's service

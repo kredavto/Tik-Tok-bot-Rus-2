@@ -46,3 +46,9 @@ def test_tariff_keyboard_uses_configured_stars_prices() -> None:
     assert keyboard.inline_keyboard[0][0].callback_data == "buy:pro"
     assert keyboard.inline_keyboard[1][0].text == "BUSINESS - 499 Stars"
     assert keyboard.inline_keyboard[1][0].callback_data == "buy:business"
+
+
+def test_tariff_keyboard_does_not_depend_on_rub_price() -> None:
+    keyboard = tariffs_menu([("pro", "PRO", 0, 199)])
+
+    assert keyboard.inline_keyboard[0][0].callback_data == "buy:pro"

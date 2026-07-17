@@ -3,6 +3,7 @@ from urllib.parse import urlencode
 from uuid import UUID
 
 from aiogram import Bot, F, Router
+from aiogram.exceptions import TelegramAPIError, TelegramBadRequest, TelegramForbiddenError
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
@@ -51,6 +52,7 @@ from app.db.session import (
     has_tiktok_account,
     is_intake_enabled,
     list_recent_upload_jobs,
+    mark_stars_payment_failed,
     mark_stars_payment_paid,
     mark_stars_payment_refunded_by_charge,
     revoke_tiktok_accounts,
@@ -112,7 +114,7 @@ async def tariffs(message: Message, state: FSMContext) -> None:
         plans = list(
             (
                 await session.scalars(
-                    select(Plan).where(Plan.is_active.is_(True)).order_by(Plan.price_rub)
+                    select(Plan).where(Plan.is_active.is_(True)).order_by(Plan.daily_limit)
                 )
             ).all()
         )
@@ -440,26 +442,39 @@ async def buy_callback(callback: CallbackQuery, bot: Bot, state: FSMContext) -> 
     plan_code = callback.data.split(":", 1)[1]
     async with session_scope() as session:
         plan = await session.get(Plan, plan_code)
-        if (
-            not plan
-            or not plan.is_active
-            or plan.price_rub <= 0
-            or plan.price_stars is None
-            or plan.price_stars <= 0
-        ):
+        if not plan or not plan.is_active or plan.price_stars is None or plan.price_stars <= 0:
             await callback.answer("Тариф недоступен для покупки.", show_alert=True)
             return
         user = await get_or_create_user(session, callback.from_user.id, callback.from_user.username)
         payment = await create_stars_payment(session, user.id, plan.id)
 
-    await bot.send_invoice(
-        chat_id=callback.from_user.id,
-        title=f"Тариф {plan.title}",
-        description=f"Подписка {plan.title} на {plan.duration_days or 30} дней",
-        payload=f"stars:{payment.id}",
-        currency="XTR",
-        prices=[LabeledPrice(label=plan.title, amount=payment.amount_stars or 0)],
-    )
+    try:
+        await bot.send_invoice(
+            chat_id=callback.from_user.id,
+            title=f"Тариф {plan.title}",
+            description=f"Подписка {plan.title} на {plan.duration_days or 30} дней",
+            payload=f"stars:{payment.id}",
+            currency="XTR",
+            prices=[LabeledPrice(label=plan.title, amount=payment.amount_stars or 0)],
+            start_parameter=f"stars_{payment.id.hex}",
+        )
+    except (TelegramBadRequest, TelegramForbiddenError):
+        async with session_scope() as session:
+            await mark_stars_payment_failed(session, payment.id)
+        logger.warning(
+            "Telegram rejected Stars invoice",
+            extra={"payment_id": str(payment.id)},
+        )
+        await callback.answer(messages.PAYMENT_ERROR, show_alert=True)
+        return
+    except TelegramAPIError:
+        # Delivery can be ambiguous after transport failures, so keep the order payable.
+        logger.warning(
+            "Telegram Stars invoice delivery is ambiguous",
+            extra={"payment_id": str(payment.id)},
+        )
+        await callback.answer(messages.NETWORK_ERROR, show_alert=True)
+        return
     await state.set_state(BotStates.PAYMENT_WAIT)
     await callback.answer()
 
@@ -539,6 +554,11 @@ async def stars_payment_refunded(message: Message) -> None:
 @router.message(Command("paysupport"))
 async def payment_support(message: Message) -> None:
     await message.answer(messages.PAYMENT_SUPPORT)
+
+
+@router.message(Command("terms"))
+async def payment_terms(message: Message) -> None:
+    await message.answer(messages.AGREEMENT)
 
 
 @router.message(F.text == BTN_HISTORY)

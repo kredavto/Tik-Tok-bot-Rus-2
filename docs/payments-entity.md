@@ -37,6 +37,8 @@ The current implementation may use internal names such as `provider_invoice_id` 
 - FREE does not create a payment record.
 - Only PRO and BUSINESS purchases create payment records.
 - Telegram Stars activation happens only after validated `successful_payment`.
+- A definitive Stars invoice rejection changes `created` to `failed`; an ambiguous transport result
+  remains `created` because Telegram may still have delivered the invoice.
 - Telegram Stars refund calls require a committed `refund_pending` claim; duplicate requests do not
   repeat the provider call, and Telegram's service event reconciles ambiguous outcomes.
 - Robokassa activation happens only after verified ResultURL in an approved channel.
