@@ -136,6 +136,7 @@ async def status(message: Message) -> None:
     await message.answer(await _status_text(message.from_user.id, message.from_user.username))
 
 
+@router.message(Command("connect"))
 @router.message(F.text == BTN_CONNECT_TIKTOK)
 async def connect_tiktok(message: Message, state: FSMContext) -> None:
     assert message.from_user is not None

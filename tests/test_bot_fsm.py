@@ -339,6 +339,40 @@ async def test_help_command_is_available() -> None:
     message.answer.assert_awaited_once_with(handlers.messages.HELP)
 
 
+@pytest.mark.asyncio
+async def test_connect_command_creates_oauth_link(monkeypatch: pytest.MonkeyPatch) -> None:
+    user_id = uuid4()
+
+    @asynccontextmanager
+    async def fake_session_scope():
+        yield object()
+
+    async def fake_user(_session: object, _telegram_id: int, _username: str | None):
+        return SimpleNamespace(id=user_id)
+
+    create_state = AsyncMock(return_value="signed-oauth-state")
+    monkeypatch.setattr(handlers, "session_scope", fake_session_scope)
+    monkeypatch.setattr(handlers, "get_or_create_user", fake_user)
+    monkeypatch.setattr(handlers, "create_oauth_state", create_state)
+    monkeypatch.setattr(handlers.settings, "tiktok_client_key", "sandbox-client-key")
+    monkeypatch.setattr(
+        handlers.settings,
+        "tiktok_redirect_uri",
+        "https://loader.invest-lend.ru/api/v1/oauth/tiktok/callback",
+    )
+    monkeypatch.setattr(handlers.settings, "public_base_url", "https://loader.invest-lend.ru")
+    message = make_message("/connect")
+    state = FakeState()
+
+    await handlers.connect_tiktok(message, state)  # type: ignore[arg-type]
+
+    create_state.assert_awaited_once_with(str(user_id))
+    assert state.current == BotStates.MAIN_MENU
+    answer = message.answer.await_args.args[0]
+    assert answer.startswith("Подключите TikTok через официальный OAuth 2.0:\n")
+    assert answer.endswith("/api/v1/oauth/tiktok/start?state=signed-oauth-state")
+
+
 def test_fsm_contains_all_specified_states() -> None:
     expected = {
         "START",

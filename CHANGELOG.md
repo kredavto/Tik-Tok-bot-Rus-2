@@ -8,6 +8,7 @@ The project follows Semantic Versioning.
 
 ### Added
 
+- `/connect` Telegram command as an accessible alternative to the TikTok OAuth menu button.
 - Review-ready TikTok publication preview and literal Music Usage Confirmation / Branded Content
   Policy declarations before the final publish action.
 - User-safe handling for TikTok creator posting caps and posting bans returned by creator-info.

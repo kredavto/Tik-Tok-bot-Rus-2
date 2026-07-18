@@ -42,6 +42,7 @@ Open Telegram, start your bot, and use:
 - `/start` to see the menu.
 - `/tariffs` to view available plans.
 - `/status` to check the current plan and daily limit.
+- `/connect` to connect a TikTok account through official OAuth 2.0.
 - `/terms` to review the user agreement.
 - `/paysupport` for payment support.
 - `/help` to open the bot guide.
