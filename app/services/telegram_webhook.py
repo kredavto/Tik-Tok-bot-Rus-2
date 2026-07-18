@@ -10,6 +10,7 @@ BOT_COMMANDS = (
     BotCommand(command="start", description="Открыть главное меню"),
     BotCommand(command="tariffs", description="Посмотреть тарифы"),
     BotCommand(command="status", description="Проверить текущий тариф"),
+    BotCommand(command="connect", description="Подключить TikTok через OAuth"),
     BotCommand(command="terms", description="Прочитать пользовательское соглашение"),
     BotCommand(command="paysupport", description="Получить помощь по платежу"),
     BotCommand(command="help", description="Открыть справку"),
