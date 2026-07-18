@@ -83,6 +83,8 @@ app.include_router(admin_router, include_in_schema=False)
 
 ADMIN_UI_DIR = Path(__file__).resolve().parents[1] / "admin_ui" / "static"
 PUBLIC_DIR = Path(__file__).resolve().parents[1] / "public"
+TIKTOK_VERIFICATION_FILENAME = "tiktokpJH2q8gM2ASum3oIlutdetglRNW2iobN.txt"
+TIKTOK_VERIFICATION_URL_PATH = f"/{TIKTOK_VERIFICATION_FILENAME}"
 app.mount("/admin-ui", StaticFiles(directory=ADMIN_UI_DIR, html=True), name="admin-ui")
 app.mount("/assets", StaticFiles(directory=PUBLIC_DIR / "static"), name="public-assets")
 
@@ -157,7 +159,10 @@ async def request_id_middleware(request: Request, call_next):
     response.headers["X-Request-ID"] = request_id
     response.headers["X-Correlation-ID"] = correlation_id
     response.headers["X-Response-Time-ms"] = str(response_time_ms)
-    if request.url.path.startswith(("/admin-ui", "/legal", "/assets")) or request.url.path == "/":
+    if request.url.path.startswith(("/admin-ui", "/legal", "/assets")) or request.url.path in {
+        "/",
+        TIKTOK_VERIFICATION_URL_PATH,
+    }:
         response.headers["Cache-Control"] = "no-store"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; script-src 'self'; style-src 'self'; "
@@ -183,7 +188,9 @@ async def request_id_middleware(request: Request, call_next):
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
-    public_path = request.url.path == "/" or request.url.path.startswith(("/legal", "/assets"))
+    public_path = request.url.path in {"/", TIKTOK_VERIFICATION_URL_PATH} or (
+        request.url.path.startswith(("/legal", "/assets"))
+    )
     if request.url.path in {"/health", "/ready", "/metrics"} or public_path:
         return await call_next(request)
 
@@ -233,6 +240,14 @@ async def public_terms() -> FileResponse:
 @app.get("/legal/privacy", include_in_schema=False)
 async def public_privacy() -> FileResponse:
     return FileResponse(PUBLIC_DIR / "privacy.html")
+
+
+@app.get(TIKTOK_VERIFICATION_URL_PATH, include_in_schema=False)
+async def tiktok_url_verification() -> FileResponse:
+    return FileResponse(
+        PUBLIC_DIR / TIKTOK_VERIFICATION_FILENAME,
+        media_type="text/plain",
+    )
 
 
 @app.get("/api/v1/health")

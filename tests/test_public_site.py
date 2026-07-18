@@ -58,3 +58,18 @@ async def test_public_icon_meets_tiktok_portal_requirements() -> None:
 
     assert response.status_code == 200
     assert response.headers["content-type"] == "image/png"
+
+
+@pytest.mark.asyncio
+async def test_tiktok_verification_file_is_served_verbatim() -> None:
+    verification_path = Path(api_main.PUBLIC_DIR) / api_main.TIKTOK_VERIFICATION_FILENAME
+    expected_content = verification_path.read_bytes()
+
+    transport = ASGITransport(app=api_main.app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get(api_main.TIKTOK_VERIFICATION_URL_PATH)
+
+    assert response.status_code == 200
+    assert response.content == expected_content
+    assert response.headers["content-type"].startswith("text/plain")
+    assert response.headers["x-content-type-options"] == "nosniff"
