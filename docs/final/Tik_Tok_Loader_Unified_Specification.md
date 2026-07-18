@@ -4,7 +4,7 @@
 
 - **Версия:** 0.9.6
 - **Репозиторий:** `kredavto/Tik-Tok-bot-Rus-2`
-- **Дата сборки:** 2026-07-17
+- **Дата сборки:** 2026-07-18
 - **Статус:** проектная спецификация для реализации
 
 > Публикация TikTok в проекте проектируется только через официальный TikTok Content Posting API и OAuth 2.0. Неофициальные API, автоматизация интерфейса и методы обхода ограничений не входят в допустимую архитектуру.
@@ -1421,9 +1421,12 @@ must show the complete user-controlled flow:
 3. Return to the bot with the connected TikTok account displayed.
 4. Upload an owned test video and review creator information.
 5. Manually choose privacy and interaction settings with no preselected privacy value.
-6. Confirm content disclosures and the publication itself.
-7. Show the processing status and final private post in the test TikTok account.
-8. Disconnect TikTok and confirm that stored OAuth credentials are removed.
+6. Show the video preview, leave commercial-content disclosure off by default, then demonstrate
+   the optional multi-select disclosure controls and the applicable TikTok label.
+7. Show the literal Music Usage Confirmation declaration and, for branded content, the Branded
+   Content Policy declaration immediately before the publish button.
+8. Show the processing status and final private post in the test TikTok account.
+9. Disconnect TikTok and confirm that stored OAuth credentials are removed.
 
 Do not submit the application for review until the portal draft, Sandbox flow, and demo video have
 all been checked against the current production build.
@@ -1437,8 +1440,10 @@ Before every publication the bot must query `/v2/post/publish/creator_info/query
 3. Enforce the creator-specific maximum video duration.
 4. Let the user explicitly enable Comment, Duet, and Stitch only when TikTok allows them.
 5. Collect commercial-content disclosure and prevent branded content with `SELF_ONLY` visibility.
-6. Obtain explicit publication consent before any media is transferred.
-7. Poll `/v2/post/publish/status/fetch/` or process final Content Posting webhooks.
+6. Display a preview of the exact video selected for publication.
+7. Display the applicable Music Usage Confirmation and Branded Content Policy declaration.
+8. Obtain explicit publication consent before any media is transferred to TikTok.
+9. Poll `/v2/post/publish/status/fetch/` or process final Content Posting webhooks.
 
 Unaudited TikTok clients remain restricted to private posts and other platform limits. The system
 must report those restrictions and must not attempt to bypass them.

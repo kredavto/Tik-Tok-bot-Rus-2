@@ -6,6 +6,18 @@ The project follows Semantic Versioning.
 
 ## [Unreleased]
 
+### Added
+
+- Review-ready TikTok publication preview and literal Music Usage Confirmation / Branded Content
+  Policy declarations before the final publish action.
+- User-safe handling for TikTok creator posting caps and posting bans returned by creator-info.
+
+### Changed
+
+- Align commercial-content disclosure with TikTok Direct Post UX: the control is off by default,
+  enabled explicitly, supports own-brand and branded-content multi-selection, and displays the
+  resulting `Promotional content` or `Paid partnership` label.
+
 ## [0.2.0] - 2026-07-17
 
 ### Added

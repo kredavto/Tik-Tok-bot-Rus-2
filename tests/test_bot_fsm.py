@@ -11,6 +11,7 @@ from aiogram.types import CallbackQuery, Message
 from app.bot import handlers
 from app.bot.states import BotStates
 from app.services.tiktok import TikTokCreatorInfo
+from app.services.tiktok import TikTokApiError
 
 
 class FakeState:
@@ -43,6 +44,9 @@ def make_message(text: str = "") -> MagicMock:
     message.text = text
     message.from_user = SimpleNamespace(id=12345, username="qa_user")
     message.answer = AsyncMock()
+    message.answer_video = AsyncMock()
+    message.answer_document = AsyncMock()
+    message.edit_reply_markup = AsyncMock()
     return message
 
 
@@ -139,11 +143,34 @@ async def test_upload_fsm_rejects_unavailable_privacy() -> None:
 
 
 @pytest.mark.asyncio
+async def test_creator_posting_limit_stops_upload_with_clear_message(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def reject_creator_info(_telegram_id: int, _username: str | None):
+        raise TikTokApiError("spam_risk_too_many_posts", "daily cap reached")
+
+    cleanup = AsyncMock()
+    monkeypatch.setattr(handlers, "_load_creator_info", reject_creator_info)
+    monkeypatch.setattr(handlers, "cleanup_temp_file", cleanup)
+    state = FakeState({"duration_sec": 30.0, "local_path": "/tmp/video.mp4"})
+    message = make_message("#тест")
+
+    await handlers.receive_hashtags(message, state)  # type: ignore[arg-type]
+
+    assert state.current == BotStates.MAIN_MENU
+    cleanup.assert_awaited_once_with("/tmp/video.mp4")
+    message.answer.assert_awaited_once_with(
+        handlers.messages.CREATOR_POSTING_UNAVAILABLE,
+        reply_markup=handlers.main_menu(),
+    )
+
+
+@pytest.mark.asyncio
 async def test_private_upload_rejects_branded_content() -> None:
     state = FakeState({"privacy_level": "SELF_ONLY"})
-    callback = make_callback("commercial:branded")
+    callback = make_callback("commercial_detail:branded")
 
-    await handlers.select_commercial_content(callback, state)  # type: ignore[arg-type]
+    await handlers.select_commercial_content_details(callback, state)  # type: ignore[arg-type]
 
     assert state.current is None
     assert "brand_content_toggle" not in state.data
@@ -164,17 +191,55 @@ async def test_upload_fsm_reaches_confirmation() -> None:
             "allow_comment": True,
             "allow_duet": False,
             "allow_stitch": True,
+            "file_id": "telegram-video-id",
+            "media_kind": "video",
         }
     )
-    callback = make_callback("commercial:organic")
+    enable_callback = make_callback("commercial:on")
+    await handlers.select_commercial_content(enable_callback, state)  # type: ignore[arg-type]
+    assert state.current == BotStates.VIDEO_COMMERCIAL_DETAILS
+
+    organic_callback = make_callback("commercial_detail:organic")
+    await handlers.select_commercial_content_details(organic_callback, state)  # type: ignore[arg-type]
+    organic_callback.message.edit_reply_markup.assert_awaited_once()
+
+    confirm_callback = make_callback("commercial_detail:continue")
+    await handlers.select_commercial_content_details(confirm_callback, state)  # type: ignore[arg-type]
+
+    assert state.current == BotStates.CONFIRM_UPLOAD
+    assert state.data["brand_content_toggle"] is False
+    assert state.data["brand_organic_toggle"] is True
+    confirm_callback.message.answer_video.assert_awaited_once_with(
+        video="telegram-video-id",
+        caption=handlers.messages.VIDEO_PREVIEW,
+    )
+    confirmation = confirm_callback.message.answer.await_args.args[0]
+    assert "Promotional content" in confirmation
+    assert "TikTok's Music Usage Confirmation" in confirmation
+    confirm_callback.answer.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_commercial_content_off_has_no_preselected_disclosure() -> None:
+    state = FakeState(
+        {
+            "privacy_level": "SELF_ONLY",
+            "creator_nickname": "Creator",
+            "description": "Описание",
+            "hashtags": "#тест",
+            "file_id": "telegram-document-id",
+            "media_kind": "document",
+        }
+    )
+    callback = make_callback("commercial:off")
 
     await handlers.select_commercial_content(callback, state)  # type: ignore[arg-type]
 
     assert state.current == BotStates.CONFIRM_UPLOAD
     assert state.data["brand_content_toggle"] is False
-    assert state.data["brand_organic_toggle"] is True
-    callback.message.answer.assert_awaited_once()
-    callback.answer.assert_awaited_once()
+    assert state.data["brand_organic_toggle"] is False
+    callback.message.answer_document.assert_awaited_once()
+    assert "Метка TikTok: нет" in callback.message.answer.await_args.args[0]
 
 
 @pytest.mark.asyncio
@@ -286,6 +351,7 @@ def test_fsm_contains_all_specified_states() -> None:
         "VIDEO_PRIVACY",
         "VIDEO_INTERACTIONS",
         "VIDEO_COMMERCIAL",
+        "VIDEO_COMMERCIAL_DETAILS",
         "CONFIRM_UPLOAD",
         "PAYMENT_SELECT_PLAN",
         "PAYMENT_WAIT",

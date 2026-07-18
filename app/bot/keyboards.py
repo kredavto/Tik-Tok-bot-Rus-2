@@ -124,22 +124,52 @@ def interactions_keyboard(
     )
 
 
-def commercial_content_keyboard(allow_branded_content: bool) -> InlineKeyboardMarkup:
+def commercial_content_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Нет, не продвигает", callback_data="commercial:off")],
+            [InlineKeyboardButton(text="Да, настроить раскрытие", callback_data="commercial:on")],
+        ]
+    )
+
+
+def commercial_content_details_keyboard(
+    *,
+    brand_organic_toggle: bool,
+    brand_content_toggle: bool,
+    allow_branded_content: bool,
+) -> InlineKeyboardMarkup:
+    organic_marker = "Выбрано" if brand_organic_toggle else "Не выбрано"
     rows = [
-        [InlineKeyboardButton(text="Нет продвижения", callback_data="commercial:none")],
-        [InlineKeyboardButton(text="Продвигаю свой бренд", callback_data="commercial:organic")],
+        [
+            InlineKeyboardButton(
+                text=f"Свой бренд: {organic_marker}",
+                callback_data="commercial_detail:organic",
+            )
+        ]
     ]
     if allow_branded_content:
-        rows.extend(
+        branded_marker = "Выбрано" if brand_content_toggle else "Не выбрано"
+        rows.append(
             [
-                [
-                    InlineKeyboardButton(
-                        text="Платное партнерство", callback_data="commercial:branded"
-                    )
-                ],
-                [InlineKeyboardButton(text="Оба варианта", callback_data="commercial:both")],
+                InlineKeyboardButton(
+                    text=f"Платное партнерство: {branded_marker}",
+                    callback_data="commercial_detail:branded",
+                )
             ]
         )
+    else:
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text="Платное партнерство: недоступно для «Только я»",
+                    callback_data="commercial_detail:unavailable",
+                )
+            ]
+        )
+    rows.append(
+        [InlineKeyboardButton(text="Продолжить", callback_data="commercial_detail:continue")]
+    )
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 

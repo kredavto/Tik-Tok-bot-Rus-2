@@ -12,6 +12,7 @@ class BotStates(StatesGroup):
     VIDEO_PRIVACY = State()
     VIDEO_INTERACTIONS = State()
     VIDEO_COMMERCIAL = State()
+    VIDEO_COMMERCIAL_DETAILS = State()
     CONFIRM_UPLOAD = State()
     PAYMENT_SELECT_PLAN = State()
     PAYMENT_WAIT = State()

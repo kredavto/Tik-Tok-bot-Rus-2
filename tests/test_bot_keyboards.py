@@ -1,4 +1,5 @@
 from app.bot.keyboards import (
+    commercial_content_details_keyboard,
     commercial_content_keyboard,
     interactions_keyboard,
     privacy_keyboard,
@@ -27,10 +28,25 @@ def test_unavailable_interaction_cannot_be_toggled() -> None:
 
 
 def test_branded_content_is_hidden_for_private_post() -> None:
-    keyboard = commercial_content_keyboard(allow_branded_content=False)
+    keyboard = commercial_content_details_keyboard(
+        brand_organic_toggle=False,
+        brand_content_toggle=False,
+        allow_branded_content=False,
+    )
 
     callbacks = [row[0].callback_data for row in keyboard.inline_keyboard]
-    assert callbacks == ["commercial:none", "commercial:organic"]
+    assert callbacks == [
+        "commercial_detail:organic",
+        "commercial_detail:unavailable",
+        "commercial_detail:continue",
+    ]
+
+
+def test_commercial_disclosure_is_off_by_default() -> None:
+    keyboard = commercial_content_keyboard()
+
+    callbacks = [row[0].callback_data for row in keyboard.inline_keyboard]
+    assert callbacks == ["commercial:off", "commercial:on"]
 
 
 def test_tariff_keyboard_uses_configured_stars_prices() -> None:

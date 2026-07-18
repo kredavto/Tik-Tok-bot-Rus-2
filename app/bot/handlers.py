@@ -27,6 +27,7 @@ from app.bot.keyboards import (
     BTN_UPLOAD,
     PRIVACY_LABELS,
     agreement_keyboard,
+    commercial_content_details_keyboard,
     commercial_content_keyboard,
     interactions_keyboard,
     main_menu,
@@ -73,6 +74,11 @@ router = Router()
 logger = logging.getLogger(__name__)
 
 SUPPORTED_VIDEO_MIME_TYPES = {"video/mp4", "video/quicktime", "video/webm"}
+CREATOR_POSTING_UNAVAILABLE_CODES = {
+    "spam_risk_too_many_posts",
+    "spam_risk_user_banned_from_posting",
+    "reached_active_user_cap",
+}
 
 
 @router.message(Command("start"))
@@ -215,6 +221,7 @@ async def receive_video(message: Message, bot: Bot, state: FSMContext) -> None:
         file_id=file_id,
         local_path=str(local_path),
         duration_sec=inspection.duration_sec,
+        media_kind="video" if message.video else "document",
     )
     await state.set_state(BotStates.VIDEO_DESCRIPTION)
     await message.answer(messages.ASK_DESCRIPTION)
@@ -244,6 +251,17 @@ async def receive_hashtags(message: Message, state: FSMContext) -> None:
             message.from_user.id,
             message.from_user.username,
         )
+    except TikTokApiError as exc:
+        logger.warning("TikTok creator info rejected request: code=%s", exc.code)
+        await _discard_pending_upload(state)
+        await state.set_state(BotStates.MAIN_MENU)
+        response = (
+            messages.CREATOR_POSTING_UNAVAILABLE
+            if exc.code in CREATOR_POSTING_UNAVAILABLE_CODES
+            else messages.CREATOR_INFO_ERROR
+        )
+        await message.answer(response, reply_markup=main_menu())
+        return
     except Exception:
         logger.exception("TikTok creator info request failed")
         await _discard_pending_upload(state)
@@ -318,10 +336,9 @@ async def select_interactions(callback: CallbackQuery, state: FSMContext) -> Non
     data = await state.get_data()
     if action == "continue":
         await state.set_state(BotStates.VIDEO_COMMERCIAL)
-        allow_branded = data.get("privacy_level") != "SELF_ONLY"
         await callback.message.answer(
             messages.ASK_COMMERCIAL,
-            reply_markup=commercial_content_keyboard(allow_branded),
+            reply_markup=commercial_content_keyboard(),
         )
         await callback.answer()
         return
@@ -352,24 +369,101 @@ async def select_commercial_content(callback: CallbackQuery, state: FSMContext) 
     assert callback.data is not None
     assert isinstance(callback.message, Message)
     selection = callback.data.split(":", 1)[1]
-    if selection not in {"none", "organic", "branded", "both"}:
+    if selection == "off":
+        await state.update_data(
+            brand_content_toggle=False,
+            brand_organic_toggle=False,
+            commercial_selection="none",
+        )
+        await _show_upload_confirmation(callback, state, "none")
+        return
+    if selection != "on":
         await callback.answer("Некорректный вариант.", show_alert=True)
         return
+
+    await state.update_data(brand_content_toggle=False, brand_organic_toggle=False)
+    await state.set_state(BotStates.VIDEO_COMMERCIAL_DETAILS)
     data = await state.get_data()
-    if data.get("privacy_level") == "SELF_ONLY" and selection in {"branded", "both"}:
+    await callback.message.answer(
+        messages.ASK_COMMERCIAL_DETAILS,
+        reply_markup=_commercial_details_markup(data),
+    )
+    await callback.answer()
+
+
+@router.callback_query(
+    BotStates.VIDEO_COMMERCIAL_DETAILS,
+    F.data.startswith("commercial_detail:"),
+)
+async def select_commercial_content_details(
+    callback: CallbackQuery,
+    state: FSMContext,
+) -> None:
+    assert callback.data is not None
+    assert isinstance(callback.message, Message)
+    action = callback.data.split(":", 1)[1]
+    data = await state.get_data()
+
+    if action == "unavailable":
         await callback.answer(
             "Платное партнерство недоступно для приватной публикации.",
             show_alert=True,
         )
         return
+    if action in {"organic", "branded"}:
+        if action == "branded" and data.get("privacy_level") == "SELF_ONLY":
+            await callback.answer(
+                "Платное партнерство недоступно для приватной публикации.",
+                show_alert=True,
+            )
+            return
+        field = "brand_organic_toggle" if action == "organic" else "brand_content_toggle"
+        await state.update_data({field: not bool(data.get(field, False))})
+        await callback.message.edit_reply_markup(
+            reply_markup=_commercial_details_markup(await state.get_data())
+        )
+        await callback.answer()
+        return
+    if action != "continue":
+        await callback.answer("Некорректный вариант.", show_alert=True)
+        return
 
-    await state.update_data(
-        brand_content_toggle=selection in {"branded", "both"},
-        brand_organic_toggle=selection in {"organic", "both"},
-        commercial_selection=selection,
-    )
-    await state.set_state(BotStates.CONFIRM_UPLOAD)
+    organic = bool(data.get("brand_organic_toggle", False))
+    branded = bool(data.get("brand_content_toggle", False))
+    if not organic and not branded:
+        await callback.answer(messages.COMMERCIAL_SELECTION_REQUIRED, show_alert=True)
+        return
+
+    selection = "both" if organic and branded else "organic" if organic else "branded"
+    await state.update_data(commercial_selection=selection)
+    await _show_upload_confirmation(callback, state, selection)
+
+
+async def _show_upload_confirmation(
+    callback: CallbackQuery,
+    state: FSMContext,
+    selection: str,
+) -> None:
+    assert isinstance(callback.message, Message)
     data = await state.get_data()
+    try:
+        if data.get("media_kind") == "document":
+            await callback.message.answer_document(
+                document=data["file_id"],
+                caption=messages.VIDEO_PREVIEW,
+            )
+        else:
+            await callback.message.answer_video(
+                video=data["file_id"],
+                caption=messages.VIDEO_PREVIEW,
+            )
+    except TelegramAPIError:
+        logger.exception("Could not render TikTok publication preview")
+        await callback.message.answer(messages.VIDEO_PREVIEW_ERROR)
+        await callback.answer()
+        return
+
+    await state.set_state(BotStates.CONFIRM_UPLOAD)
     await callback.message.answer(
         messages.CONFIRM_UPLOAD.format(
             nickname=data.get("creator_nickname") or "TikTok",
@@ -380,6 +474,8 @@ async def select_commercial_content(callback: CallbackQuery, state: FSMContext) 
             duet=_enabled_label(data.get("allow_duet", False)),
             stitch=_enabled_label(data.get("allow_stitch", False)),
             commercial=_commercial_label(selection),
+            disclosure=_commercial_disclosure_label(selection),
+            consent=_commercial_consent(selection),
         ),
         reply_markup=upload_confirmation_keyboard(),
     )
@@ -663,6 +759,14 @@ def _interactions_markup(data: dict) -> InlineKeyboardMarkup:
     )
 
 
+def _commercial_details_markup(data: dict) -> InlineKeyboardMarkup:
+    return commercial_content_details_keyboard(
+        brand_organic_toggle=bool(data.get("brand_organic_toggle", False)),
+        brand_content_toggle=bool(data.get("brand_content_toggle", False)),
+        allow_branded_content=data.get("privacy_level") != "SELF_ONLY",
+    )
+
+
 def _enabled_label(value: object) -> str:
     return "разрешены" if value else "запрещены"
 
@@ -674,6 +778,23 @@ def _commercial_label(selection: str) -> str:
         "branded": "платное партнерство",
         "both": "собственный бренд и платное партнерство",
     }[selection]
+
+
+def _commercial_disclosure_label(selection: str) -> str:
+    return {
+        "none": "нет",
+        "organic": "Promotional content",
+        "branded": "Paid partnership",
+        "both": "Paid partnership",
+    }[selection]
+
+
+def _commercial_consent(selection: str) -> str:
+    if selection in {"branded", "both"}:
+        return (
+            "By posting, you agree to TikTok's Branded Content Policy and Music Usage Confirmation."
+        )
+    return "By posting, you agree to TikTok's Music Usage Confirmation."
 
 
 async def _discard_pending_upload(state: FSMContext) -> None:
