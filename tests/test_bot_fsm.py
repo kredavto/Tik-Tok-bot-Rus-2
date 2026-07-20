@@ -263,6 +263,16 @@ async def test_cancel_cleans_pending_file_and_returns_to_main_menu(
     message.answer.assert_awaited_once()
 
 
+def test_cancel_handler_precedes_free_text_upload_handlers() -> None:
+    callbacks = [
+        handler.callback.__name__ for handler in handlers.router.observers["message"].handlers
+    ]
+
+    cancel_index = callbacks.index("cancel_current_operation")
+    assert cancel_index < callbacks.index("receive_description")
+    assert cancel_index < callbacks.index("receive_hashtags")
+
+
 @pytest.mark.asyncio
 async def test_stars_invoice_is_independent_from_rub_and_single_chat(
     monkeypatch: pytest.MonkeyPatch,

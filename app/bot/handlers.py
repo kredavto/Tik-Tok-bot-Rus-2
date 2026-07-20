@@ -157,6 +157,13 @@ async def connect_tiktok(message: Message, state: FSMContext) -> None:
     await message.answer(f"Подключите TikTok через официальный OAuth 2.0:\n{start_url}")
 
 
+@router.message(F.text == BTN_CANCEL)
+async def cancel_current_operation(message: Message, state: FSMContext) -> None:
+    await _discard_pending_upload(state)
+    await state.set_state(BotStates.MAIN_MENU)
+    await message.answer(messages.CANCELLED, reply_markup=main_menu())
+
+
 @router.message(Command("upload"))
 @router.message(F.text == BTN_UPLOAD)
 async def start_upload(message: Message, state: FSMContext) -> None:
@@ -690,13 +697,6 @@ async def revoke_tiktok(callback: CallbackQuery) -> None:
         await revoke_tiktok_accounts(session, user.id)
     await callback.message.answer(messages.TIKTOK_REVOKED, reply_markup=main_menu())
     await callback.answer()
-
-
-@router.message(F.text == BTN_CANCEL)
-async def cancel_current_operation(message: Message, state: FSMContext) -> None:
-    await _discard_pending_upload(state)
-    await state.set_state(BotStates.MAIN_MENU)
-    await message.answer(messages.CANCELLED, reply_markup=main_menu())
 
 
 @router.message(Command("help"))
