@@ -53,6 +53,17 @@ services:
       postgres:
         condition: service_healthy
 
+  runtime-init:
+    <<: *app-service
+    user: root
+    restart: "no"
+    command: >
+      sh -c "chown -R appuser:appuser /app/data /app/backups
+      && chmod 0750 /app/data /app/backups"
+    volumes:
+      - ./data:/app/data
+      - ./backups:/app/backups
+
   api:
     <<: *app-service
     command: >
@@ -64,6 +75,8 @@ services:
       redis:
         condition: service_healthy
       migrate:
+        condition: service_completed_successfully
+      runtime-init:
         condition: service_completed_successfully
     expose:
       - "${APP_PORT:-8080}"
@@ -90,6 +103,8 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+      runtime-init:
+        condition: service_completed_successfully
     volumes:
       - ./data:/app/data
       - ./backups:/app/backups
@@ -106,6 +121,8 @@ services:
       redis:
         condition: service_healthy
       migrate:
+        condition: service_completed_successfully
+      runtime-init:
         condition: service_completed_successfully
     volumes:
       - ./data:/app/data

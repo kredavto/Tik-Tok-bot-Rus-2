@@ -9,6 +9,7 @@ The project follows Semantic Versioning.
 ### Added
 
 - `/connect` Telegram command as an accessible alternative to the TikTok OAuth menu button.
+- `/upload` Telegram command as an accessible entry point to the video publication workflow.
 - Review-ready TikTok publication preview and literal Music Usage Confirmation / Branded Content
   Policy declarations before the final publish action.
 - User-safe handling for TikTok creator posting caps and posting bans returned by creator-info.
@@ -20,6 +21,11 @@ The project follows Semantic Versioning.
 - Align commercial-content disclosure with TikTok Direct Post UX: the control is off by default,
   enabled explicitly, supports own-brand and branded-content multi-selection, and displays the
   resulting `Promotional content` or `Paid partnership` label.
+
+### Fixed
+
+- Initialize bind-mounted video and backup directories for the unprivileged application user before
+  API, bot, and worker startup, preventing permission failures during Telegram video intake.
 
 ## [0.2.0] - 2026-07-17
 

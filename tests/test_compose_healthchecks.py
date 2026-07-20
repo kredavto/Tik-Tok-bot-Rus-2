@@ -24,3 +24,14 @@ def test_deploy_helper_applies_cloudflared_override_from_environment() -> None:
 
     assert 'ingress="$(env_value DEPLOY_INGRESS)"' in helper
     assert "deploy/docker-compose.cloudflared.yml" in helper
+
+
+def test_runtime_directories_are_initialized_for_unprivileged_services() -> None:
+    compose = (Path(__file__).parents[1] / "docker-compose.yml").read_text()
+
+    runtime_init = compose.split("  runtime-init:\n", maxsplit=1)[1].split(
+        "\n  api:\n", maxsplit=1
+    )[0]
+    assert "user: root" in runtime_init
+    assert "chown -R appuser:appuser /app/data /app/backups" in runtime_init
+    assert compose.count("runtime-init:\n        condition: service_completed_successfully") == 3

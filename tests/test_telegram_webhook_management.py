@@ -119,6 +119,7 @@ async def test_configure_webhook_is_verified_without_dropping_updates() -> None:
         "tariffs",
         "status",
         "connect",
+        "upload",
         "terms",
         "paysupport",
         "help",

@@ -157,6 +157,7 @@ async def connect_tiktok(message: Message, state: FSMContext) -> None:
     await message.answer(f"Подключите TikTok через официальный OAuth 2.0:\n{start_url}")
 
 
+@router.message(Command("upload"))
 @router.message(F.text == BTN_UPLOAD)
 async def start_upload(message: Message, state: FSMContext) -> None:
     assert message.from_user is not None
