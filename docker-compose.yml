@@ -56,6 +56,10 @@ services:
   runtime-init:
     <<: *app-service
     user: root
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
     restart: "no"
     command: >
       sh -c "chown -R appuser:appuser /app/data /app/backups

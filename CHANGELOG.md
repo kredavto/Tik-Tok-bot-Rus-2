@@ -25,7 +25,8 @@ The project follows Semantic Versioning.
 ### Fixed
 
 - Initialize bind-mounted video and backup directories for the unprivileged application user before
-  API, bot, and worker startup, preventing permission failures during Telegram video intake.
+  API, bot, and worker startup using narrowly scoped one-shot filesystem capabilities, preventing
+  permission failures during Telegram video intake.
 
 ## [0.2.0] - 2026-07-17
 

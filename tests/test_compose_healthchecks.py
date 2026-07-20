@@ -33,5 +33,8 @@ def test_runtime_directories_are_initialized_for_unprivileged_services() -> None
         "\n  api:\n", maxsplit=1
     )[0]
     assert "user: root" in runtime_init
+    assert "- CHOWN" in runtime_init
+    assert "- DAC_OVERRIDE" in runtime_init
+    assert "- FOWNER" in runtime_init
     assert "chown -R appuser:appuser /app/data /app/backups" in runtime_init
     assert compose.count("runtime-init:\n        condition: service_completed_successfully") == 3
