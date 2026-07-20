@@ -15,6 +15,8 @@ The project follows Semantic Versioning.
 
 ### Changed
 
+- Record successful TikTok Sandbox OAuth acceptance, encrypted token persistence, replay
+  protection, Telegram notification, and official Creator Info verification on 2026-07-20.
 - Align commercial-content disclosure with TikTok Direct Post UX: the control is off by default,
   enabled explicitly, supports own-brand and branded-content multi-selection, and displays the
   resulting `Promotional content` or `Paid partnership` label.

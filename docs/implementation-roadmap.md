@@ -22,10 +22,10 @@ This document is the final implementation roadmap for Tik_Tok_Loader. It can be 
 Current implementation status: stages 1 through 9 pass the repository's automated quality gates.
 Stage 10 infrastructure is active on the Netherlands server: domain and HTTPS, isolated Compose
 networking, Telegram webhook delivery, PostgreSQL backup, public smoke checks, Robokassa sandbox
-acceptance, production Robokassa configuration, and a real Telegram Stars payment/refund scenario
-have been verified. Stable release `0.2.0` is the production baseline. TikTok publication remains
-disabled until the official OAuth, Sandbox, application review, and publication acceptance gates
-pass.
+acceptance, production Robokassa configuration, a real Telegram Stars payment/refund scenario, and
+TikTok Sandbox OAuth with encrypted token persistence and Creator Info have been verified. Stable
+release `0.2.0` is the production baseline. TikTok publication remains disabled until the
+controlled Content Posting, application review, and publication acceptance gates pass.
 
 ## Control Points
 

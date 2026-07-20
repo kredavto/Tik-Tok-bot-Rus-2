@@ -11,10 +11,11 @@ The current stable production version is `0.2.0`. The version is synchronized ac
 templates. `CHANGELOG.md` contains a matching release heading.
 
 The release was promoted from `0.2.0-rc.1` after automated quality gates, production Robokassa
-acceptance, and a real Telegram Stars payment and refund scenario passed. TikTok publication stays
-disabled by configuration until official OAuth, Sandbox, and Content Posting acceptance are
-complete. The manifest builder continues to reject any prerelease when the supplied runtime
-environment contains `APP_ENV=production`.
+acceptance, and a real Telegram Stars payment and refund scenario passed. TikTok Sandbox OAuth and
+Creator Info acceptance completed on 2026-07-20. TikTok publication stays disabled by configuration
+until the controlled Content Posting scenario and application-review gates are complete. The
+manifest builder continues to reject any prerelease when the supplied runtime environment contains
+`APP_ENV=production`.
 
 ## Manifest Contents
 
