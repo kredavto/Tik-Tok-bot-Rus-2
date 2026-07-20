@@ -114,8 +114,11 @@ Before every publication the bot must query `/v2/post/publish/creator_info/query
 8. Obtain explicit publication consent before any media is transferred to TikTok.
 9. Poll `/v2/post/publish/status/fetch/` or process final Content Posting webhooks.
 
-Unaudited TikTok clients remain restricted to private posts and other platform limits. The system
-must report those restrictions and must not attempt to bypass them.
+Unaudited TikTok clients remain restricted to `SELF_ONLY` posts and other platform limits. TikTok
+also requires every target creator account to be set to private at posting time. Keep
+`TIKTOK_APP_AUDITED=false` until the Direct Post audit is approved; the bot then blocks public
+creator accounts before confirmation. The system must report these restrictions and must not
+attempt to bypass them.
 
 TikTok account persistence rules are documented in [TikTok Accounts Entity](tiktok-accounts-entity.md).
 

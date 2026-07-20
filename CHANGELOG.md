@@ -29,6 +29,8 @@ The project follows Semantic Versioning.
   permission failures during Telegram video intake.
 - Prioritize the global cancel action before state-specific text handlers so an upload can be safely
   abandoned while entering its description or hashtags.
+- Stop unaudited Direct Post flows before confirmation when the connected TikTok account is public,
+  return a specific recovery message for that provider restriction, and clean rejected video files.
 
 ## [0.2.0] - 2026-07-17
 

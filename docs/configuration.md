@@ -19,7 +19,10 @@ Database: `DATABASE_URL`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`.
 
 Redis: `REDIS_URL`.
 
-TikTok API: `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `TIKTOK_REDIRECT_URI`.
+TikTok API: `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `TIKTOK_REDIRECT_URI`,
+`TIKTOK_PUBLISH_ENABLED`, and `TIKTOK_APP_AUDITED`. Keep `TIKTOK_APP_AUDITED=false` until TikTok
+approves the Direct Post audit; unaudited clients can post only to TikTok accounts that are private
+at posting time and only with `SELF_ONLY` visibility.
 
 Telegram delivery: `TELEGRAM_DELIVERY_MODE` is `polling` for local development and `webhook` for
 production. Webhook mode also requires `TELEGRAM_WEBHOOK_SECRET`,

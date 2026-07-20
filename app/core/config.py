@@ -57,6 +57,7 @@ class Settings(BaseSettings):
     tiktok_redirect_uri: str = Field("", alias="TIKTOK_REDIRECT_URI")
     tiktok_webhook_secret: str = Field("", alias="TIKTOK_WEBHOOK_SECRET")
     tiktok_publish_enabled: bool = Field(False, alias="TIKTOK_PUBLISH_ENABLED")
+    tiktok_app_audited: bool = Field(False, alias="TIKTOK_APP_AUDITED")
 
     robokassa_login: str = Field(
         "",

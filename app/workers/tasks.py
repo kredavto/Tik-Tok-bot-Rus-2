@@ -162,6 +162,7 @@ async def _process_upload_locked(upload_id: str, user_id: str, started: float) -
     bot = Bot(token=settings.bot_token) if settings.bot_token else None
     telegram_id: int | None = None
     accepted_by_tiktok = False
+    local_path: str | None = None
     try:
         await redis.setex(f"upload:{upload_id}:status", 86400, UploadStatus.VALIDATING.value)
         async with session_scope() as session:
@@ -170,6 +171,7 @@ async def _process_upload_locked(upload_id: str, user_id: str, started: float) -
             if not upload or not user or str(upload.user_id) != user_id:
                 await redis.setex(f"upload:{upload_id}:status", 86400, UploadStatus.FAILED.value)
                 return
+            local_path = upload.local_path
             if upload.status != UploadStatus.NEW.value:
                 logger.info(
                     "Upload job is not eligible for initial processing",
@@ -326,7 +328,7 @@ async def _process_upload_locked(upload_id: str, user_id: str, started: float) -
                 bot,
                 telegram_id,
                 bot_text(
-                    "publish_error", reason="TikTok вернул ограничение или ошибку авторизации"
+                    "publish_error", reason=_tiktok_upload_error_reason(exc.code)
                 ),
             )
         logger.warning(
@@ -354,8 +356,22 @@ async def _process_upload_locked(upload_id: str, user_id: str, started: float) -
             },
         )
         await redis.aclose()
+        await _cleanup_unaccepted_upload(local_path, accepted_by_tiktok)
         if bot:
             await bot.session.close()
+
+
+def _tiktok_upload_error_reason(code: str) -> str:
+    if code == "unaudited_client_can_only_post_to_private_accounts":
+        return "для тестового режима TikTok-аккаунт должен быть приватным"
+    if code in {"access_token_invalid", "scope_not_authorized"}:
+        return "нужно заново подключить TikTok и проверить разрешение video.publish"
+    return "TikTok вернул ограничение или ошибку авторизации"
+
+
+async def _cleanup_unaccepted_upload(local_path: str | None, accepted: bool) -> None:
+    if local_path and not accepted:
+        await cleanup_temp_file(local_path)
 
 
 async def _persist_tiktok_acceptance(

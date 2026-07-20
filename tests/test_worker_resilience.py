@@ -135,6 +135,27 @@ async def test_local_failures_do_not_reclassify_tiktok_acceptance(
 
 
 @pytest.mark.asyncio
+async def test_rejected_upload_cleans_temporary_video(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cleanup = AsyncMock()
+    monkeypatch.setattr(tasks, "cleanup_temp_file", cleanup)
+
+    await tasks._cleanup_unaccepted_upload("/tmp/rejected.mp4", accepted=False)
+    await tasks._cleanup_unaccepted_upload("/tmp/accepted.mp4", accepted=True)
+
+    cleanup.assert_awaited_once_with("/tmp/rejected.mp4")
+
+
+def test_unaudited_tiktok_error_has_actionable_user_message() -> None:
+    reason = tasks._tiktok_upload_error_reason(
+        "unaudited_client_can_only_post_to_private_accounts"
+    )
+
+    assert "аккаунт должен быть приватным" in reason
+
+
+@pytest.mark.asyncio
 async def test_processing_reconciliation_requeues_accepted_uploads(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

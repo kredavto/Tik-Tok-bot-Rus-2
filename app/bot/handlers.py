@@ -294,6 +294,17 @@ async def receive_hashtags(message: Message, state: FSMContext) -> None:
         await state.set_state(BotStates.MAIN_MENU)
         await message.answer(messages.CREATOR_INFO_ERROR, reply_markup=main_menu())
         return
+    if (
+        not settings.tiktok_app_audited
+        and "PUBLIC_TO_EVERYONE" in creator.privacy_level_options
+    ):
+        await _discard_pending_upload(state)
+        await state.set_state(BotStates.MAIN_MENU)
+        await message.answer(
+            messages.CREATOR_PRIVATE_ACCOUNT_REQUIRED,
+            reply_markup=main_menu(),
+        )
+        return
 
     await state.update_data(
         tiktok_account_id=str(account_id),

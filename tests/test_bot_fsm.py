@@ -96,6 +96,7 @@ def configure_stars_checkout(
 
 @pytest.mark.asyncio
 async def test_upload_fsm_collects_creator_options(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(handlers.settings, "tiktok_app_audited", True)
     account_id = uuid4()
     creator = TikTokCreatorInfo(
         username="creator",
@@ -126,6 +127,41 @@ async def test_upload_fsm_collects_creator_options(monkeypatch: pytest.MonkeyPat
     assert state.data["comment_available"] is True
     assert state.data["duet_available"] is False
     hashtags.answer.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_unaudited_app_requires_private_creator_account(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    creator = TikTokCreatorInfo(
+        username="creator",
+        nickname="Creator",
+        privacy_level_options=("SELF_ONLY", "PUBLIC_TO_EVERYONE"),
+        comment_disabled=False,
+        duet_disabled=False,
+        stitch_disabled=False,
+        max_video_post_duration_sec=180,
+    )
+
+    async def load_creator_info(_telegram_id: int, _username: str | None):
+        return uuid4(), creator
+
+    cleanup = AsyncMock()
+    monkeypatch.setattr(handlers.settings, "tiktok_app_audited", False)
+    monkeypatch.setattr(handlers, "_load_creator_info", load_creator_info)
+    monkeypatch.setattr(handlers, "cleanup_temp_file", cleanup)
+    state = FakeState({"duration_sec": 30.0, "local_path": "/tmp/video.mp4"})
+    message = make_message("#test")
+
+    await handlers.receive_hashtags(message, state)  # type: ignore[arg-type]
+
+    assert state.current == BotStates.MAIN_MENU
+    assert state.data == {}
+    cleanup.assert_awaited_once_with("/tmp/video.mp4")
+    message.answer.assert_awaited_once_with(
+        handlers.messages.CREATOR_PRIVATE_ACCOUNT_REQUIRED,
+        reply_markup=handlers.main_menu(),
+    )
 
 
 @pytest.mark.asyncio
