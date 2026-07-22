@@ -77,11 +77,12 @@ TikTok publishing requires:
 
 Before confirmation, the bot queries current creator information, requires a manual privacy
 choice, lets the user configure the interaction options TikTok currently allows, and asks for
-commercial-content disclosure. Production publication remains disabled until the TikTok app and
-`video.publish` scope are approved.
+commercial-content disclosure. For an unaudited client, the target account must be private and the
+bot restricts test publications to TikTok's required `SELF_ONLY` visibility.
 
-Until those requirements are met, production publication remains disabled. A queued task stops
-with a clear user-facing error and does not attempt an unofficial fallback or bypass.
+Publication remains disabled until the required developer configuration and `video.publish` scope
+are available. A queued task stops with a clear user-facing error and does not attempt an
+unofficial fallback or bypass.
 
 ## Scheduled Maintenance
 

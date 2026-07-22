@@ -294,10 +294,7 @@ async def receive_hashtags(message: Message, state: FSMContext) -> None:
         await state.set_state(BotStates.MAIN_MENU)
         await message.answer(messages.CREATOR_INFO_ERROR, reply_markup=main_menu())
         return
-    if (
-        not settings.tiktok_app_audited
-        and "PUBLIC_TO_EVERYONE" in creator.privacy_level_options
-    ):
+    if not settings.tiktok_app_audited and "PUBLIC_TO_EVERYONE" in creator.privacy_level_options:
         await _discard_pending_upload(state)
         await state.set_state(BotStates.MAIN_MENU)
         await message.answer(
@@ -306,10 +303,21 @@ async def receive_hashtags(message: Message, state: FSMContext) -> None:
         )
         return
 
+    privacy_options = list(creator.privacy_level_options)
+    privacy_message = messages.ASK_PRIVACY
+    if not settings.tiktok_app_audited:
+        if "SELF_ONLY" not in creator.privacy_level_options:
+            await _discard_pending_upload(state)
+            await state.set_state(BotStates.MAIN_MENU)
+            await message.answer(messages.CREATOR_INFO_ERROR, reply_markup=main_menu())
+            return
+        privacy_options = ["SELF_ONLY"]
+        privacy_message = messages.ASK_PRIVACY_UNAUDITED
+
     await state.update_data(
         tiktok_account_id=str(account_id),
         creator_nickname=creator.nickname or creator.username,
-        privacy_options=list(creator.privacy_level_options),
+        privacy_options=privacy_options,
         comment_available=not creator.comment_disabled,
         duet_available=not creator.duet_disabled,
         stitch_available=not creator.stitch_disabled,
@@ -319,8 +327,8 @@ async def receive_hashtags(message: Message, state: FSMContext) -> None:
     )
     await state.set_state(BotStates.VIDEO_PRIVACY)
     await message.answer(
-        messages.ASK_PRIVACY.format(nickname=creator.nickname or creator.username),
-        reply_markup=privacy_keyboard(list(creator.privacy_level_options)),
+        privacy_message.format(nickname=creator.nickname or creator.username),
+        reply_markup=privacy_keyboard(privacy_options),
     )
 
 

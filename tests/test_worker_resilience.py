@@ -148,9 +148,7 @@ async def test_rejected_upload_cleans_temporary_video(
 
 
 def test_unaudited_tiktok_error_has_actionable_user_message() -> None:
-    reason = tasks._tiktok_upload_error_reason(
-        "unaudited_client_can_only_post_to_private_accounts"
-    )
+    reason = tasks._tiktok_upload_error_reason("unaudited_client_can_only_post_to_private_accounts")
 
     assert "аккаунт должен быть приватным" in reason
 

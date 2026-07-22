@@ -285,6 +285,23 @@ async def _process_upload_locked(upload_id: str, user_id: str, started: float) -
                     )
                     return
 
+                if not settings.tiktok_app_audited and upload.privacy_level != "SELF_ONLY":
+                    await transition_upload_job(
+                        session,
+                        upload,
+                        UploadStatus.FAILED,
+                        "Unaudited TikTok clients require SELF_ONLY visibility.",
+                    )
+                    await _notify(
+                        bot,
+                        user.telegram_id,
+                        bot_text(
+                            "publish_error",
+                            reason="до завершения аудита выберите видимость «Только я»",
+                        ),
+                    )
+                    return
+
                 await transition_upload_job(
                     session, upload, UploadStatus.UPLOADING, "Uploading to TikTok"
                 )
@@ -327,9 +344,7 @@ async def _process_upload_locked(upload_id: str, user_id: str, started: float) -
             await _notify(
                 bot,
                 telegram_id,
-                bot_text(
-                    "publish_error", reason=_tiktok_upload_error_reason(exc.code)
-                ),
+                bot_text("publish_error", reason=_tiktok_upload_error_reason(exc.code)),
             )
         logger.warning(
             "TikTok API rejected upload", extra={"upload_id": upload_id, "code": exc.code}

@@ -165,6 +165,39 @@ async def test_unaudited_app_requires_private_creator_account(
 
 
 @pytest.mark.asyncio
+async def test_unaudited_app_offers_only_self_only_visibility(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    account_id = uuid4()
+    creator = TikTokCreatorInfo(
+        username="creator",
+        nickname="Creator",
+        privacy_level_options=("FOLLOWER_OF_CREATOR", "MUTUAL_FOLLOW_FRIENDS", "SELF_ONLY"),
+        comment_disabled=False,
+        duet_disabled=True,
+        stitch_disabled=True,
+        max_video_post_duration_sec=180,
+    )
+
+    async def load_creator_info(_telegram_id: int, _username: str | None):
+        return account_id, creator
+
+    monkeypatch.setattr(handlers.settings, "tiktok_app_audited", False)
+    monkeypatch.setattr(handlers, "_load_creator_info", load_creator_info)
+    state = FakeState({"duration_sec": 30.0, "local_path": "/tmp/video.mp4"})
+    message = make_message("#test")
+
+    await handlers.receive_hashtags(message, state)  # type: ignore[arg-type]
+
+    assert state.current == BotStates.VIDEO_PRIVACY
+    assert state.data["privacy_options"] == ["SELF_ONLY"]
+    answer = message.answer.await_args
+    assert answer.args[0] == handlers.messages.ASK_PRIVACY_UNAUDITED.format(nickname="Creator")
+    callbacks = [row[0].callback_data for row in answer.kwargs["reply_markup"].inline_keyboard]
+    assert callbacks == ["privacy:SELF_ONLY"]
+
+
+@pytest.mark.asyncio
 async def test_upload_fsm_rejects_unavailable_privacy() -> None:
     state = FakeState({"privacy_options": ["SELF_ONLY"]})
     callback = make_callback("privacy:PUBLIC_TO_EVERYONE")

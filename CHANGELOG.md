@@ -24,6 +24,8 @@ The project follows Semantic Versioning.
 
 ### Fixed
 
+- Restrict unaudited TikTok Direct Post attempts to `SELF_ONLY` visibility in both the Telegram FSM
+  and worker validation, matching TikTok's private-viewership requirement.
 - Initialize bind-mounted video and backup directories for the unprivileged application user before
   API, bot, and worker startup using narrowly scoped one-shot filesystem capabilities, preventing
   permission failures during Telegram video intake.
