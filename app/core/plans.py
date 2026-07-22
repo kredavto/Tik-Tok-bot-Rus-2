@@ -6,6 +6,7 @@ class PlanCode(StrEnum):
     FREE = "free"
     PRO = "pro"
     BUSINESS = "business"
+    UNLIMIT = "unlimit"
 
 
 @dataclass(frozen=True)
@@ -21,6 +22,7 @@ PLANS: dict[PlanCode, Plan] = {
     PlanCode.FREE: Plan(PlanCode.FREE, "FREE", 0, None, 2),
     PlanCode.PRO: Plan(PlanCode.PRO, "PRO", 499, 199, 5),
     PlanCode.BUSINESS: Plan(PlanCode.BUSINESS, "BUSINESS", 999, 499, 10),
+    PlanCode.UNLIMIT: Plan(PlanCode.UNLIMIT, "UNLIMIT", 1999, 999, 0),
 }
 
 

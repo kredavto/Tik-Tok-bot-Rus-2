@@ -38,6 +38,7 @@ from app.db.session import (
     init_db,
     mark_payment_paid,
     record_webhook_event,
+    refund_failed_upload_usage,
     session_scope,
     transition_upload_job,
     upsert_tiktok_account,
@@ -492,7 +493,9 @@ async def tiktok_webhook(request: Request) -> dict[str, str]:
             return {"status": "ok"}
 
         upload = (
-            await session.scalar(select(UploadJob).where(UploadJob.tiktok_publish_id == publish_id))
+            await session.scalar(
+                select(UploadJob).where(UploadJob.tiktok_publish_id == publish_id).with_for_update()
+            )
             if publish_id
             else None
         )
@@ -515,6 +518,7 @@ async def tiktok_webhook(request: Request) -> dict[str, str]:
                     UploadStatus.FAILED,
                     f"TikTok processing failed: {reason}",
                 )
+                await refund_failed_upload_usage(session, upload)
                 user = await session.get(User, upload.user_id)
                 if user:
                     notify_upload_status.send(user.telegram_id, UploadStatus.FAILED.value)

@@ -2,7 +2,7 @@
 
 ## Scope and Compliance
 
-PRO and BUSINESS are digital services consumed inside Telegram. Purchases initiated by the bot must
+PRO, BUSINESS, and UNLIMIT are digital services consumed inside Telegram. Purchases initiated by the bot must
 therefore use Telegram Stars (`XTR`) in accordance with the official Telegram payment rules for
 digital goods and services.
 
@@ -17,12 +17,12 @@ Official references:
 ## Tariff Configuration
 
 `plans.price_stars` stores the positive integer Stars price for each paid plan. The approved prices
-are `199 XTR` for PRO and `499 XTR` for BUSINESS. Values are managed through the administrative API
+are `199 XTR` for PRO, `499 XTR` for BUSINESS, and `999 XTR` for UNLIMIT. Values are managed through the administrative API
 and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversion is allowed.
 
 ## Payment Flow
 
-1. The user selects PRO or BUSINESS.
+1. The user selects PRO, BUSINESS, or UNLIMIT.
 2. The backend creates a `payments` row with provider `telegram_stars`, currency `XTR`, and a unique
    payment UUID.
 3. The bot sends a single-chat invoice with currency `XTR`, omits `provider_token`, and puts the
@@ -67,8 +67,8 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 - Exact user, amount, currency, provider, and payment ID are validated.
 - Concurrent duplicate confirmations activate one subscription.
 - Reuse of a charge ID for another payment is rejected.
-- PRO is invoiced for `199 XTR` and BUSINESS for `499 XTR` by default.
-- PRO and BUSINESS Stars prices can be changed without a source-code release.
+- PRO is invoiced for `199 XTR`, BUSINESS for `499 XTR`, and UNLIMIT for `999 XTR` by default.
+- Paid-plan Stars prices can be changed without a source-code release.
 - `/terms` and `/paysupport` remain available in production.
 - RUB and XTR revenue are reported separately.
 - Repeated Stars refund requests do not call Telegram or alter subscription state twice.

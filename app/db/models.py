@@ -189,6 +189,10 @@ class UploadJob(Base):
     brand_organic_toggle: Mapped[bool] = mapped_column(Boolean, default=False)
     status: Mapped[str] = mapped_column(String(32), default="NEW", index=True)
     tiktok_publish_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    usage_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    usage_refunded_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, index=True

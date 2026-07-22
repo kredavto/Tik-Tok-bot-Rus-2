@@ -28,7 +28,7 @@ Non-functional requirements are defined in [Non-Functional Requirements](non-fun
 | Redis | Cache, locks, queue coordination, OAuth state, rate limiting |
 | Worker | Video validation, preparation, publication workflow, cleanup, background jobs |
 | Scheduler | Redis-leased dispatch and heartbeat for recurring maintenance jobs |
-| Telegram Stars | In-bot payment for PRO and BUSINESS digital subscriptions |
+| Telegram Stars | In-bot payment for PRO, BUSINESS, and UNLIMIT digital subscriptions |
 | Robokassa | Dormant external-channel payment integration, subject to policy approval |
 | TikTok OAuth 2.0 | User authorization for official TikTok API access |
 | TikTok Content Posting API | Official publication workflow |
@@ -39,7 +39,7 @@ Main component interaction flows are documented in [Sequence Flows](sequence-flo
 
 ## Functional Commitments
 
-- FREE, PRO, and BUSINESS tariffs are supported.
+- FREE, PRO, BUSINESS, and UNLIMIT tariffs are supported.
 - FREE is assigned automatically to new users.
 - Paid subscriptions expire automatically and return users to FREE.
 - Daily upload limits are enforced transactionally.

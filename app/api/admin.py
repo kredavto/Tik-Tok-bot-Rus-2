@@ -74,7 +74,7 @@ class RoleUpdate(BaseModel):
 
 class RobokassaOrderCreate(BaseModel):
     telegram_user_id: int = Field(gt=0)
-    plan_id: Literal["pro", "business"]
+    plan_id: Literal["pro", "business", "unlimit"]
 
 
 class StarsRefundReconciliation(BaseModel):

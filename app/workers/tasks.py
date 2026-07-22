@@ -39,10 +39,12 @@ from app.db.models import (
 )
 from app.db.session import (
     can_upload_today,
+    current_usage_date,
     expire_due_paid_subscriptions,
     list_tiktok_accounts_due_for_refresh,
     mark_subscription_expiration_notified,
     record_accepted_upload,
+    refund_failed_upload_usage,
     session_scope,
     transition_upload_job,
     upsert_tiktok_account,
@@ -386,8 +388,11 @@ def _tiktok_upload_error_reason(code: str) -> str:
 
 def _tiktok_processing_error_reason(reason: str) -> str:
     if reason == "internal":
-        return "временная ошибка на стороне TikTok; повторите публикацию позже"
-    return "TikTok отклонил публикацию"
+        return (
+            "временная ошибка на стороне TikTok; повторите публикацию позже. "
+            "Суточная попытка возвращена"
+        )
+    return "TikTok отклонил публикацию; суточная попытка возвращена"
 
 
 async def _cleanup_unaccepted_upload(local_path: str | None, accepted: bool) -> None:
@@ -401,7 +406,9 @@ async def _persist_tiktok_acceptance(
     user: User,
     publish_id: str,
 ) -> None:
-    await record_accepted_upload(session, user)
+    if upload.usage_date is None:
+        upload.usage_date = current_usage_date()
+        await record_accepted_upload(session, user, upload.usage_date)
     upload.tiktok_publish_id = publish_id
     await transition_upload_job(
         session,
@@ -508,7 +515,10 @@ async def _notify_upload_status(telegram_id: int, status: str) -> None:
         elif status == "TIKTOK_REAUTH_REQUIRED":
             message = bot_text("tiktok_reauth_required")
         else:
-            message = bot_text("publish_error", reason="TikTok отклонил публикацию")
+            message = bot_text(
+                "publish_error",
+                reason="TikTok отклонил публикацию; суточная попытка возвращена",
+            )
         await bot.send_message(telegram_id, message)
     finally:
         await bot.session.close()
@@ -734,7 +744,9 @@ async def _check_publish_status(upload_id: str, user_id: str, attempt: int) -> N
             if not acquired:
                 return
             async with session_scope() as session:
-                upload = await session.get(UploadJob, UUID(upload_id))
+                upload = await session.scalar(
+                    select(UploadJob).where(UploadJob.id == UUID(upload_id)).with_for_update()
+                )
                 user = await session.get(User, UUID(user_id))
                 if (
                     not upload
@@ -752,6 +764,7 @@ async def _check_publish_status(upload_id: str, user_id: str, attempt: int) -> N
                         UploadStatus.FAILED,
                         "TikTok account was disconnected while publication was processing.",
                     )
+                    await refund_failed_upload_usage(session, upload)
                     return
 
                 result = await TikTokClient(
@@ -774,6 +787,7 @@ async def _check_publish_status(upload_id: str, user_id: str, attempt: int) -> N
                         UploadStatus.FAILED,
                         f"TikTok processing failed: {reason}",
                     )
+                    await refund_failed_upload_usage(session, upload)
                     await _notify(
                         bot,
                         user.telegram_id,

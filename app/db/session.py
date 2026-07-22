@@ -6,7 +6,7 @@ from decimal import Decimal, InvalidOperation
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import aliased
@@ -195,23 +195,58 @@ async def get_daily_usage(session: AsyncSession, user_id: UUID, usage_date: date
 async def can_upload_today(session: AsyncSession, user: User) -> tuple[bool, int, int]:
     plan = await get_plan_record(session, await active_plan_code(session, user))
     usage = await get_daily_usage(session, user.id, current_usage_date())
+    if plan.daily_limit == 0:
+        return True, usage.upload_count, plan.daily_limit
     return usage.upload_count < plan.daily_limit, usage.upload_count, plan.daily_limit
 
 
 async def consume_daily_upload(session: AsyncSession, user: User) -> tuple[bool, int, int]:
     plan = await get_plan_record(session, await active_plan_code(session, user))
     usage = await get_daily_usage(session, user.id, current_usage_date())
-    if usage.upload_count >= plan.daily_limit:
+    if plan.daily_limit > 0 and usage.upload_count >= plan.daily_limit:
         return False, usage.upload_count, plan.daily_limit
     usage.upload_count += 1
     return True, usage.upload_count, plan.daily_limit
 
 
-async def record_accepted_upload(session: AsyncSession, user: User) -> int:
+async def record_accepted_upload(
+    session: AsyncSession,
+    user: User,
+    usage_date: date | None = None,
+) -> int:
     """Record a publication that TikTok has already accepted."""
-    usage = await get_daily_usage(session, user.id, current_usage_date())
+    usage = await get_daily_usage(session, user.id, usage_date or current_usage_date())
     usage.upload_count += 1
     return usage.upload_count
+
+
+async def refund_failed_upload_usage(
+    session: AsyncSession,
+    upload: UploadJob,
+) -> bool:
+    """Return a reserved daily attempt once after TikTok reports final failure."""
+    refunded_at = datetime.now(UTC)
+    refunded_row = (
+        await session.execute(
+            update(UploadJob)
+            .where(
+                UploadJob.id == upload.id,
+                UploadJob.usage_date.is_not(None),
+                UploadJob.usage_refunded_at.is_(None),
+            )
+            .values(usage_refunded_at=refunded_at)
+            .returning(UploadJob.user_id, UploadJob.usage_date)
+        )
+    ).one_or_none()
+    if refunded_row is None:
+        return False
+    user_id, usage_date = refunded_row
+    if usage_date is None:
+        return False
+    usage = await get_daily_usage(session, user_id, usage_date)
+    if usage.upload_count > 0:
+        usage.upload_count -= 1
+    return True
 
 
 async def accept_agreement(session: AsyncSession, user: User) -> None:

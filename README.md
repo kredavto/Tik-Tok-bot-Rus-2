@@ -11,6 +11,7 @@ Important: this project does not implement VPN, proxy routing, device spoofing, 
 | FREE | 0 | - | 2 |
 | PRO | 499 | 199 XTR | 5 |
 | BUSINESS | 999 | 499 XTR | 10 |
+| UNLIMIT | 1999 | 999 XTR | Unlimited |
 
 ## What Is Included
 
@@ -62,8 +63,10 @@ For production, configure:
 - `PUBLIC_BASE_URL`
 - TikTok developer credentials after app approval
 
-Paid-plan prices are `199 XTR` for PRO and `499 XTR` for BUSINESS. They are stored in PostgreSQL and
-remain manageable through the administrator panel.
+Paid-plan prices are `199 XTR` for PRO, `499 XTR` for BUSINESS, and `999 XTR` for UNLIMIT. RUB
+reference prices are shown alongside Stars prices. In-bot digital checkout uses Stars; Robokassa
+remains available to an approved external sales channel. Prices are stored in PostgreSQL and remain
+manageable through the administrator panel.
 
 ## TikTok Publishing
 
@@ -87,7 +90,7 @@ unofficial fallback or bypass.
 ## Scheduled Maintenance
 
 The `scheduler` container uses Redis leases to enqueue periodic tasks exactly once per configured
-window. It expires PRO/BUSINESS subscriptions and returns users to FREE, refreshes TikTok OAuth
+window. It expires PRO/BUSINESS/UNLIMIT subscriptions and returns users to FREE, refreshes TikTok OAuth
 tokens before expiration, and runs retention cleanup. Docker monitors its Redis heartbeat.
 
 ## Administrative Console

@@ -59,7 +59,7 @@ Administrative REST endpoint requirements are documented in [Administrative REST
 
 ## Plan Management
 
-PRO and BUSINESS price, daily limit, duration, and sale availability are stored in PostgreSQL and can be changed without code edits.
+PRO, BUSINESS, and UNLIMIT price, daily limit, duration, and sale availability are stored in PostgreSQL and can be changed without code edits. A zero daily limit means unlimited.
 
 Every plan update is written to `admin_actions`.
 

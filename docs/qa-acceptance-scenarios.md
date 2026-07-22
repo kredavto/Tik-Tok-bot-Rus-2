@@ -11,6 +11,7 @@ Prepare these accounts in staging:
 | FREE user | Validate free daily limit and default plan assignment |
 | PRO user | Validate paid plan behavior and daily limit |
 | BUSINESS user | Validate higher paid limit |
+| UNLIMIT user | Validate paid plan without a daily cap |
 | Administrator | Validate admin API and audit log |
 | User without TikTok | Validate TikTok connection requirement |
 
@@ -53,6 +54,7 @@ Expected result:
 - Job is queued and processed.
 - Official TikTok API acceptance is recorded.
 - User daily usage is incremented only after acceptance.
+- A final TikTok failure returns the reserved usage exactly once.
 - User receives final notification.
 
 ### QA-LIMIT-001: Daily Limit Exceeded
@@ -74,6 +76,7 @@ duplicate confirmation are covered. A real Telegram Stars round trip remains a s
 Expected result:
 
 - A PRO invoice is created for `199 XTR`; a BUSINESS invoice is created for `499 XTR`.
+- An UNLIMIT invoice is created for `999 XTR`; its RUB reference price is `1999`.
 - User, amount, currency, payment UUID, and charge ID are verified.
 - Subscription activates only after `successful_payment`.
 - Duplicate updates do not create another subscription.

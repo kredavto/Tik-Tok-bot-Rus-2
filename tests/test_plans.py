@@ -13,3 +13,6 @@ def test_paid_plan_prices() -> None:
     assert get_plan("pro").price_stars == 199
     assert get_plan("business").price_rub == 999
     assert get_plan("business").price_stars == 499
+    assert get_plan("unlimit").price_rub == 1999
+    assert get_plan("unlimit").price_stars == 999
+    assert get_plan("unlimit").daily_limit == 0

@@ -65,7 +65,7 @@ async def test_tiktok_acceptance_is_committed_before_local_side_effects(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     session = AsyncMock()
-    upload = SimpleNamespace(tiktok_publish_id=None)
+    upload = SimpleNamespace(tiktok_publish_id=None, usage_date=None)
     user = SimpleNamespace()
     transition = AsyncMock()
     record_accepted = AsyncMock(return_value=3)
@@ -75,7 +75,7 @@ async def test_tiktok_acceptance_is_committed_before_local_side_effects(
     await tasks._persist_tiktok_acceptance(session, upload, user, "publish-id")
 
     assert upload.tiktok_publish_id == "publish-id"
-    record_accepted.assert_awaited_once_with(session, user)
+    record_accepted.assert_awaited_once_with(session, user, upload.usage_date)
     transition.assert_awaited_once_with(
         session,
         upload,
@@ -90,7 +90,7 @@ async def test_tiktok_acceptance_is_recorded_after_plan_limit_changes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     session = AsyncMock()
-    upload = SimpleNamespace(tiktok_publish_id=None)
+    upload = SimpleNamespace(tiktok_publish_id=None, usage_date=None)
     record_accepted = AsyncMock(return_value=3)
     transition = AsyncMock()
     monkeypatch.setattr(tasks, "record_accepted_upload", record_accepted)
@@ -158,12 +158,13 @@ def test_tiktok_internal_processing_error_is_reported_as_temporary() -> None:
 
     assert "временная ошибка на стороне TikTok" in reason
     assert "повторите публикацию позже" in reason
+    assert "Суточная попытка возвращена" in reason
 
 
 def test_unknown_tiktok_processing_error_keeps_generic_message() -> None:
     reason = tasks._tiktok_processing_error_reason("unknown_reason")
 
-    assert reason == "TikTok отклонил публикацию"
+    assert reason == "TikTok отклонил публикацию; суточная попытка возвращена"
 
 
 @pytest.mark.asyncio

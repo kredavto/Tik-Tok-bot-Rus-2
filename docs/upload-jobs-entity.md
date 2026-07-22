@@ -16,6 +16,8 @@
 | `caption` | TEXT | Video description |
 | `hashtags` | TEXT | Hashtags |
 | `error_code` | VARCHAR | Error code when available |
+| `usage_date` | DATE | Business date on which the accepted attempt was reserved |
+| `usage_refunded_at` | TIMESTAMP WITH TIME ZONE | Idempotency marker for a returned attempt |
 | `created_at` | TIMESTAMP WITH TIME ZONE | Record creation time |
 | `updated_at` | TIMESTAMP WITH TIME ZONE | Last update time |
 
@@ -39,7 +41,9 @@ The detailed lifecycle is documented in [Video Publication Lifecycle](video-life
 - Every status change must be recorded in `upload_job_events`.
 - Retry is allowed only for temporary errors.
 - Terminal states must not be overwritten by stale retries.
-- User daily limit is consumed only after official TikTok API acceptance.
+- User daily allowance is reserved only after official TikTok API acceptance.
+- A final TikTok `FAILED` status returns the reservation exactly once. Repeated webhook delivery or
+  polling cannot decrement the counter twice.
 
 Daily counter rules are documented in [Daily Usage Entity](daily-usage-entity.md).
 

@@ -24,8 +24,10 @@ Track these indicators for project growth:
 | Active FREE users | Shows free-tier usage |
 | Active PRO users | Shows paid PRO adoption |
 | Active BUSINESS users | Shows paid BUSINESS adoption |
+| Active UNLIMIT users | Shows paid UNLIMIT adoption |
 | FREE to PRO conversion | Measures PRO monetization |
 | FREE to BUSINESS conversion | Measures BUSINESS monetization |
+| FREE to UNLIMIT conversion | Measures UNLIMIT monetization |
 | Successful payments | Measures provider-specific payment flow |
 | Revenue by plan | Supports pricing and growth analysis |
 
@@ -51,7 +53,7 @@ The admin dashboard should expose:
 - New registrations by period.
 - Publication volume and success rate.
 - RUB and Telegram Stars successful payments and revenue by period, reported separately.
-- Conversion FREE to PRO and FREE to BUSINESS.
+- Conversion FREE to PRO, FREE to BUSINESS, and FREE to UNLIMIT.
 - Queue size, processing latency, and failed jobs.
 - Critical errors and repeated failures.
 

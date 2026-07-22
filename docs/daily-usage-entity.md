@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`daily_usage` tracks daily publication limit consumption for FREE, PRO, and BUSINESS users.
+`daily_usage` tracks publication reservations for FREE, PRO, BUSINESS, and UNLIMIT users.
 
 ## Recommended Fields
 
@@ -23,8 +23,11 @@ The current implementation may use `upload_count` for the same domain meaning as
 
 - Create a record automatically on the first accepted publication of the day.
 - The business day resets at 00:00 Europe/Moscow.
-- Increment usage only after the official TikTok API accepts the publication.
+- Reserve usage only after the official TikTok API accepts the publication.
+- Return the reserved attempt exactly once when TikTok reports final `FAILED`, including provider
+  `internal` failures. The upload job stores the accounting date and refund timestamp.
 - Do not increment usage for validation, preparation, authorization, or platform-restriction failures.
+- `daily_limit=0` means unlimited. Usage is still counted for analytics but never blocks publishing.
 - If a user changes plan during the day, recalculate remaining allowance without resetting already used publications.
 - Reprocessing the same upload job must not increment the counter twice.
 
@@ -34,6 +37,7 @@ The current implementation may use `upload_count` for the same domain meaning as
 - Counter updates must be transactional.
 - Use locking or equivalent concurrency protection before incrementing counters.
 - Counter updates must be idempotent for repeated worker attempts.
+- Webhook and polling races must not refund one upload more than once.
 - Usage changes must be auditable.
 
 ## Relationships

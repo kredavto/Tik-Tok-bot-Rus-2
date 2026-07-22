@@ -36,7 +36,7 @@ is released so the next scheduler tick can retry.
 
 The current periodic tasks are:
 
-- Expire due PRO and BUSINESS subscriptions and create the replacement FREE subscription.
+- Expire due PRO, BUSINESS, and UNLIMIT subscriptions and create the replacement FREE subscription.
 - Refresh TikTok access tokens before their expiry.
 - Remove temporary files and expired operational records according to the retention policy.
 - Redispatch pending payment-success notification outbox events.

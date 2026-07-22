@@ -2,9 +2,9 @@
 
 **Unified Technical Specification**
 
-- **Версия:** 0.9.6
+- **Версия:** 0.9.7
 - **Репозиторий:** `kredavto/Tik-Tok-bot-Rus-2`
-- **Дата сборки:** 2026-07-18
+- **Дата сборки:** 2026-07-22
 - **Статус:** проектная спецификация для реализации
 
 > Публикация TikTok в проекте проектируется только через официальный TikTok Content Posting API и OAuth 2.0. Неофициальные API, автоматизация интерфейса и методы обхода ограничений не входят в допустимую архитектуру.
@@ -173,7 +173,7 @@ Non-functional requirements are defined in [Non-Functional Requirements](#6-non-
 | Redis | Cache, locks, queue coordination, OAuth state, rate limiting |
 | Worker | Video validation, preparation, publication workflow, cleanup, background jobs |
 | Scheduler | Redis-leased dispatch and heartbeat for recurring maintenance jobs |
-| Telegram Stars | In-bot payment for PRO and BUSINESS digital subscriptions |
+| Telegram Stars | In-bot payment for PRO, BUSINESS, and UNLIMIT digital subscriptions |
 | Robokassa | Dormant external-channel payment integration, subject to policy approval |
 | TikTok OAuth 2.0 | User authorization for official TikTok API access |
 | TikTok Content Posting API | Official publication workflow |
@@ -184,7 +184,7 @@ Main component interaction flows are documented in [Sequence Flows](#4-sequence-
 
 ## 2.3. Functional Commitments
 
-- FREE, PRO, and BUSINESS tariffs are supported.
+- FREE, PRO, BUSINESS, and UNLIMIT tariffs are supported.
 - FREE is assigned automatically to new users.
 - Paid subscriptions expire automatically and return users to FREE.
 - Daily upload limits are enforced transactionally.
@@ -247,7 +247,7 @@ This document is the high-level navigation map for Tik_Tok_Loader components. It
 | Worker | Background processing for video validation, preparation, publication, status checks, cleanup, subscription expiry, and retries. |
 | Scheduler | Redis-leased dispatch of subscription expiry, OAuth refresh, and retention tasks. |
 | TikTok API | Official OAuth 2.0 authorization and Content Posting API video publication. |
-| Telegram Stars | In-bot payment acceptance for PRO and BUSINESS digital subscriptions. |
+| Telegram Stars | In-bot payment acceptance for PRO, BUSINESS, and UNLIMIT digital subscriptions. |
 | Robokassa | Existing callback integration reserved for a separately approved sales channel. |
 | Admin Panel | Administrative management, analytics, audit review, settings, users, payments, and upload queues. |
 
@@ -348,7 +348,7 @@ sequenceDiagram
     participant DB as PostgreSQL
     participant TG as Telegram Payments
 
-    User->>Bot: Select PRO or BUSINESS
+    User->>Bot: Select PRO, BUSINESS, or UNLIMIT
     Bot->>DB: Create XTR payment UUID
     Bot->>TG: Send XTR invoice
     TG-->>Bot: pre_checkout_query
@@ -397,7 +397,7 @@ This document is the final implementation roadmap for Tik_Tok_Loader. It can be 
 | 2. Core architecture and database | Implement modular application layout, PostgreSQL schema, SQLAlchemy models, Alembic migrations, settings, logging, and Redis connectivity. | Migrations apply, database entities match documentation, health/readiness checks work. |
 | 3. Telegram bot | Implement aiogram bot, FSM flows, menu, localization, keyboards, user registration, FREE assignment, plan display, and upload intake. | Bot scenarios pass tests and match FSM documentation. |
 | 4. TikTok Content Posting API | Implement official OAuth 2.0 flow, encrypted token storage, token refresh, official publication client, webhook handling, and error reporting. | OAuth and mocked TikTok API tests pass; no unofficial API or bypass behavior exists. |
-| 5. Robokassa integration | Implement payment creation, signature verification, ResultURL processing, idempotency, subscription activation, and payment audit. | PRO/BUSINESS payment scenarios pass, SuccessURL does not activate subscriptions. |
+| 5. Robokassa integration | Implement payment creation, signature verification, ResultURL processing, idempotency, subscription activation, and payment audit. | PRO/BUSINESS/UNLIMIT external-channel payment scenarios pass, SuccessURL does not activate subscriptions. |
 | 6. Workers and video processing | Implement queueing, FFprobe validation, safe FFmpeg preparation, TikTok submission jobs, cleanup, retries, and daily-limit accounting. | Upload lifecycle and queue recovery scenarios pass. |
 | 7. Admin panel and analytics | Implement administrative API/panel, RBAC, settings, users, payments, upload queue, audit logs, and metrics views. | Admin operations are authenticated, audited, tested, and documented. |
 | 8. CI/CD and deployment automation | Complete CI checks, Docker builds, migration checks, secret scanning, deployment guides, backup scripts, and Nginx/HTTPS setup. | CI passes and staging deployment is reproducible. |
@@ -409,10 +409,10 @@ This document is the final implementation roadmap for Tik_Tok_Loader. It can be 
 Current implementation status: stages 1 through 9 pass the repository's automated quality gates.
 Stage 10 infrastructure is active on the Netherlands server: domain and HTTPS, isolated Compose
 networking, Telegram webhook delivery, PostgreSQL backup, public smoke checks, Robokassa sandbox
-acceptance, production Robokassa configuration, and a real Telegram Stars payment/refund scenario
-have been verified. Stable release `0.2.0` is the production baseline. TikTok publication remains
-disabled until the official OAuth, Sandbox, application review, and publication acceptance gates
-pass.
+acceptance, production Robokassa configuration, a real Telegram Stars payment/refund scenario, and
+TikTok Sandbox OAuth with encrypted token persistence and Creator Info have been verified. Stable
+release `0.2.0` is the production baseline. TikTok publication remains disabled until the
+controlled Content Posting, application review, and publication acceptance gates pass.
 
 ## 5.3. Control Points
 
@@ -514,7 +514,7 @@ Canonical entity names are defined in [Glossary and Naming Conventions](#71-glos
 | --- | --- |
 | `users` | Telegram users and account-level settings |
 | `tiktok_accounts` | Connected TikTok accounts and encrypted OAuth tokens |
-| `plans` | FREE, PRO, and BUSINESS tariffs |
+| `plans` | FREE, PRO, BUSINESS, and UNLIMIT tariffs |
 | `subscriptions` | Active and historical subscriptions |
 | `payments` | Provider-neutral payment history for Stars and approved external channels |
 | `upload_jobs` | Publication tasks and status |
@@ -716,7 +716,8 @@ Changes to `tiktok_accounts` require updated SQLAlchemy models, Alembic migratio
 
 ## 10.1. Purpose
 
-`subscriptions` stores active and historical user subscriptions for FREE, PRO, and BUSINESS plans.
+`subscriptions` stores active and historical user subscriptions for FREE, PRO, BUSINESS, and
+UNLIMIT plans.
 
 ## 10.2. Recommended Fields
 
@@ -747,8 +748,9 @@ The current implementation may use `ends_at` for the same domain meaning as `exp
 
 - New users automatically receive the FREE plan.
 - FREE subscriptions have no expiration time.
-- PRO and BUSINESS subscriptions expire after the configured paid period.
-- After PRO or BUSINESS expires, the user returns to FREE automatically.
+- PRO, BUSINESS, and UNLIMIT subscriptions expire after the configured paid period.
+- After a paid subscription expires, the user returns to FREE automatically.
+- UNLIMIT uses `daily_limit=0`, which means no daily publication cap.
 - Only one subscription should be active for a user at the same time.
 - Switching to a paid plan must not delete historical subscription records.
 - Subscription status changes must be transactional.
@@ -787,7 +789,7 @@ Changes to `subscriptions` require updated SQLAlchemy models, Alembic migrations
 
 ## 11.1. Purpose
 
-`payments` stores the immutable history of PRO and BUSINESS payment attempts. Telegram Stars is the
+`payments` stores the immutable history of PRO, BUSINESS, and UNLIMIT payment attempts. Telegram Stars is the
 checkout provider for digital subscriptions purchased inside the bot. Robokassa is retained only for
 a separately approved channel that complies with provider and platform rules.
 
@@ -820,7 +822,7 @@ The current implementation may use internal names such as `provider_invoice_id` 
 ## 11.4. Business Rules
 
 - FREE does not create a payment record.
-- Only PRO and BUSINESS purchases create payment records.
+- Only PRO, BUSINESS, and UNLIMIT purchases create payment records.
 - Telegram Stars activation happens only after validated `successful_payment`.
 - A definitive Stars invoice rejection changes `created` to `failed`; an ambiguous transport result
   remains `created` because Telegram may still have delivered the invoice.
@@ -869,6 +871,8 @@ provider-specific idempotency checks, and security review.
 | `caption` | TEXT | Video description |
 | `hashtags` | TEXT | Hashtags |
 | `error_code` | VARCHAR | Error code when available |
+| `usage_date` | DATE | Business date on which the accepted attempt was reserved |
+| `usage_refunded_at` | TIMESTAMP WITH TIME ZONE | Idempotency marker for a returned attempt |
 | `created_at` | TIMESTAMP WITH TIME ZONE | Record creation time |
 | `updated_at` | TIMESTAMP WITH TIME ZONE | Last update time |
 
@@ -892,7 +896,9 @@ The detailed lifecycle is documented in [Video Publication Lifecycle](#19-video-
 - Every status change must be recorded in `upload_job_events`.
 - Retry is allowed only for temporary errors.
 - Terminal states must not be overwritten by stale retries.
-- User daily limit is consumed only after official TikTok API acceptance.
+- User daily allowance is reserved only after official TikTok API acceptance.
+- A final TikTok `FAILED` status returns the reservation exactly once. Repeated webhook delivery or
+  polling cannot decrement the counter twice.
 
 Daily counter rules are documented in [Daily Usage Entity](#13-daily-usage-entity).
 
@@ -915,7 +921,7 @@ Changes to `upload_jobs` require updated SQLAlchemy models, Alembic migrations, 
 
 ## 13.1. Purpose
 
-`daily_usage` tracks daily publication limit consumption for FREE, PRO, and BUSINESS users.
+`daily_usage` tracks publication reservations for FREE, PRO, BUSINESS, and UNLIMIT users.
 
 ## 13.2. Recommended Fields
 
@@ -936,8 +942,11 @@ The current implementation may use `upload_count` for the same domain meaning as
 
 - Create a record automatically on the first accepted publication of the day.
 - The business day resets at 00:00 Europe/Moscow.
-- Increment usage only after the official TikTok API accepts the publication.
+- Reserve usage only after the official TikTok API accepts the publication.
+- Return the reserved attempt exactly once when TikTok reports final `FAILED`, including provider
+  `internal` failures. The upload job stores the accounting date and refund timestamp.
 - Do not increment usage for validation, preparation, authorization, or platform-restriction failures.
+- `daily_limit=0` means unlimited. Usage is still counted for analytics but never blocks publishing.
 - If a user changes plan during the day, recalculate remaining allowance without resetting already used publications.
 - Reprocessing the same upload job must not increment the counter twice.
 
@@ -947,6 +956,7 @@ The current implementation may use `upload_count` for the same domain meaning as
 - Counter updates must be transactional.
 - Use locking or equivalent concurrency protection before incrementing counters.
 - Counter updates must be idempotent for repeated worker attempts.
+- Webhook and polling races must not refund one upload more than once.
 - Usage changes must be auditable.
 
 ## 13.5. Relationships
@@ -1195,7 +1205,7 @@ Administrative REST endpoint requirements are documented in [Administrative REST
 
 ## 17.4. Plan Management
 
-PRO and BUSINESS price, daily limit, duration, and sale availability are stored in PostgreSQL and can be changed without code edits.
+PRO, BUSINESS, and UNLIMIT price, daily limit, duration, and sale availability are stored in PostgreSQL and can be changed without code edits. A zero daily limit means unlimited.
 
 Every plan update is written to `admin_actions`.
 
@@ -1270,10 +1280,13 @@ The bot validates and prepares the video, then sends it to TikTok only through t
 - FREE: 2 videos per day.
 - PRO: 5 videos per day.
 - BUSINESS: 10 videos per day.
+- UNLIMIT: unlimited videos for 30 days, `999 XTR` or the external-channel reference price `1999 RUB`.
 
-Paid plans purchased in the bot are invoiced in Telegram Stars and activate only after Telegram
-confirms `successful_payment`. Use `/paysupport` for payment support without sending passwords,
-one-time codes, or card details.
+The tariff screen shows both Stars and RUB reference prices. Paid plans purchased inside the bot are
+invoiced in Telegram Stars and activate only after Telegram confirms `successful_payment`.
+Robokassa is reserved for an approved external sales channel and is not offered as an alternative
+digital-goods checkout inside Telegram. Use `/paysupport` for payment support without sending
+passwords, one-time codes, or card details.
 
 Use `/terms` at any time to review the user agreement accepted during registration.
 
@@ -1283,7 +1296,9 @@ Open settings and tap `Отключить TikTok`. Stored OAuth tokens are delet
 
 ## 18.5. Errors
 
-The bot shows a short user-safe message. Internal details, tokens, and provider secrets are never shown.
+The bot shows a short user-safe message. Internal details, tokens, and provider secrets are never
+shown. If TikTok accepts a video and later reports a final processing failure, the reserved daily
+attempt is returned automatically.
 
 # 19. Video Publication Lifecycle
 
@@ -1322,7 +1337,9 @@ End-to-end publication sequence is documented in [Sequence Flows](#4-sequence-fl
 ## 19.3. Error Rules
 
 - No daily limit is consumed when validation or preparation fails.
-- Daily limit is consumed only after official TikTok API acceptance.
+- Daily allowance is reserved only after official TikTok API acceptance.
+- A final TikTok processing failure returns the reserved attempt exactly once, including
+  retryable provider-side `internal` failures.
 - Authorization and platform restriction errors are not retried automatically.
 - Temporary failures can be retried by the queue system.
 
@@ -1445,8 +1462,11 @@ Before every publication the bot must query `/v2/post/publish/creator_info/query
 8. Obtain explicit publication consent before any media is transferred to TikTok.
 9. Poll `/v2/post/publish/status/fetch/` or process final Content Posting webhooks.
 
-Unaudited TikTok clients remain restricted to private posts and other platform limits. The system
-must report those restrictions and must not attempt to bypass them.
+Unaudited TikTok clients remain restricted to `SELF_ONLY` posts and other platform limits. TikTok
+also requires every target creator account to be set to private at posting time. Keep
+`TIKTOK_APP_AUDITED=false` until the Direct Post audit is approved; the bot then blocks public
+creator accounts before confirmation. The system must report these restrictions and must not
+attempt to bypass them.
 
 TikTok account persistence rules are documented in [TikTok Accounts Entity](#9-tiktok-accounts-entity).
 
@@ -1473,7 +1493,7 @@ If TikTok rejects authorization, scope, publication, region, account, policy, or
 
 ## 21.1. Scope and Compliance
 
-PRO and BUSINESS are digital services consumed inside Telegram. Purchases initiated by the bot must
+PRO, BUSINESS, and UNLIMIT are digital services consumed inside Telegram. Purchases initiated by the bot must
 therefore use Telegram Stars (`XTR`) in accordance with the official Telegram payment rules for
 digital goods and services.
 
@@ -1488,12 +1508,12 @@ Official references:
 ## 21.2. Tariff Configuration
 
 `plans.price_stars` stores the positive integer Stars price for each paid plan. The approved prices
-are `199 XTR` for PRO and `499 XTR` for BUSINESS. Values are managed through the administrative API
+are `199 XTR` for PRO, `499 XTR` for BUSINESS, and `999 XTR` for UNLIMIT. Values are managed through the administrative API
 and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversion is allowed.
 
 ## 21.3. Payment Flow
 
-1. The user selects PRO or BUSINESS.
+1. The user selects PRO, BUSINESS, or UNLIMIT.
 2. The backend creates a `payments` row with provider `telegram_stars`, currency `XTR`, and a unique
    payment UUID.
 3. The bot sends a single-chat invoice with currency `XTR`, omits `provider_token`, and puts the
@@ -1538,8 +1558,8 @@ and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversi
 - Exact user, amount, currency, provider, and payment ID are validated.
 - Concurrent duplicate confirmations activate one subscription.
 - Reuse of a charge ID for another payment is rejected.
-- PRO is invoiced for `199 XTR` and BUSINESS for `499 XTR` by default.
-- PRO and BUSINESS Stars prices can be changed without a source-code release.
+- PRO is invoiced for `199 XTR`, BUSINESS for `499 XTR`, and UNLIMIT for `999 XTR` by default.
+- Paid-plan Stars prices can be changed without a source-code release.
 - `/terms` and `/paysupport` remain available in production.
 - RUB and XTR revenue are reported separately.
 - Repeated Stars refund requests do not call Telegram or alter subscription state twice.
@@ -1569,7 +1589,7 @@ bot. The PRO Stars price was changed through the audited administrative API from
 Группа спецификации: Интеграции
 
 
-> Policy boundary: PRO and BUSINESS are digital services consumed inside Telegram. The bot must use
+> Policy boundary: PRO, BUSINESS, and UNLIMIT are digital services consumed inside Telegram. The bot must use
 > Telegram Stars for in-bot checkout and must not show Robokassa as an alternative payment method.
 > This integration remains available only for an approved external sales channel. Operators create
 > checkout links through the authenticated admin API; the Telegram bot itself continues to offer
@@ -1583,6 +1603,7 @@ End-to-end payment sequence is documented in [Sequence Flows](#4-sequence-flows)
 | --- | ---: | --- |
 | PRO | 499 RUB | 30 days |
 | Business | 999 RUB | 30 days |
+| UNLIMIT | 1999 RUB | 30 days |
 
 FREE does not use Robokassa.
 
@@ -2625,7 +2646,10 @@ Database: `DATABASE_URL`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`.
 
 Redis: `REDIS_URL`.
 
-TikTok API: `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `TIKTOK_REDIRECT_URI`.
+TikTok API: `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `TIKTOK_REDIRECT_URI`,
+`TIKTOK_PUBLISH_ENABLED`, and `TIKTOK_APP_AUDITED`. Keep `TIKTOK_APP_AUDITED=false` until TikTok
+approves the Direct Post audit; unaudited clients can post only to TikTok accounts that are private
+at posting time and only with `SELF_ONLY` visibility.
 
 Telegram delivery: `TELEGRAM_DELIVERY_MODE` is `polling` for local development and `webhook` for
 production. Webhook mode also requires `TELEGRAM_WEBHOOK_SECRET`,
@@ -2783,6 +2807,8 @@ ENV_FILE=.env bash deploy/deploy.sh production vX.Y.Z
 The checked-out application version must equal `APP_VERSION` in `.env`. A release candidate such as
 `0.2.0-rc.1` is accepted for staging and rejected for production until promoted to a stable SemVer.
 Each deployment records a deterministic source manifest under `.deploy/release-manifest.json`.
+The one-shot `runtime-init` service gives the unprivileged application user access to the bind-mounted
+`data/` and `backups/` directories before API, bot, and worker processes start.
 
 The complete certificate bootstrap, deployment, backup, restore, rollback, and CI procedure is in
 [CI/CD and Deployment Automation](#37-cicd-and-deployment-automation).
@@ -3226,7 +3252,7 @@ public HTTPS URL. Then perform these provider-backed scenarios:
 - All containers are running.
 - Healthchecks are green.
 - Telegram, TikTok, and Robokassa callbacks work.
-- FREE, PRO, and BUSINESS limits match the specification.
+- FREE, PRO, BUSINESS, and UNLIMIT limits match the specification.
 - No critical errors appear in logs.
 - Metrics are available to administrators.
 - Backups are present and restorable.
@@ -4051,7 +4077,7 @@ is released so the next scheduler tick can retry.
 
 The current periodic tasks are:
 
-- Expire due PRO and BUSINESS subscriptions and create the replacement FREE subscription.
+- Expire due PRO, BUSINESS, and UNLIMIT subscriptions and create the replacement FREE subscription.
 - Refresh TikTok access tokens before their expiry.
 - Remove temporary files and expired operational records according to the retention policy.
 - Redispatch pending payment-success notification outbox events.
@@ -4310,8 +4336,10 @@ Track these indicators for project growth:
 | Active FREE users | Shows free-tier usage |
 | Active PRO users | Shows paid PRO adoption |
 | Active BUSINESS users | Shows paid BUSINESS adoption |
+| Active UNLIMIT users | Shows paid UNLIMIT adoption |
 | FREE to PRO conversion | Measures PRO monetization |
 | FREE to BUSINESS conversion | Measures BUSINESS monetization |
+| FREE to UNLIMIT conversion | Measures UNLIMIT monetization |
 | Successful payments | Measures provider-specific payment flow |
 | Revenue by plan | Supports pricing and growth analysis |
 
@@ -4337,7 +4365,7 @@ The admin dashboard should expose:
 - New registrations by period.
 - Publication volume and success rate.
 - RUB and Telegram Stars successful payments and revenue by period, reported separately.
-- Conversion FREE to PRO and FREE to BUSINESS.
+- Conversion FREE to PRO, FREE to BUSINESS, and FREE to UNLIMIT.
 - Queue size, processing latency, and failed jobs.
 - Critical errors and repeated failures.
 
@@ -5051,10 +5079,11 @@ The current stable production version is `0.2.0`. The version is synchronized ac
 templates. `CHANGELOG.md` contains a matching release heading.
 
 The release was promoted from `0.2.0-rc.1` after automated quality gates, production Robokassa
-acceptance, and a real Telegram Stars payment and refund scenario passed. TikTok publication stays
-disabled by configuration until official OAuth, Sandbox, and Content Posting acceptance are
-complete. The manifest builder continues to reject any prerelease when the supplied runtime
-environment contains `APP_ENV=production`.
+acceptance, and a real Telegram Stars payment and refund scenario passed. TikTok Sandbox OAuth and
+Creator Info acceptance completed on 2026-07-20. TikTok publication stays disabled by configuration
+until the controlled Content Posting scenario and application-review gates are complete. The
+manifest builder continues to reject any prerelease when the supplied runtime environment contains
+`APP_ENV=production`.
 
 ## 64.2. Manifest Contents
 
@@ -5304,6 +5333,7 @@ Prepare these accounts in staging:
 | FREE user | Validate free daily limit and default plan assignment |
 | PRO user | Validate paid plan behavior and daily limit |
 | BUSINESS user | Validate higher paid limit |
+| UNLIMIT user | Validate paid plan without a daily cap |
 | Administrator | Validate admin API and audit log |
 | User without TikTok | Validate TikTok connection requirement |
 
@@ -5346,6 +5376,7 @@ Expected result:
 - Job is queued and processed.
 - Official TikTok API acceptance is recorded.
 - User daily usage is incremented only after acceptance.
+- A final TikTok failure returns the reserved usage exactly once.
 - User receives final notification.
 
 ### 67.2.4. QA-LIMIT-001: Daily Limit Exceeded
@@ -5367,6 +5398,7 @@ duplicate confirmation are covered. A real Telegram Stars round trip remains a s
 Expected result:
 
 - A PRO invoice is created for `199 XTR`; a BUSINESS invoice is created for `499 XTR`.
+- An UNLIMIT invoice is created for `999 XTR`; its RUB reference price is `1999`.
 - User, amount, currency, payment UUID, and charge ID are verified.
 - Subscription activates only after `successful_payment`.
 - Duplicate updates do not create another subscription.
@@ -5555,8 +5587,8 @@ Implementation progress must be checked against [Implementation Roadmap](#5-impl
 - Video upload FSM works: video, description, hashtags, confirmation.
 - Video validation and preparation work for MP4, MOV, and WEBM.
 - Upload lifecycle events are recorded.
-- FREE, PRO, and BUSINESS limits match the specification.
-- Robokassa payment link generation works for PRO and BUSINESS.
+- FREE, PRO, BUSINESS, and UNLIMIT limits match the specification.
+- Robokassa external-channel payment link generation works for PRO, BUSINESS, and UNLIMIT.
 - Robokassa ResultURL activates paid subscriptions.
 - SuccessURL does not activate subscriptions.
 - Expired paid subscriptions return to FREE and produce one pending user notification.
@@ -5637,11 +5669,11 @@ Each functional requirement must have a stable identifier and a visible link to 
 | ID | Requirement | Component | Test evidence | Docs | Status |
 | --- | --- | --- | --- | --- | --- |
 | `REQ-001` | User registration | Bot / DB | `QA-REG-001`; subscriptions and FSM tests | [Users](#8-users-entity), [QA](#67-qa-test-data-and-acceptance-scenarios) | Implemented |
-| `REQ-002` | TikTok OAuth | API / OAuth | `QA-OAUTH-001`; API and TikTok tests | [TikTok Config](#20-tiktok-developer-configuration), [Public API](#26-public-rest-api) | Implemented; staging pending |
+| `REQ-002` | TikTok OAuth | API / OAuth | `QA-OAUTH-001`; API and TikTok tests; [Sandbox OAuth evidence](../test-evidence/tiktok-sandbox-oauth-2026-07-20.md) | [TikTok Config](#20-tiktok-developer-configuration), [Public API](#26-public-rest-api) | Implemented; Sandbox provider acceptance completed 2026-07-20 |
 | `REQ-003` | Paid plans in Telegram | Telegram Stars | `QA-PAY-001`; automated Stars tests and provider-backed payment/refund acceptance | [Payments](#11-payments-entity), [Telegram Stars](#21-telegram-stars-payments) | Implemented at 199/499 XTR; production provider acceptance completed 2026-07-17 |
-| `REQ-004` | Video publication | Worker / TikTok | `QA-UPL-001`; FSM, video, worker, and lifecycle tests | [Upload Jobs](#12-upload-jobs-entity), [Lifecycle](#19-video-publication-lifecycle) | Implemented; staging pending |
+| `REQ-004` | Video publication | Worker / TikTok | `QA-UPL-001`; FSM, video, worker, and lifecycle tests; [controlled Direct Post evidence](../test-evidence/tiktok-sandbox-direct-post-2026-07-21.md) | [Upload Jobs](#12-upload-jobs-entity), [Lifecycle](#19-video-publication-lifecycle) | Implemented; provider acceptance blocked until the Sandbox target account is private |
 | `REQ-005` | Daily limits | Usage service | `QA-LIMIT-001`; quota concurrency tests | [Daily Usage](#13-daily-usage-entity) | Implemented |
-| `NFR-001` | Core NFR controls | Cross-cutting | CI quality, coverage, migration, container, production smoke | [NFR](#6-non-functional-requirements), [Tests](#68-test-strategy-and-quality-gates) | Implemented; TikTok provider completion pending |
+| `NFR-001` | Core NFR controls | Cross-cutting | CI quality, coverage, migration, container, production smoke | [NFR](#6-non-functional-requirements), [Tests](#68-test-strategy-and-quality-gates) | Implemented; TikTok publication acceptance pending |
 | `NFR-002` | Security audit | Audit | Admin, tracing, webhook, secret scan | [Security Audit](#31-security-logging-and-audit) | Implemented |
 | `NFR-003` | Infrastructure dependencies | Operations | Container build, production health, backup and post-update checks | [Infrastructure](#61-infrastructure-dependency-management) | Implemented |
 | `NFR-004` | Confidential data | Security | Encryption and secret-scan tests | [Data Policy](#32-confidential-data-policy) | Implemented |
@@ -5650,8 +5682,8 @@ Each functional requirement must have a stable identifier and a visible link to 
 | `TD-001` | Technical debt | Development | Release readiness review | [Technical Debt](#59-technical-debt-management) | Process defined |
 | `DEP-001` | Licenses and components | Dependencies | Dependency and release review | [Licenses](#62-license-and-third-party-component-management) | Process defined |
 | `API-001` | API compatibility | REST / OpenAPI | OpenAPI checker and API tests | [API Versioning](#25-api-versioning-and-client-compatibility) | Implemented |
-| `ROAD-001` | Implementation roadmap | Delivery | Preflight, smoke, Robokassa and Telegram Stars acceptance, and roadmap control points | [Roadmap](#5-implementation-roadmap), [Staging Runbook](#39-staging-acceptance-runbook) | Stage 10 infrastructure active; TikTok acceptance pending |
-| `OPS-001` | Controlled production launch | Operations | Deploy validator, webhook verification, backup and production smoke | [Production Launch](#40-production-launch-plan), [Staging Runbook](#39-staging-acceptance-runbook) | Infrastructure and Robokassa verified; TikTok provider evidence pending |
+| `ROAD-001` | Implementation roadmap | Delivery | Preflight, smoke, Robokassa, Telegram Stars, and TikTok OAuth acceptance | [Roadmap](#5-implementation-roadmap), [Staging Runbook](#39-staging-acceptance-runbook) | Stage 10 infrastructure and TikTok Sandbox OAuth verified; publication acceptance pending |
+| `OPS-001` | Controlled production launch | Operations | Deploy validator, webhook verification, backup and production smoke | [Production Launch](#40-production-launch-plan), [Staging Runbook](#39-staging-acceptance-runbook) | Infrastructure, payments, and TikTok Sandbox OAuth verified; publication gate remains |
 | `REL-001` | Reproducible release candidate | Release | Manifest determinism, version, migration, CI run #59 and provider evidence | [Release Candidate](#64-release-candidate-manifest), [Release](#65-release-management) | RC deployed for acceptance; stable promotion pending |
 
 ## 70.3. Maintenance Rules
@@ -5683,7 +5715,7 @@ The project is release-ready only when every approved requirement has traceabili
 | Worker | Background process that handles queued tasks |
 | Request ID | Unique identifier for one HTTP request |
 | Correlation ID | Identifier for a chain of related operations |
-| Plan | Tariff definition: FREE, PRO, or BUSINESS |
+| Plan | Tariff definition: FREE, PRO, BUSINESS, or UNLIMIT |
 | Payment | Provider-neutral payment attempt and confirmation record |
 | Telegram Stars | Telegram digital payment currency, code `XTR` |
 | Admin Action | Immutable administrative audit event |
@@ -5697,7 +5729,7 @@ The project is release-ready only when every approved requirement has traceabili
 - Variables and functions use `snake_case`.
 - REST endpoints use the existing project style and kebab-case only when it improves readability.
 - Environment variables use uppercase `SNAKE_CASE`.
-- Plan names are written as `FREE`, `PRO`, and `BUSINESS` in product and technical documentation.
+- Plan names are written as `FREE`, `PRO`, `BUSINESS`, and `UNLIMIT` in product and technical documentation.
 
 ## 71.3. Entity Names
 

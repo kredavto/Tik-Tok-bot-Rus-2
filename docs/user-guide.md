@@ -24,10 +24,13 @@ The bot validates and prepares the video, then sends it to TikTok only through t
 - FREE: 2 videos per day.
 - PRO: 5 videos per day.
 - BUSINESS: 10 videos per day.
+- UNLIMIT: unlimited videos for 30 days, `999 XTR` or the external-channel reference price `1999 RUB`.
 
-Paid plans purchased in the bot are invoiced in Telegram Stars and activate only after Telegram
-confirms `successful_payment`. Use `/paysupport` for payment support without sending passwords,
-one-time codes, or card details.
+The tariff screen shows both Stars and RUB reference prices. Paid plans purchased inside the bot are
+invoiced in Telegram Stars and activate only after Telegram confirms `successful_payment`.
+Robokassa is reserved for an approved external sales channel and is not offered as an alternative
+digital-goods checkout inside Telegram. Use `/paysupport` for payment support without sending
+passwords, one-time codes, or card details.
 
 Use `/terms` at any time to review the user agreement accepted during registration.
 
@@ -37,4 +40,6 @@ Open settings and tap `Отключить TikTok`. Stored OAuth tokens are delet
 
 ## Errors
 
-The bot shows a short user-safe message. Internal details, tokens, and provider secrets are never shown.
+The bot shows a short user-safe message. Internal details, tokens, and provider secrets are never
+shown. If TikTok accepts a video and later reports a final processing failure, the reserved daily
+attempt is returned automatically.

@@ -117,13 +117,8 @@ async def accept_agreement_callback(callback: CallbackQuery, state: FSMContext) 
 @router.message(F.text == BTN_TARIFFS)
 async def tariffs(message: Message, state: FSMContext) -> None:
     async with session_scope() as session:
-        plans = list(
-            (
-                await session.scalars(
-                    select(Plan).where(Plan.is_active.is_(True)).order_by(Plan.daily_limit)
-                )
-            ).all()
-        )
+        plans = list((await session.scalars(select(Plan).where(Plan.is_active.is_(True)))).all())
+    plans.sort(key=lambda plan: (plan.daily_limit == 0, plan.daily_limit))
     await state.set_state(BotStates.PAYMENT_SELECT_PLAN)
     keyboard_plans = [(plan.id, plan.title, plan.price_rub, plan.price_stars) for plan in plans]
     await message.answer(_tariff_text(plans), reply_markup=tariffs_menu(keyboard_plans))
@@ -563,13 +558,26 @@ async def cancel_upload(callback: CallbackQuery, state: FSMContext) -> None:
 async def buy_callback(callback: CallbackQuery, bot: Bot, state: FSMContext) -> None:
     assert callback.data is not None
     assert isinstance(callback.message, Message)
-    plan_code = callback.data.split(":", 1)[1]
+    parts = callback.data.split(":")
+    if len(parts) == 2:
+        payment_method, plan_code = "stars", parts[1]
+    elif len(parts) == 3:
+        _, payment_method, plan_code = parts
+    else:
+        await callback.answer("Некорректный способ оплаты.", show_alert=True)
+        return
     async with session_scope() as session:
         plan = await session.get(Plan, plan_code)
-        if not plan or not plan.is_active or plan.price_stars is None or plan.price_stars <= 0:
+        if not plan or not plan.is_active or plan_code == "free":
             await callback.answer("Тариф недоступен для покупки.", show_alert=True)
             return
         user = await get_or_create_user(session, callback.from_user.id, callback.from_user.username)
+        if payment_method != "stars":
+            await callback.answer("Некорректный способ оплаты.", show_alert=True)
+            return
+        if plan.price_stars is None or plan.price_stars <= 0:
+            await callback.answer("Оплата Stars временно недоступна.", show_alert=True)
+            return
         payment = await create_stars_payment(session, user.id, plan.id)
 
     try:
@@ -835,7 +843,8 @@ def _tariff_text(plans: list[Plan]) -> str:
             else f"{plan.price_rub} руб./{plan.duration_days or 30} дней"
         )
         stars = f", {plan.price_stars} Stars" if plan.price_stars else ""
-        lines.append(f"{plan.title}: {price}{stars}, {plan.daily_limit} видео в сутки")
+        limit = "безлимитно" if plan.daily_limit == 0 else f"{plan.daily_limit} видео в сутки"
+        lines.append(f"{plan.title}: {price}{stars}, {limit}")
     return "\n".join(lines)
 
 
@@ -845,4 +854,5 @@ async def _status_text(telegram_id: int, username: str | None) -> str:
         allowed, used, limit = await can_upload_today(session, user)
         plan = await get_plan_record(session, await active_plan_code(session, user))
     marker = "доступна" if allowed else "исчерпана"
-    return f"Тариф: {plan.title}\nСегодня: {used}/{limit}\nЗагрузка: {marker}"
+    limit_label = "безлимит" if limit == 0 else str(limit)
+    return f"Тариф: {plan.title}\nСегодня: {used}/{limit_label}\nЗагрузка: {marker}"

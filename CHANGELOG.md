@@ -8,6 +8,7 @@ The project follows Semantic Versioning.
 
 ### Added
 
+- The 30-day UNLIMIT plan at `999 XTR` with a `1999 RUB` external-channel reference price.
 - `/connect` Telegram command as an accessible alternative to the TikTok OAuth menu button.
 - `/upload` Telegram command as an accessible entry point to the video publication workflow.
 - Review-ready TikTok publication preview and literal Music Usage Confirmation / Branded Content
@@ -16,6 +17,8 @@ The project follows Semantic Versioning.
 
 ### Changed
 
+- Display RUB and Stars prices together on the Telegram tariff screen while preserving the
+  Telegram Stars-only checkout required for digital services purchased inside Telegram.
 - Record successful TikTok Sandbox OAuth acceptance, encrypted token persistence, replay
   protection, Telegram notification, and official Creator Info verification on 2026-07-20.
 - Align commercial-content disclosure with TikTok Direct Post UX: the control is off by default,
@@ -24,6 +27,8 @@ The project follows Semantic Versioning.
 
 ### Fixed
 
+- Return a reserved daily attempt exactly once when TikTok accepts an upload and later reports a
+  final processing failure, including migration of previously failed accepted publications.
 - Restrict unaudited TikTok Direct Post attempts to `SELF_ONLY` visibility in both the Telegram FSM
   and worker validation, matching TikTok's private-viewership requirement.
 - Initialize bind-mounted video and backup directories for the unprivileged application user before

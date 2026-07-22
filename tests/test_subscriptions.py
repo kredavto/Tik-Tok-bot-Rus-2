@@ -7,16 +7,19 @@ import pytest
 from sqlalchemy import func, select
 
 from app.core.plans import PlanCode
-from app.db.models import DailyUsage, Subscription, User
+from app.db.models import DailyUsage, Subscription, UploadJob, User
 from app.db.session import (
     active_plan_code,
     can_upload_today,
     consume_daily_upload,
     create_paid_subscription,
+    current_usage_date,
     expire_due_paid_subscriptions,
     get_or_create_user,
     init_db,
     mark_subscription_expiration_notified,
+    record_accepted_upload,
+    refund_failed_upload_usage,
     session_scope,
 )
 
@@ -58,6 +61,39 @@ async def test_paid_subscription_overrides_free_plan() -> None:
             )
         )
         assert active_count == 1
+
+
+@pytest.mark.asyncio
+async def test_unlimit_plan_never_exhausts_daily_limit() -> None:
+    await init_db()
+    telegram_id = random.randint(800_000_000, 899_999_999)
+    async with session_scope() as session:
+        user = await get_or_create_user(session, telegram_id, "unlimit_user")
+        await create_paid_subscription(session, user.id, PlanCode.UNLIMIT.value)
+        for expected_count in range(1, 21):
+            assert await consume_daily_upload(session, user) == (True, expected_count, 0)
+        assert await can_upload_today(session, user) == (True, 20, 0)
+
+
+@pytest.mark.asyncio
+async def test_failed_tiktok_upload_refunds_usage_once() -> None:
+    await init_db()
+    telegram_id = random.randint(900_000_000, 999_999_999)
+    async with session_scope() as session:
+        user = await get_or_create_user(session, telegram_id, "refund_user")
+        job = UploadJob(
+            user_id=user.id,
+            telegram_file_id="telegram-file-id",
+            local_path="/tmp/refund-video.mp4",
+            usage_date=current_usage_date(),
+        )
+        session.add(job)
+        await session.flush()
+        await record_accepted_upload(session, user, job.usage_date)
+        assert await can_upload_today(session, user) == (True, 1, 2)
+        assert await refund_failed_upload_usage(session, job) is True
+        assert await refund_failed_upload_usage(session, job) is False
+        assert await can_upload_today(session, user) == (True, 0, 2)
 
 
 @pytest.mark.asyncio

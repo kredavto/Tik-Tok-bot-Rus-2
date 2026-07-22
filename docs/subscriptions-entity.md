@@ -2,7 +2,8 @@
 
 ## Purpose
 
-`subscriptions` stores active and historical user subscriptions for FREE, PRO, and BUSINESS plans.
+`subscriptions` stores active and historical user subscriptions for FREE, PRO, BUSINESS, and
+UNLIMIT plans.
 
 ## Recommended Fields
 
@@ -33,8 +34,9 @@ The current implementation may use `ends_at` for the same domain meaning as `exp
 
 - New users automatically receive the FREE plan.
 - FREE subscriptions have no expiration time.
-- PRO and BUSINESS subscriptions expire after the configured paid period.
-- After PRO or BUSINESS expires, the user returns to FREE automatically.
+- PRO, BUSINESS, and UNLIMIT subscriptions expire after the configured paid period.
+- After a paid subscription expires, the user returns to FREE automatically.
+- UNLIMIT uses `daily_limit=0`, which means no daily publication cap.
 - Only one subscription should be active for a user at the same time.
 - Switching to a paid plan must not delete historical subscription records.
 - Subscription status changes must be transactional.

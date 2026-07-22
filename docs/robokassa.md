@@ -1,6 +1,6 @@
 # Robokassa Setup
 
-> Policy boundary: PRO and BUSINESS are digital services consumed inside Telegram. The bot must use
+> Policy boundary: PRO, BUSINESS, and UNLIMIT are digital services consumed inside Telegram. The bot must use
 > Telegram Stars for in-bot checkout and must not show Robokassa as an alternative payment method.
 > This integration remains available only for an approved external sales channel. Operators create
 > checkout links through the authenticated admin API; the Telegram bot itself continues to offer
@@ -14,6 +14,7 @@ End-to-end payment sequence is documented in [Sequence Flows](sequence-flows.md)
 | --- | ---: | --- |
 | PRO | 499 RUB | 30 days |
 | Business | 999 RUB | 30 days |
+| UNLIMIT | 1999 RUB | 30 days |
 
 FREE does not use Robokassa.
 

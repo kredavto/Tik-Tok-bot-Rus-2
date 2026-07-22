@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`payments` stores the immutable history of PRO and BUSINESS payment attempts. Telegram Stars is the
+`payments` stores the immutable history of PRO, BUSINESS, and UNLIMIT payment attempts. Telegram Stars is the
 checkout provider for digital subscriptions purchased inside the bot. Robokassa is retained only for
 a separately approved channel that complies with provider and platform rules.
 
@@ -35,7 +35,7 @@ The current implementation may use internal names such as `provider_invoice_id` 
 ## Business Rules
 
 - FREE does not create a payment record.
-- Only PRO and BUSINESS purchases create payment records.
+- Only PRO, BUSINESS, and UNLIMIT purchases create payment records.
 - Telegram Stars activation happens only after validated `successful_payment`.
 - A definitive Stars invoice rejection changes `created` to `failed`; an ambiguous transport result
   remains `created` because Telegram may still have delivered the invoice.

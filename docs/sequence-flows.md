@@ -48,7 +48,7 @@ sequenceDiagram
     participant DB as PostgreSQL
     participant TG as Telegram Payments
 
-    User->>Bot: Select PRO or BUSINESS
+    User->>Bot: Select PRO, BUSINESS, or UNLIMIT
     Bot->>DB: Create XTR payment UUID
     Bot->>TG: Send XTR invoice
     TG-->>Bot: pre_checkout_query

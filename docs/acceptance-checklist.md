@@ -18,8 +18,8 @@ Implementation progress must be checked against [Implementation Roadmap](impleme
 - Video upload FSM works: video, description, hashtags, confirmation.
 - Video validation and preparation work for MP4, MOV, and WEBM.
 - Upload lifecycle events are recorded.
-- FREE, PRO, and BUSINESS limits match the specification.
-- Robokassa payment link generation works for PRO and BUSINESS.
+- FREE, PRO, BUSINESS, and UNLIMIT limits match the specification.
+- Robokassa external-channel payment link generation works for PRO, BUSINESS, and UNLIMIT.
 - Robokassa ResultURL activates paid subscriptions.
 - SuccessURL does not activate subscriptions.
 - Expired paid subscriptions return to FREE and produce one pending user notification.

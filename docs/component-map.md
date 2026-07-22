@@ -13,7 +13,7 @@ This document is the high-level navigation map for Tik_Tok_Loader components. It
 | Worker | Background processing for video validation, preparation, publication, status checks, cleanup, subscription expiry, and retries. |
 | Scheduler | Redis-leased dispatch of subscription expiry, OAuth refresh, and retention tasks. |
 | TikTok API | Official OAuth 2.0 authorization and Content Posting API video publication. |
-| Telegram Stars | In-bot payment acceptance for PRO and BUSINESS digital subscriptions. |
+| Telegram Stars | In-bot payment acceptance for PRO, BUSINESS, and UNLIMIT digital subscriptions. |
 | Robokassa | Existing callback integration reserved for a separately approved sales channel. |
 | Admin Panel | Administrative management, analytics, audit review, settings, users, payments, and upload queues. |
 

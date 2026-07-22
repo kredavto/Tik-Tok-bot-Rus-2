@@ -94,6 +94,24 @@ def configure_stars_checkout(
     return plan, payment
 
 
+def test_tariff_text_shows_rub_stars_and_unlimited_limit() -> None:
+    plans = [
+        SimpleNamespace(
+            title="UNLIMIT",
+            price_rub=1999,
+            price_stars=999,
+            duration_days=30,
+            daily_limit=0,
+        )
+    ]
+
+    text = handlers._tariff_text(plans)  # type: ignore[arg-type]
+
+    assert "1999 руб./30 дней" in text
+    assert "999 Stars" in text
+    assert "безлимитно" in text
+
+
 @pytest.mark.asyncio
 async def test_upload_fsm_collects_creator_options(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(handlers.settings, "tiktok_app_audited", True)
@@ -347,7 +365,7 @@ async def test_stars_invoice_is_independent_from_rub_and_single_chat(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _, payment = configure_stars_checkout(monkeypatch, price_rub=0)
-    callback = make_callback("buy:pro")
+    callback = make_callback("buy:stars:pro")
     bot = SimpleNamespace(send_invoice=AsyncMock())
     state = FakeState()
 
@@ -358,6 +376,24 @@ async def test_stars_invoice_is_independent_from_rub_and_single_chat(
     assert call["currency"] == "XTR"
     assert call["start_parameter"] == f"stars_{payment.id.hex}"
     assert "provider_token" not in call
+
+
+@pytest.mark.asyncio
+async def test_rub_checkout_is_not_offered_inside_telegram(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    configure_stars_checkout(monkeypatch)
+    callback = make_callback("buy:rub:pro")
+    bot = SimpleNamespace(send_invoice=AsyncMock())
+    state = FakeState()
+
+    await handlers.buy_callback(callback, bot, state)  # type: ignore[arg-type]
+
+    bot.send_invoice.assert_not_awaited()
+    callback.answer.assert_awaited_once_with(
+        "Некорректный способ оплаты.",
+        show_alert=True,
+    )
 
 
 @pytest.mark.asyncio

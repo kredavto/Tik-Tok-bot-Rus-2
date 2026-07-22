@@ -46,7 +46,16 @@ def tariffs_menu(plans: list[tuple[str, str, int, int | None]]) -> InlineKeyboar
     for plan_code, title, _price_rub, price_stars in plans:
         if plan_code == "free":
             continue
-        if not price_stars:
+        if price_stars:
+            rows.append(
+                [
+                    InlineKeyboardButton(
+                        text=f"Купить {title}: {price_stars} Stars",
+                        callback_data=f"buy:stars:{plan_code}",
+                    )
+                ]
+            )
+        else:
             rows.append(
                 [
                     InlineKeyboardButton(
@@ -55,15 +64,6 @@ def tariffs_menu(plans: list[tuple[str, str, int, int | None]]) -> InlineKeyboar
                     )
                 ]
             )
-            continue
-        rows.append(
-            [
-                InlineKeyboardButton(
-                    text=f"{title} - {price_stars} Stars",
-                    callback_data=f"buy:{plan_code}",
-                )
-            ]
-        )
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 

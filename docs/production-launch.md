@@ -58,7 +58,7 @@ public HTTPS URL. Then perform these provider-backed scenarios:
 - All containers are running.
 - Healthchecks are green.
 - Telegram, TikTok, and Robokassa callbacks work.
-- FREE, PRO, and BUSINESS limits match the specification.
+- FREE, PRO, BUSINESS, and UNLIMIT limits match the specification.
 - No critical errors appear in logs.
 - Metrics are available to administrators.
 - Backups are present and restorable.
