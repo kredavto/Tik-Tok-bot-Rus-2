@@ -153,6 +153,19 @@ def test_unaudited_tiktok_error_has_actionable_user_message() -> None:
     assert "аккаунт должен быть приватным" in reason
 
 
+def test_tiktok_internal_processing_error_is_reported_as_temporary() -> None:
+    reason = tasks._tiktok_processing_error_reason("internal")
+
+    assert "временная ошибка на стороне TikTok" in reason
+    assert "повторите публикацию позже" in reason
+
+
+def test_unknown_tiktok_processing_error_keeps_generic_message() -> None:
+    reason = tasks._tiktok_processing_error_reason("unknown_reason")
+
+    assert reason == "TikTok отклонил публикацию"
+
+
 @pytest.mark.asyncio
 async def test_processing_reconciliation_requeues_accepted_uploads(
     monkeypatch: pytest.MonkeyPatch,

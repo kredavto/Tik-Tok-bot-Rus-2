@@ -384,6 +384,12 @@ def _tiktok_upload_error_reason(code: str) -> str:
     return "TikTok вернул ограничение или ошибку авторизации"
 
 
+def _tiktok_processing_error_reason(reason: str) -> str:
+    if reason == "internal":
+        return "временная ошибка на стороне TikTok; повторите публикацию позже"
+    return "TikTok отклонил публикацию"
+
+
 async def _cleanup_unaccepted_upload(local_path: str | None, accepted: bool) -> None:
     if local_path and not accepted:
         await cleanup_temp_file(local_path)
@@ -771,7 +777,10 @@ async def _check_publish_status(upload_id: str, user_id: str, attempt: int) -> N
                     await _notify(
                         bot,
                         user.telegram_id,
-                        bot_text("publish_error", reason="TikTok отклонил публикацию"),
+                        bot_text(
+                            "publish_error",
+                            reason=_tiktok_processing_error_reason(reason),
+                        ),
                     )
                     return
 
