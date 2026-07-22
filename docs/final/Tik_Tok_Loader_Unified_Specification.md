@@ -2,9 +2,9 @@
 
 **Unified Technical Specification**
 
-- **Версия:** 0.1.0
+- **Версия:** 0.9.7
 - **Репозиторий:** `kredavto/Tik-Tok-bot-Rus-2`
-- **Дата сборки:** 2026-07-12
+- **Дата сборки:** 2026-07-22
 - **Статус:** проектная спецификация для реализации
 
 > Публикация TikTok в проекте проектируется только через официальный TikTok Content Posting API и OAuth 2.0. Неофициальные API, автоматизация интерфейса и методы обхода ограничений не входят в допустимую архитектуру.
@@ -27,57 +27,63 @@
 - [14. Webhook Events Entity](#14-webhook-events-entity)
 - [15. Admin Actions Entity](#15-admin-actions-entity)
 - [16. System Settings Entity](#16-system-settings-entity)
-- [17. User Guide](#17-user-guide)
-- [18. Video Publication Lifecycle](#18-video-publication-lifecycle)
-- [19. TikTok Developer Configuration](#19-tiktok-developer-configuration)
-- [20. Robokassa Setup](#20-robokassa-setup)
-- [21. API Documentation](#21-api-documentation)
-- [22. REST API Standards](#22-rest-api-standards)
-- [23. API Versioning and Client Compatibility](#23-api-versioning-and-client-compatibility)
-- [24. Public REST API](#24-public-rest-api)
-- [25. Administrative REST API](#25-administrative-rest-api)
-- [26. OpenAPI and Contract Documentation](#26-openapi-and-contract-documentation)
-- [27. Error Codes and Exception Handling](#27-error-codes-and-exception-handling)
-- [28. Security, Backup, and Monitoring](#28-security-backup-and-monitoring)
-- [29. Security Logging and Audit](#29-security-logging-and-audit)
-- [30. Confidential Data Policy](#30-confidential-data-policy)
-- [31. Environment Configuration and Secrets Control](#31-environment-configuration-and-secrets-control)
-- [32. Configuration](#32-configuration)
-- [33. Configuration Management](#33-configuration-management)
-- [34. Deployment](#34-deployment)
-- [35. Containerization](#35-containerization)
-- [36. Production Launch Plan](#36-production-launch-plan)
-- [37. Operations Runbook](#37-operations-runbook)
-- [38. SOP Checklists](#38-sop-checklists)
-- [39. Maintenance Guide](#39-maintenance-guide)
-- [40. Post-Launch Maintenance and Versioning](#40-post-launch-maintenance-and-versioning)
-- [41. Incident Response and Disaster Recovery](#41-incident-response-and-disaster-recovery)
-- [42. Incident Management](#42-incident-management)
-- [43. Backup and Restore Policy](#43-backup-and-restore-policy)
-- [44. Service Continuity Plan](#44-service-continuity-plan)
-- [45. Data Retention](#45-data-retention)
-- [46. File Storage Policy](#46-file-storage-policy)
-- [47. Queue and Retry Policy](#47-queue-and-retry-policy)
-- [48. Performance and Scaling](#48-performance-and-scaling)
-- [49. Capacity and Performance Management](#49-capacity-and-performance-management)
-- [50. Metrics and KPI](#50-metrics-and-kpi)
-- [51. Observability and Diagnostics](#51-observability-and-diagnostics)
-- [52. Development Standards](#52-development-standards)
-- [53. GitHub Workflow](#53-github-workflow)
-- [54. Feature Development Plan](#54-feature-development-plan)
-- [55. Technical Debt Management](#55-technical-debt-management)
-- [56. Dependencies and Third-Party Services](#56-dependencies-and-third-party-services)
-- [57. Infrastructure Dependency Management](#57-infrastructure-dependency-management)
-- [58. License and Third-Party Component Management](#58-license-and-third-party-component-management)
-- [59. Migration and Version Compatibility Plan](#59-migration-and-version-compatibility-plan)
-- [60. Release Management](#60-release-management)
-- [61. Change Acceptance Policy](#61-change-acceptance-policy)
-- [62. QA Test Data and Acceptance Scenarios](#62-qa-test-data-and-acceptance-scenarios)
-- [63. Acceptance Checklist](#63-acceptance-checklist)
-- [64. Requirements Traceability Matrix](#64-requirements-traceability-matrix)
-- [65. Glossary and Naming Conventions](#65-glossary-and-naming-conventions)
-- [66. Specification Index](#66-specification-index)
-- [67. Risk Management](#67-risk-management)
+- [17. Administrator Guide](#17-administrator-guide)
+- [18. User Guide](#18-user-guide)
+- [19. Video Publication Lifecycle](#19-video-publication-lifecycle)
+- [20. TikTok Developer Configuration](#20-tiktok-developer-configuration)
+- [21. Telegram Stars Payments](#21-telegram-stars-payments)
+- [22. Robokassa Setup](#22-robokassa-setup)
+- [23. API Documentation](#23-api-documentation)
+- [24. REST API Standards](#24-rest-api-standards)
+- [25. API Versioning and Client Compatibility](#25-api-versioning-and-client-compatibility)
+- [26. Public REST API](#26-public-rest-api)
+- [27. Administrative REST API](#27-administrative-rest-api)
+- [28. OpenAPI and Contract Documentation](#28-openapi-and-contract-documentation)
+- [29. Error Codes and Exception Handling](#29-error-codes-and-exception-handling)
+- [30. Security, Backup, and Monitoring](#30-security-backup-and-monitoring)
+- [31. Security Logging and Audit](#31-security-logging-and-audit)
+- [32. Confidential Data Policy](#32-confidential-data-policy)
+- [33. Environment Configuration and Secrets Control](#33-environment-configuration-and-secrets-control)
+- [34. Configuration](#34-configuration)
+- [35. Configuration Management](#35-configuration-management)
+- [36. Deployment](#36-deployment)
+- [37. CI/CD and Deployment Automation](#37-cicd-and-deployment-automation)
+- [38. Containerization](#38-containerization)
+- [39. Staging Acceptance Runbook](#39-staging-acceptance-runbook)
+- [40. Production Launch Plan](#40-production-launch-plan)
+- [41. Operations Runbook](#41-operations-runbook)
+- [42. SOP Checklists](#42-sop-checklists)
+- [43. Maintenance Guide](#43-maintenance-guide)
+- [44. Post-Launch Maintenance and Versioning](#44-post-launch-maintenance-and-versioning)
+- [45. Incident Response and Disaster Recovery](#45-incident-response-and-disaster-recovery)
+- [46. Incident Management](#46-incident-management)
+- [47. Backup and Restore Policy](#47-backup-and-restore-policy)
+- [48. Service Continuity Plan](#48-service-continuity-plan)
+- [49. Data Retention](#49-data-retention)
+- [50. File Storage Policy](#50-file-storage-policy)
+- [51. Queue and Retry Policy](#51-queue-and-retry-policy)
+- [52. Performance and Scaling](#52-performance-and-scaling)
+- [53. Capacity and Performance Management](#53-capacity-and-performance-management)
+- [54. Metrics and KPI](#54-metrics-and-kpi)
+- [55. Observability and Diagnostics](#55-observability-and-diagnostics)
+- [56. Development Standards](#56-development-standards)
+- [57. GitHub Workflow](#57-github-workflow)
+- [58. Feature Development Plan](#58-feature-development-plan)
+- [59. Technical Debt Management](#59-technical-debt-management)
+- [60. Dependencies and Third-Party Services](#60-dependencies-and-third-party-services)
+- [61. Infrastructure Dependency Management](#61-infrastructure-dependency-management)
+- [62. License and Third-Party Component Management](#62-license-and-third-party-component-management)
+- [63. Migration and Version Compatibility Plan](#63-migration-and-version-compatibility-plan)
+- [64. Release Candidate Manifest](#64-release-candidate-manifest)
+- [65. Release Management](#65-release-management)
+- [66. Change Acceptance Policy](#66-change-acceptance-policy)
+- [67. QA Test Data and Acceptance Scenarios](#67-qa-test-data-and-acceptance-scenarios)
+- [68. Test Strategy and Quality Gates](#68-test-strategy-and-quality-gates)
+- [69. Acceptance Checklist](#69-acceptance-checklist)
+- [70. Requirements Traceability Matrix](#70-requirements-traceability-matrix)
+- [71. Glossary and Naming Conventions](#71-glossary-and-naming-conventions)
+- [72. Specification Index](#72-specification-index)
+- [73. Risk Management](#73-risk-management)
 
 ## Список сокращений и терминов
 
@@ -96,6 +102,7 @@
 | SOP | Standard Operating Procedure, стандартная операционная процедура |
 | TLS/SSL | Криптографическая защита транспортного соединения |
 | UTC | Coordinated Universal Time |
+| XTR | Код валюты Telegram Stars в Bot API |
 
 
 # 1. Compliance Notes
@@ -103,7 +110,7 @@
 Группа спецификации: Общие положения
 
 
-The compliance boundary is summarized in [Architecture Summary](architecture-summary.md).
+The compliance boundary is summarized in [Architecture Summary](#2-architecture-summary).
 
 ## 1.1. Regional Restrictions
 
@@ -131,18 +138,18 @@ The supported model is the official TikTok Content Posting API:
 
 If the official API is unavailable for a specific user or region, the bot should keep the upload as a queued draft and tell the user that publication cannot be completed automatically.
 
-TikTok Developer Portal setup must follow [TikTok Developer Configuration](tiktok-developer-configuration.md).
+TikTok Developer Portal setup must follow [TikTok Developer Configuration](#20-tiktok-developer-configuration).
 
 # 2. Architecture Summary
 
 Группа спецификации: Архитектура
 
 
-Terminology and naming rules are defined in [Glossary and Naming Conventions](glossary-naming.md).
+Terminology and naming rules are defined in [Glossary and Naming Conventions](#71-glossary-and-naming-conventions).
 
-The consolidated component overview is maintained in [Project Component Map](component-map.md).
+The consolidated component overview is maintained in [Project Component Map](#3-project-component-map).
 
-Non-functional requirements are defined in [Non-Functional Requirements](non-functional-requirements.md).
+Non-functional requirements are defined in [Non-Functional Requirements](#6-non-functional-requirements).
 
 ## 2.1. Core Principles
 
@@ -165,29 +172,32 @@ Non-functional requirements are defined in [Non-Functional Requirements](non-fun
 | PostgreSQL | Users, plans, subscriptions, payments, upload jobs, audit data, settings |
 | Redis | Cache, locks, queue coordination, OAuth state, rate limiting |
 | Worker | Video validation, preparation, publication workflow, cleanup, background jobs |
-| Robokassa | Paid PRO and BUSINESS subscription payments |
+| Scheduler | Redis-leased dispatch and heartbeat for recurring maintenance jobs |
+| Telegram Stars | In-bot payment for PRO, BUSINESS, and UNLIMIT digital subscriptions |
+| Robokassa | Dormant external-channel payment integration, subject to policy approval |
 | TikTok OAuth 2.0 | User authorization for official TikTok API access |
 | TikTok Content Posting API | Official publication workflow |
 | Admin API | Users, subscriptions, payments, plans, jobs, analytics, settings |
 | Monitoring and logging | Health checks, readiness checks, metrics, JSON logs, audit trail |
 
-Main component interaction flows are documented in [Sequence Flows](sequence-flows.md).
+Main component interaction flows are documented in [Sequence Flows](#4-sequence-flows).
 
 ## 2.3. Functional Commitments
 
-- FREE, PRO, and BUSINESS tariffs are supported.
+- FREE, PRO, BUSINESS, and UNLIMIT tariffs are supported.
 - FREE is assigned automatically to new users.
 - Paid subscriptions expire automatically and return users to FREE.
 - Daily upload limits are enforced transactionally.
 - Video files are validated safely before publication processing.
-- Payments are processed idempotently through Robokassa ResultURL.
+- Telegram Stars payments are confirmed idempotently from `successful_payment`.
+- Robokassa ResultURL remains idempotent in an approved external channel.
 - Background jobs are idempotent and safe to retry only for temporary failures.
 - OAuth tokens are stored encrypted.
 - User, payment, publication, webhook, and admin actions are logged.
 - Public API compatibility is preserved within `/api/v1`.
-- Data validation and persistence must follow [Data Quality and Integrity](data-quality-integrity.md).
-- REST API format and compatibility must follow [REST API Standards](rest-api-standards.md).
-- Entity relationships must follow [Logical Data Model](data-model.md).
+- Data validation and persistence must follow [Data Quality and Integrity](../data-quality-integrity.md).
+- REST API format and compatibility must follow [REST API Standards](#24-rest-api-standards).
+- Entity relationships must follow [Logical Data Model](#7-logical-data-model).
 
 ## 2.4. Compliance Boundary
 
@@ -210,14 +220,14 @@ If TikTok returns an authorization, permission, regional, account, or policy res
 - CI runs linting, typing, tests, migration checks, Docker build, and secret scanning.
 - Production releases require staging verification and rollback readiness.
 - Monitoring, logs, and KPI must support operational decisions.
-- Observability must follow [Observability and Diagnostics](observability-diagnostics.md).
-- Data quality controls must follow [Data Quality and Integrity](data-quality-integrity.md).
+- Observability must follow [Observability and Diagnostics](#55-observability-and-diagnostics).
+- Data quality controls must follow [Data Quality and Integrity](../data-quality-integrity.md).
 
 ## 2.6. Final Rule
 
 Future development must preserve architectural integrity, security, scalability, and maintainability while staying within the official TikTok API model.
 
-Future change acceptance must follow [Change Acceptance Policy](change-acceptance-policy.md).
+Future change acceptance must follow [Change Acceptance Policy](#66-change-acceptance-policy).
 
 # 3. Project Component Map
 
@@ -235,8 +245,10 @@ This document is the high-level navigation map for Tik_Tok_Loader components. It
 | PostgreSQL | Primary data store for users, TikTok accounts, subscriptions, payments, upload jobs, usage counters, webhook events, audit logs, and settings. |
 | Redis | Queue coordination, cache, rate limiting, OAuth state storage, and distributed locks. |
 | Worker | Background processing for video validation, preparation, publication, status checks, cleanup, subscription expiry, and retries. |
+| Scheduler | Redis-leased dispatch of subscription expiry, OAuth refresh, and retention tasks. |
 | TikTok API | Official OAuth 2.0 authorization and Content Posting API video publication. |
-| Robokassa | Payment acceptance for PRO and BUSINESS subscriptions through the existing merchant account. |
+| Telegram Stars | In-bot payment acceptance for PRO, BUSINESS, and UNLIMIT digital subscriptions. |
+| Robokassa | Existing callback integration reserved for a separately approved sales channel. |
 | Admin Panel | Administrative management, analytics, audit review, settings, users, payments, and upload queues. |
 
 ## 3.2. Interaction Flows
@@ -247,8 +259,10 @@ flowchart LR
     Bot --> API["FastAPI"]
     API --> DB["PostgreSQL"]
     API --> Redis["Redis"]
+    Scheduler["Scheduler"] --> Redis
     Redis --> Worker["Worker"]
     Worker --> TikTok["TikTok Content Posting API"]
+    Stars["Telegram Stars"] --> Bot
     Robokassa["Robokassa"] --> ResultURL["ResultURL"]
     ResultURL --> API
     API --> Bot
@@ -260,10 +274,11 @@ Canonical service flows are:
 - User -> Telegram Bot -> FastAPI.
 - FastAPI -> PostgreSQL / Redis.
 - Worker -> official TikTok Content Posting API.
-- Robokassa -> ResultURL -> FastAPI.
+- Telegram Stars -> Bot API update -> PostgreSQL subscription transaction.
+- Approved external channel: Robokassa -> ResultURL -> FastAPI.
 - FastAPI -> Telegram Bot -> User.
 
-Detailed publication and payment sequences are documented in [Sequence Flows](sequence-flows.md).
+Detailed publication and payment sequences are documented in [Sequence Flows](#4-sequence-flows).
 
 ## 3.3. Architecture Principles
 
@@ -278,14 +293,14 @@ Detailed publication and payment sequences are documented in [Sequence Flows](se
 
 ## 3.4. Final Guidance
 
-All specification sections form one technical requirement set for Tik_Tok_Loader. Future changes must preserve the architecture described in [Architecture Summary](architecture-summary.md), remain inside the official TikTok API model, include relevant automated tests, and update documentation together with implementation changes.
+All specification sections form one technical requirement set for Tik_Tok_Loader. Future changes must preserve the architecture described in [Architecture Summary](#2-architecture-summary), remain inside the official TikTok API model, include relevant automated tests, and update documentation together with implementation changes.
 
 # 4. Sequence Flows
 
 Группа спецификации: Архитектура
 
 
-The high-level component map is documented in [Project Component Map](component-map.md).
+The high-level component map is documented in [Project Component Map](#3-project-component-map).
 
 ## 4.1. Video Publication Flow
 
@@ -324,38 +339,39 @@ Rules:
 - Consume daily usage only after official TikTok API acceptance.
 - Do not retry automatically for authorization, permission, platform, or regional restrictions.
 
-## 4.2. Payment Flow
+## 4.2. Telegram Stars Payment Flow
 
 ```mermaid
 sequenceDiagram
     participant User
     participant Bot as Telegram Bot
-    participant API as FastAPI Backend
     participant DB as PostgreSQL
-    participant Robo as Robokassa
+    participant TG as Telegram Payments
 
-    User->>Bot: Select PRO or BUSINESS
-    Bot->>API: Create payment order
-    API->>DB: Store payment with InvId
-    API-->>Bot: Return payment URL
-    Bot-->>User: Send payment URL
-    User->>Robo: Pay invoice
-    Robo->>API: ResultURL notification
-    API->>API: Verify signature, amount, currency, InvId
-    API->>DB: Mark payment paid and activate subscription
-    API-->>Robo: OK{InvId}
-    API->>Bot: Notify subscription activated
+    User->>Bot: Select PRO, BUSINESS, or UNLIMIT
+    Bot->>DB: Create XTR payment UUID
+    Bot->>TG: Send XTR invoice
+    TG-->>Bot: pre_checkout_query
+    Bot->>DB: Validate user, amount, currency, status
+    Bot-->>TG: Answer within 10 seconds
+    TG-->>Bot: successful_payment
+    Bot->>DB: Lock payment and store charge ID
+    Bot->>DB: Activate one subscription transactionally
     Bot-->>User: Payment success message
 ```
 
 Rules:
 
 - FREE does not create a payment.
-- Only ResultURL activates subscriptions.
-- SuccessURL is informational.
-- Repeated ResultURL events are idempotent.
+- Only `successful_payment` activates an in-bot subscription.
+- Sending an invoice and accepting pre-checkout do not activate a subscription.
+- Duplicate payment updates and charge IDs are idempotent.
 - Payment status and subscription activation must be transactional.
-- Never log Robokassa secrets.
+- Never log bot tokens or sensitive payment data.
+
+The separately approved Robokassa callback flow remains documented in
+[Robokassa Setup](#22-robokassa-setup) and is not presented as an alternative in-bot checkout for digital
+subscriptions.
 
 ## 4.3. Cross-Cutting Requirements
 
@@ -364,7 +380,7 @@ Rules:
 - Use correlation IDs for linked operations.
 - Persist webhook events before processing.
 - Keep retries idempotent.
-- Follow [Queue and Retry Policy](queue-retry-policy.md), [Observability and Diagnostics](observability-diagnostics.md), and [Error Codes and Exception Handling](error-handling.md).
+- Follow [Queue and Retry Policy](#51-queue-and-retry-policy), [Observability and Diagnostics](#55-observability-and-diagnostics), and [Error Codes and Exception Handling](#29-error-codes-and-exception-handling).
 
 # 5. Implementation Roadmap
 
@@ -381,14 +397,24 @@ This document is the final implementation roadmap for Tik_Tok_Loader. It can be 
 | 2. Core architecture and database | Implement modular application layout, PostgreSQL schema, SQLAlchemy models, Alembic migrations, settings, logging, and Redis connectivity. | Migrations apply, database entities match documentation, health/readiness checks work. |
 | 3. Telegram bot | Implement aiogram bot, FSM flows, menu, localization, keyboards, user registration, FREE assignment, plan display, and upload intake. | Bot scenarios pass tests and match FSM documentation. |
 | 4. TikTok Content Posting API | Implement official OAuth 2.0 flow, encrypted token storage, token refresh, official publication client, webhook handling, and error reporting. | OAuth and mocked TikTok API tests pass; no unofficial API or bypass behavior exists. |
-| 5. Robokassa integration | Implement payment creation, signature verification, ResultURL processing, idempotency, subscription activation, and payment audit. | PRO/BUSINESS payment scenarios pass, SuccessURL does not activate subscriptions. |
+| 5. Robokassa integration | Implement payment creation, signature verification, ResultURL processing, idempotency, subscription activation, and payment audit. | PRO/BUSINESS/UNLIMIT external-channel payment scenarios pass, SuccessURL does not activate subscriptions. |
 | 6. Workers and video processing | Implement queueing, FFprobe validation, safe FFmpeg preparation, TikTok submission jobs, cleanup, retries, and daily-limit accounting. | Upload lifecycle and queue recovery scenarios pass. |
 | 7. Admin panel and analytics | Implement administrative API/panel, RBAC, settings, users, payments, upload queue, audit logs, and metrics views. | Admin operations are authenticated, audited, tested, and documented. |
 | 8. CI/CD and deployment automation | Complete CI checks, Docker builds, migration checks, secret scanning, deployment guides, backup scripts, and Nginx/HTTPS setup. | CI passes and staging deployment is reproducible. |
 | 9. Comprehensive testing | Run unit, integration, FSM, Robokassa, TikTok mock, queue, migration, security, and acceptance checks. | Required tests pass and QA scenarios are documented as complete. |
 | 10. Production preparation and launch | Prepare production `.env`, domain, HTTPS, webhooks, TikTok app settings, Robokassa URLs, backups, monitoring, and launch smoke tests. | Production launch checklist passes and project is ready for operation. |
 
-## 5.2. Control Points
+## 5.2. Current Status
+
+Current implementation status: stages 1 through 9 pass the repository's automated quality gates.
+Stage 10 infrastructure is active on the Netherlands server: domain and HTTPS, isolated Compose
+networking, Telegram webhook delivery, PostgreSQL backup, public smoke checks, Robokassa sandbox
+acceptance, production Robokassa configuration, a real Telegram Stars payment/refund scenario, and
+TikTok Sandbox OAuth with encrypted token persistence and Creator Info have been verified. Stable
+release `0.2.0` is the production baseline. TikTok publication remains disabled until the
+controlled Content Posting, application review, and publication acceptance gates pass.
+
+## 5.3. Control Points
 
 Before declaring the project ready:
 
@@ -402,7 +428,7 @@ Before declaring the project ready:
 - Technical debt and dependency/license registers are reviewed.
 - Production readiness is confirmed.
 
-## 5.3. Final Rule
+## 5.4. Final Rule
 
 All previous specification sections are used together as one requirements base for implementation and maintenance. Any roadmap stage may be split into smaller tasks, but each task must preserve the architecture, security, official TikTok API boundary, tests, and documentation rules defined in the specification.
 
@@ -411,7 +437,7 @@ All previous specification sections are used together as one requirements base f
 Группа спецификации: Нефункциональные требования
 
 
-This document defines the non-functional requirements for Tik_Tok_Loader. These requirements apply to every component described in [Project Component Map](component-map.md) and must be checked together with functional acceptance criteria before release.
+This document defines the non-functional requirements for Tik_Tok_Loader. These requirements apply to every component described in [Project Component Map](#3-project-component-map) and must be checked together with functional acceptance criteria before release.
 
 ## 6.1. Performance
 
@@ -422,7 +448,7 @@ This document defines the non-functional requirements for Tik_Tok_Loader. These 
 | API response time control | Monitor API response time through metrics and logs, and investigate threshold breaches during operations. |
 | Minimal blocking | Avoid blocking I/O in request handlers and bot handlers; move heavy work to background jobs. |
 
-Performance controls are detailed in [Performance and Scaling](performance.md), [Capacity and Performance Management](capacity-management.md), and [Metrics and KPI](metrics-and-kpi.md).
+Performance controls are detailed in [Performance and Scaling](#52-performance-and-scaling), [Capacity and Performance Management](#53-capacity-and-performance-management), and [Metrics and KPI](#54-metrics-and-kpi).
 
 ## 6.2. Reliability
 
@@ -433,7 +459,7 @@ Performance controls are detailed in [Performance and Scaling](performance.md), 
 | Backups | Back up PostgreSQL, production configuration, deployment files, and critical documentation according to the retention policy. |
 | Safe recovery | Validate restore procedures in staging and preserve payment, subscription, user, and upload history during recovery. |
 
-Reliability controls are detailed in [Queue and Retry Policy](queue-retry-policy.md), [Backup and Restore Policy](backup-restore-policy.md), [Service Continuity Plan](service-continuity-plan.md), and [Incident Management](incident-management.md).
+Reliability controls are detailed in [Queue and Retry Policy](#51-queue-and-retry-policy), [Backup and Restore Policy](#47-backup-and-restore-policy), [Service Continuity Plan](#48-service-continuity-plan), and [Incident Management](#46-incident-management).
 
 ## 6.3. Security
 
@@ -444,11 +470,11 @@ Reliability controls are detailed in [Queue and Retry Policy](queue-retry-policy
 | Webhook verification | Verify TikTok and Robokassa webhook signatures before changing business state. |
 | RBAC | Enforce server-side roles and permissions for administrative operations. |
 
-Security controls are detailed in [Security, Backup, and Monitoring](security.md), [TikTok Accounts Entity](tiktok-accounts-entity.md), [Webhook Events Entity](webhook-events-entity.md), and [Administrative REST API](admin-rest-api.md).
+Security controls are detailed in [Security, Backup, and Monitoring](#30-security-backup-and-monitoring), [TikTok Accounts Entity](#9-tiktok-accounts-entity), [Webhook Events Entity](#14-webhook-events-entity), and [Administrative REST API](#27-administrative-rest-api).
 
-Security logging and audit controls are detailed in [Security Logging and Audit](security-logging-audit.md).
+Security logging and audit controls are detailed in [Security Logging and Audit](#31-security-logging-and-audit).
 
-Confidential data controls are detailed in [Confidential Data Policy](confidential-data-policy.md).
+Confidential data controls are detailed in [Confidential Data Policy](#32-confidential-data-policy).
 
 ## 6.4. Maintainability
 
@@ -459,7 +485,7 @@ Confidential data controls are detailed in [Confidential Data Policy](confidenti
 | Tests | Cover new behavior with unit, integration, FSM, Robokassa, TikTok mock, and queue-related tests where relevant. |
 | Alembic | Apply all schema changes through Alembic migrations. |
 
-Maintainability controls are detailed in [Development Standards](development.md), [Migration and Version Compatibility Plan](migration-compatibility-plan.md), [OpenAPI and Contract Documentation](openapi-contracts.md), and [Requirements Traceability Matrix](requirements-traceability.md).
+Maintainability controls are detailed in [Development Standards](#56-development-standards), [Migration and Version Compatibility Plan](#63-migration-and-version-compatibility-plan), [OpenAPI and Contract Documentation](#28-openapi-and-contract-documentation), and [Requirements Traceability Matrix](#70-requirements-traceability-matrix).
 
 ## 6.5. Scalability
 
@@ -469,7 +495,7 @@ Maintainability controls are detailed in [Development Standards](development.md)
 | Horizontal worker scaling | Support multiple worker processes with Redis-backed coordination and idempotent task handling. |
 | Extensible functionality | Add features through existing service boundaries, documented APIs, migrations, tests, and documentation updates. |
 
-Scalability controls are detailed in [Performance and Scaling](performance.md), [Capacity and Performance Management](capacity-management.md), and [Feature Development Plan](feature-development-plan.md).
+Scalability controls are detailed in [Performance and Scaling](#52-performance-and-scaling), [Capacity and Performance Management](#53-capacity-and-performance-management), and [Feature Development Plan](#58-feature-development-plan).
 
 ## 6.6. Acceptance Rule
 
@@ -480,7 +506,7 @@ A release is not production-ready until non-functional requirements are checked 
 Группа спецификации: Данные
 
 
-Canonical entity names are defined in [Glossary and Naming Conventions](glossary-naming.md).
+Canonical entity names are defined in [Glossary and Naming Conventions](#71-glossary-and-naming-conventions).
 
 ## 7.1. Core Entities
 
@@ -488,9 +514,9 @@ Canonical entity names are defined in [Glossary and Naming Conventions](glossary
 | --- | --- |
 | `users` | Telegram users and account-level settings |
 | `tiktok_accounts` | Connected TikTok accounts and encrypted OAuth tokens |
-| `plans` | FREE, PRO, and BUSINESS tariffs |
+| `plans` | FREE, PRO, BUSINESS, and UNLIMIT tariffs |
 | `subscriptions` | Active and historical subscriptions |
-| `payments` | Robokassa payment history |
+| `payments` | Provider-neutral payment history for Stars and approved external channels |
 | `upload_jobs` | Publication tasks and status |
 | `upload_job_events` | Upload lifecycle audit trail |
 | `daily_usage` | Daily upload limit counters |
@@ -536,25 +562,25 @@ Canonical entity names are defined in [Glossary and Naming Conventions](glossary
 
 ## 7.5. Development Requirement
 
-Any new persistent entity must update this model, add an Alembic migration, include tests, and follow [Data Quality and Integrity](data-quality-integrity.md).
+Any new persistent entity must update this model, add an Alembic migration, include tests, and follow [Data Quality and Integrity](../data-quality-integrity.md).
 
-The user entity is specified in [Users Entity](users-entity.md).
+The user entity is specified in [Users Entity](#8-users-entity).
 
-The TikTok account entity is specified in [TikTok Accounts Entity](tiktok-accounts-entity.md).
+The TikTok account entity is specified in [TikTok Accounts Entity](#9-tiktok-accounts-entity).
 
-The subscription entity is specified in [Subscriptions Entity](subscriptions-entity.md).
+The subscription entity is specified in [Subscriptions Entity](#10-subscriptions-entity).
 
-The payment entity is specified in [Payments Entity](payments-entity.md).
+The payment entity is specified in [Payments Entity](#11-payments-entity).
 
-The upload job entity is specified in [Upload Jobs Entity](upload-jobs-entity.md).
+The upload job entity is specified in [Upload Jobs Entity](#12-upload-jobs-entity).
 
-The daily usage entity is specified in [Daily Usage Entity](daily-usage-entity.md).
+The daily usage entity is specified in [Daily Usage Entity](#13-daily-usage-entity).
 
-The webhook event entity is specified in [Webhook Events Entity](webhook-events-entity.md).
+The webhook event entity is specified in [Webhook Events Entity](#14-webhook-events-entity).
 
-The admin action entity is specified in [Admin Actions Entity](admin-actions-entity.md).
+The admin action entity is specified in [Admin Actions Entity](#15-admin-actions-entity).
 
-The system setting entity is specified in [System Settings Entity](system-settings-entity.md).
+The system setting entity is specified in [System Settings Entity](#16-system-settings-entity).
 
 # 8. Users Entity
 
@@ -635,6 +661,8 @@ Changes to the `users` entity require updated SQLAlchemy models, Alembic migrati
 | `access_token` | TEXT encrypted | OAuth access token |
 | `refresh_token` | TEXT encrypted | OAuth refresh token |
 | `token_expires_at` | TIMESTAMP WITH TIME ZONE | Access token expiration time |
+| `refresh_blocked_at` | TIMESTAMP WITH TIME ZONE | Time automatic refresh was stopped after a non-retryable error |
+| `refresh_error_code` | VARCHAR | Sanitized non-retryable refresh error code |
 | `created_at` | TIMESTAMP WITH TIME ZONE | Connection creation time |
 | `updated_at` | TIMESTAMP WITH TIME ZONE | Last update time |
 
@@ -655,6 +683,8 @@ The current implementation may use internal column names such as `open_id`, `acc
 - Delete encrypted tokens when the user disconnects the TikTok account.
 - Check access token expiration before each TikTok API call.
 - Refresh access tokens safely through the official OAuth refresh flow.
+- Retry only network, rate-limit, and server failures. A permanent OAuth response blocks further
+  scheduled refresh attempts until the user reconnects the account.
 - Do not collect TikTok passwords.
 
 ## 9.5. Integrity Requirements
@@ -686,7 +716,8 @@ Changes to `tiktok_accounts` require updated SQLAlchemy models, Alembic migratio
 
 ## 10.1. Purpose
 
-`subscriptions` stores active and historical user subscriptions for FREE, PRO, and BUSINESS plans.
+`subscriptions` stores active and historical user subscriptions for FREE, PRO, BUSINESS, and
+UNLIMIT plans.
 
 ## 10.2. Recommended Fields
 
@@ -698,6 +729,7 @@ Changes to `tiktok_accounts` require updated SQLAlchemy models, Alembic migratio
 | `status` | VARCHAR | `active`, `expired`, or `cancelled` |
 | `starts_at` | TIMESTAMP WITH TIME ZONE | Subscription start time |
 | `expires_at` | TIMESTAMP WITH TIME ZONE | End time, `NULL` for FREE |
+| `expiration_notified_at` | TIMESTAMP WITH TIME ZONE | Successful Telegram expiration notification time |
 | `daily_limit` | INTEGER | Daily publication limit captured for the subscription |
 | `created_at` | TIMESTAMP WITH TIME ZONE | Record creation time |
 | `updated_at` | TIMESTAMP WITH TIME ZONE | Last update time |
@@ -716,11 +748,15 @@ The current implementation may use `ends_at` for the same domain meaning as `exp
 
 - New users automatically receive the FREE plan.
 - FREE subscriptions have no expiration time.
-- PRO and BUSINESS subscriptions expire after the configured paid period.
-- After PRO or BUSINESS expires, the user returns to FREE automatically.
+- PRO, BUSINESS, and UNLIMIT subscriptions expire after the configured paid period.
+- After a paid subscription expires, the user returns to FREE automatically.
+- UNLIMIT uses `daily_limit=0`, which means no daily publication cap.
 - Only one subscription should be active for a user at the same time.
 - Switching to a paid plan must not delete historical subscription records.
 - Subscription status changes must be transactional.
+- The scheduler locks due rows, marks paid subscriptions expired, creates FREE, and commits before
+  dispatching Telegram notifications.
+- Failed notifications remain pending and are retried without creating another FREE subscription.
 
 ## 10.5. Audit Requirements
 
@@ -753,7 +789,9 @@ Changes to `subscriptions` require updated SQLAlchemy models, Alembic migrations
 
 ## 11.1. Purpose
 
-`payments` stores payment records for PRO and BUSINESS subscriptions paid through the existing Robokassa merchant account.
+`payments` stores the immutable history of PRO, BUSINESS, and UNLIMIT payment attempts. Telegram Stars is the
+checkout provider for digital subscriptions purchased inside the bot. Robokassa is retained only for
+a separately approved channel that complies with provider and platform rules.
 
 ## 11.2. Recommended Fields
 
@@ -762,10 +800,13 @@ Changes to `subscriptions` require updated SQLAlchemy models, Alembic migrations
 | `id` | UUID | Internal payment identifier |
 | `user_id` | UUID | Reference to `users.id` |
 | `subscription_id` | UUID | Related subscription |
-| `inv_id` | VARCHAR | Robokassa invoice identifier |
-| `amount` | DECIMAL | Payment amount |
-| `currency` | VARCHAR | Currency, `RUB` |
-| `status` | VARCHAR | `created`, `pending`, `paid`, `failed`, `cancelled`, `refunded` |
+| `provider` | VARCHAR | `telegram_stars` or `robokassa` |
+| `provider_invoice_id` | INTEGER | Internal/Robokassa invoice reference |
+| `provider_charge_id` | VARCHAR | Unique provider confirmation ID |
+| `amount_rub` | INTEGER | RUB amount snapshot where applicable |
+| `amount_stars` | INTEGER | Telegram Stars amount where applicable |
+| `currency` | VARCHAR | `XTR` or `RUB` |
+| `status` | VARCHAR | `created`, `pending`, `paid`, `refund_pending`, `failed`, `cancelled`, `refunded` |
 | `paid_at` | TIMESTAMP WITH TIME ZONE | Payment confirmation time |
 | `created_at` | TIMESTAMP WITH TIME ZONE | Record creation time |
 
@@ -781,25 +822,33 @@ The current implementation may use internal names such as `provider_invoice_id` 
 ## 11.4. Business Rules
 
 - FREE does not create a payment record.
-- Only PRO and BUSINESS purchases create payment records.
-- Subscription activation happens only after verified Robokassa ResultURL.
+- Only PRO, BUSINESS, and UNLIMIT purchases create payment records.
+- Telegram Stars activation happens only after validated `successful_payment`.
+- A definitive Stars invoice rejection changes `created` to `failed`; an ambiguous transport result
+  remains `created` because Telegram may still have delivered the invoice.
+- Telegram Stars refund calls require a committed `refund_pending` claim; duplicate requests do not
+  repeat the provider call, and Telegram's service event reconciles ambiguous outcomes.
+- Robokassa activation happens only after verified ResultURL in an approved channel.
 - SuccessURL is informational and must not activate a subscription.
 - Repeated ResultURL notifications must be idempotent and must not activate the same subscription twice.
 - Every payment status change must be auditable.
 
 ## 11.5. Security Requirements
 
-- Do not store Robokassa secrets in `payments`.
+- Do not store provider secrets or personal banking data in `payments`.
+- Validate the Telegram user, amount, `XTR` currency, invoice payload, and charge ID.
 - Verify digital signature before changing payment status.
 - Verify amount before changing payment status.
 - Verify currency when Robokassa provides it.
 - Verify `InvId` before changing payment status.
 - Do not log Robokassa passwords or raw secrets.
-- Execute payment and subscription changes in a single transaction.
+- Execute each local payment/subscription state transition atomically. External provider calls occur
+  between committed transition stages and must be recoverable and idempotent.
 
 ## 11.6. Development Requirement
 
-Changes to `payments` require updated SQLAlchemy models, Alembic migrations, tests, documentation, Robokassa idempotency checks, and security review.
+Changes to `payments` require updated SQLAlchemy models, Alembic migrations, tests, documentation,
+provider-specific idempotency checks, and security review.
 
 # 12. Upload Jobs Entity
 
@@ -822,6 +871,8 @@ Changes to `payments` require updated SQLAlchemy models, Alembic migrations, tes
 | `caption` | TEXT | Video description |
 | `hashtags` | TEXT | Hashtags |
 | `error_code` | VARCHAR | Error code when available |
+| `usage_date` | DATE | Business date on which the accepted attempt was reserved |
+| `usage_refunded_at` | TIMESTAMP WITH TIME ZONE | Idempotency marker for a returned attempt |
 | `created_at` | TIMESTAMP WITH TIME ZONE | Record creation time |
 | `updated_at` | TIMESTAMP WITH TIME ZONE | Last update time |
 
@@ -836,7 +887,7 @@ The current implementation may use internal names such as `local_path` for `vide
 5. Receive or poll publication status.
 6. Mark as published, failed, or cancelled.
 
-The detailed lifecycle is documented in [Video Publication Lifecycle](video-lifecycle.md).
+The detailed lifecycle is documented in [Video Publication Lifecycle](#19-video-publication-lifecycle).
 
 ## 12.4. Status Rules
 
@@ -845,9 +896,11 @@ The detailed lifecycle is documented in [Video Publication Lifecycle](video-life
 - Every status change must be recorded in `upload_job_events`.
 - Retry is allowed only for temporary errors.
 - Terminal states must not be overwritten by stale retries.
-- User daily limit is consumed only after official TikTok API acceptance.
+- User daily allowance is reserved only after official TikTok API acceptance.
+- A final TikTok `FAILED` status returns the reservation exactly once. Repeated webhook delivery or
+  polling cannot decrement the counter twice.
 
-Daily counter rules are documented in [Daily Usage Entity](daily-usage-entity.md).
+Daily counter rules are documented in [Daily Usage Entity](#13-daily-usage-entity).
 
 ## 12.5. Relationships
 
@@ -868,7 +921,7 @@ Changes to `upload_jobs` require updated SQLAlchemy models, Alembic migrations, 
 
 ## 13.1. Purpose
 
-`daily_usage` tracks daily publication limit consumption for FREE, PRO, and BUSINESS users.
+`daily_usage` tracks publication reservations for FREE, PRO, BUSINESS, and UNLIMIT users.
 
 ## 13.2. Recommended Fields
 
@@ -889,8 +942,11 @@ The current implementation may use `upload_count` for the same domain meaning as
 
 - Create a record automatically on the first accepted publication of the day.
 - The business day resets at 00:00 Europe/Moscow.
-- Increment usage only after the official TikTok API accepts the publication.
+- Reserve usage only after the official TikTok API accepts the publication.
+- Return the reserved attempt exactly once when TikTok reports final `FAILED`, including provider
+  `internal` failures. The upload job stores the accounting date and refund timestamp.
 - Do not increment usage for validation, preparation, authorization, or platform-restriction failures.
+- `daily_limit=0` means unlimited. Usage is still counted for analytics but never blocks publishing.
 - If a user changes plan during the day, recalculate remaining allowance without resetting already used publications.
 - Reprocessing the same upload job must not increment the counter twice.
 
@@ -900,6 +956,7 @@ The current implementation may use `upload_count` for the same domain meaning as
 - Counter updates must be transactional.
 - Use locking or equivalent concurrency protection before incrementing counters.
 - Counter updates must be idempotent for repeated worker attempts.
+- Webhook and polling races must not refund one upload more than once.
 - Usage changes must be auditable.
 
 ## 13.5. Relationships
@@ -989,7 +1046,8 @@ Changes to `webhook_events` require updated SQLAlchemy models, Alembic migration
 | `created_at` | TIMESTAMP WITH TIME ZONE | Action time |
 | `ip_address` | VARCHAR | Administrative request source when available |
 
-The current implementation may use `metadata_json` for `details`. Any schema rename or added field, including `ip_address`, must be delivered through Alembic migration and compatibility checks.
+The implementation uses `metadata_json` for `details`. The `ip_address` field is introduced by
+Alembic revision `0006_admin_console`.
 
 ## 15.3. Recorded Actions
 
@@ -1012,9 +1070,9 @@ Record:
 - Every administrative operation must write an audit record before confirming success to the administrator.
 - Search must be supported by administrator, action type, target, and time range.
 
-Administrative REST requirements are documented in [Administrative REST API](admin-rest-api.md).
+Administrative REST requirements are documented in [Administrative REST API](#27-administrative-rest-api).
 
-Security logging requirements are documented in [Security Logging and Audit](security-logging-audit.md).
+Security logging requirements are documented in [Security Logging and Audit](#31-security-logging-and-audit).
 
 ## 15.5. Security Requirements
 
@@ -1052,13 +1110,14 @@ The current implementation may use `key` for `setting_key` and `value` for `sett
 
 ## 16.3. Example Settings
 
-- PRO and BUSINESS prices.
-- Daily publication limits.
-- Temporary file retention.
-- Maintenance mode.
-- Logging levels and retention periods.
-- Intake enabled or disabled.
-- Feature flags for controlled rollout.
+- `intake_enabled`.
+- `video_retention_hours`.
+- `log_retention_days`.
+- `backup_retention_days`.
+- `audit_log_retention_days`.
+
+Plan prices, daily limits, duration, and sale availability are stored in `plans`, not duplicated in
+`system_settings`.
 
 ## 16.4. Integrity Requirements
 
@@ -1068,6 +1127,8 @@ The current implementation may use `key` for `setting_key` and `value` for `sett
 - Setting updates must be transactional.
 - Setting updates must be written to `admin_actions`.
 - Configuration export must exclude secret-like settings.
+- Seed defaults only when a key is absent; never overwrite an administrator change at startup.
+- Retention workers read database values for each cleanup cycle and use `.env` as fallback.
 
 ## 16.5. Security Requirements
 
@@ -1080,21 +1141,131 @@ The current implementation may use `key` for `setting_key` and `value` for `sett
 
 Changes to `system_settings` require updated SQLAlchemy models, Alembic migrations, tests, documentation, configuration validation, and security review.
 
-# 17. User Guide
+# 17. Administrator Guide
+
+Группа спецификации: Администрирование
+
+
+## 17.1. Access
+
+The web console is served by FastAPI at `/admin-ui/`. In production, open it only through the
+configured HTTPS domain. The console keeps credentials in browser memory for the current page
+only; it does not use local or session storage.
+
+Admin API access requires:
+
+- `ADMIN_API_TOKEN`
+- `ADMIN_API_TELEGRAM_ID`, bound on the server to that token
+- `ADMIN_CSRF_TOKEN` for mutating requests
+- the same Telegram ID listed in `TELEGRAM_ADMIN_IDS` and provisioned as an unblocked admin user
+
+Required headers:
+
+```text
+Authorization: Bearer <ADMIN_API_TOKEN>
+X-CSRF-Token: <ADMIN_CSRF_TOKEN>
+```
+
+The caller cannot select an administrator identity in an HTTP header. The bearer credential is
+resolved only to `ADMIN_API_TELEGRAM_ID`; blocked users, non-admin users, and the `USER` role are
+rejected even when the bearer token is valid.
+
+Do not expose secrets, TikTok tokens, Robokassa passwords, or raw OAuth credentials in the UI.
+
+## 17.2. Roles
+
+RBAC is enforced on the server. Client-side checks are only UI hints.
+
+| Role | Access |
+| --- | --- |
+| USER | Telegram bot features for own account |
+| SUPPORT | Statistics, users, payments, upload jobs, and error logs |
+| ADMIN | SUPPORT permissions plus user, tariff, and payment management |
+| SUPER_ADMIN | Full access, including system settings and role management |
+
+The permission matrix is defined in `app.security.rbac`, so new roles and permissions can be added without changing business handlers.
+
+## 17.3. Sections
+
+- Dashboard and analytics: `/api/v1/admin/dashboard`, `/api/v1/admin/analytics`
+- Users and user details: `/api/v1/admin/users`
+- Plans and independent RUB/Stars prices: `/api/v1/admin/plans`
+- Payments: `/api/v1/admin/payments`
+- Upload queue and publication errors: `/api/v1/admin/upload-jobs`, `/api/v1/admin/errors`
+- System settings: `/api/v1/admin/settings`
+- Audit journal: `/api/v1/admin/audit-actions`
+- User role management: `/api/v1/admin/users/{user_id}/role`
+
+Legacy `/admin/*` routes remain available for compatibility but are excluded from OpenAPI. New
+clients must use `/api/v1/admin/*`.
+
+Dashboard and analytics KPI are defined in [Metrics and KPI](#54-metrics-and-kpi).
+
+Administrative REST endpoint requirements are documented in [Administrative REST API](#27-administrative-rest-api).
+
+## 17.4. Plan Management
+
+PRO, BUSINESS, and UNLIMIT price, daily limit, duration, and sale availability are stored in PostgreSQL and can be changed without code edits. A zero daily limit means unlimited.
+
+Every plan update is written to `admin_actions`.
+
+## 17.5. User Management
+
+Admins can:
+
+- Search users by Telegram ID or username.
+- Block or unblock users.
+- Inspect connected TikTok account metadata without access to OAuth tokens.
+- Inspect publication and payment history.
+- Return a user to FREE without deleting subscription history.
+- Review payment and subscription state.
+- Review RUB and Telegram Stars revenue separately.
+- Create audited Robokassa checkout links for an approved external sales channel.
+- Refund eligible Stars payments through Telegram's official refund method.
+- Reconcile an ambiguous Stars refund after checking the provider, choosing either `refunded` or
+  `not_refunded`; the operation is permission checked and audited.
+
+SUPER_ADMIN can assign roles. Every mutating operation requires the CSRF token and is recorded
+with the request source IP when available.
+
+Queue inspection and safe retry rules are documented in [Queue and Retry Policy](#51-queue-and-retry-policy).
+
+Only failed jobs with a classified temporary network or queue error, no TikTok publish ID, and an
+existing local video file can be restarted from the console. Authorization, permissions, platform
+restrictions, invalid media, and ambiguous accepted publications are never retried automatically.
+
+## 17.6. Runtime Settings
+
+The application seeds editable, non-secret settings for intake and retention. Retention workers
+read these values from PostgreSQL on every cleanup cycle and use `.env` values only as fallback.
+Invalid typed values are rejected before persistence.
+
+Secrets remain in `.env`; secret-like keys are excluded from the settings API and configuration
+export.
+
+## 17.7. Audit
+
+Administrative actions are recorded in `admin_actions`. Payment and webhook processing are recorded in `webhook_events`.
+
+Admin audit storage rules are documented in [Admin Actions Entity](#15-admin-actions-entity).
+
+System setting edit rules are documented in [System Settings Entity](#16-system-settings-entity).
+
+# 18. User Guide
 
 Группа спецификации: Пользовательские сценарии
 
 
-User-facing errors must follow [Error Codes and Exception Handling](error-handling.md).
+User-facing errors must follow [Error Codes and Exception Handling](#29-error-codes-and-exception-handling).
 
-## 17.1. Start
+## 18.1. Start
 
 1. Open the Telegram bot.
 2. Send `/start`.
 3. Accept the user agreement.
 4. Connect TikTok through official OAuth 2.0.
 
-## 17.2. Upload Video
+## 18.2. Upload Video
 
 1. Tap `📤 Загрузить видео`.
 2. Send MP4, MOV, or WEBM.
@@ -1104,32 +1275,41 @@ User-facing errors must follow [Error Codes and Exception Handling](error-handli
 
 The bot validates and prepares the video, then sends it to TikTok only through the official Content Posting API.
 
-## 17.3. Tariffs
+## 18.3. Tariffs
 
 - FREE: 2 videos per day.
 - PRO: 5 videos per day.
 - BUSINESS: 10 videos per day.
+- UNLIMIT: unlimited videos for 30 days, `999 XTR` or the external-channel reference price `1999 RUB`.
 
-Paid plans are activated only after Robokassa ResultURL confirmation.
+The tariff screen shows both Stars and RUB reference prices. Paid plans purchased inside the bot are
+invoiced in Telegram Stars and activate only after Telegram confirms `successful_payment`.
+Robokassa is reserved for an approved external sales channel and is not offered as an alternative
+digital-goods checkout inside Telegram. Use `/paysupport` for payment support without sending
+passwords, one-time codes, or card details.
 
-## 17.4. TikTok Disconnect
+Use `/terms` at any time to review the user agreement accepted during registration.
+
+## 18.4. TikTok Disconnect
 
 Open settings and tap `Отключить TikTok`. Stored OAuth tokens are deleted.
 
-## 17.5. Errors
+## 18.5. Errors
 
-The bot shows a short user-safe message. Internal details, tokens, and provider secrets are never shown.
+The bot shows a short user-safe message. Internal details, tokens, and provider secrets are never
+shown. If TikTok accepts a video and later reports a final processing failure, the reserved daily
+attempt is returned automatically.
 
-# 18. Video Publication Lifecycle
+# 19. Video Publication Lifecycle
 
 Группа спецификации: Пользовательские сценарии
 
 
-Upload job storage rules are documented in [Upload Jobs Entity](upload-jobs-entity.md).
+Upload job storage rules are documented in [Upload Jobs Entity](#12-upload-jobs-entity).
 
-End-to-end publication sequence is documented in [Sequence Flows](sequence-flows.md).
+End-to-end publication sequence is documented in [Sequence Flows](#4-sequence-flows).
 
-## 18.1. Statuses
+## 19.1. Statuses
 
 - `NEW`
 - `VALIDATING`
@@ -1141,7 +1321,7 @@ End-to-end publication sequence is documented in [Sequence Flows](sequence-flows
 - `FAILED`
 - `CANCELLED`
 
-## 18.2. Flow
+## 19.2. Flow
 
 1. User starts upload.
 2. Bot checks TikTok connection and daily limit.
@@ -1154,23 +1334,21 @@ End-to-end publication sequence is documented in [Sequence Flows](sequence-flows
 9. Each lifecycle transition is recorded in `upload_job_events`.
 10. User receives a Telegram notification.
 
-## 18.3. Error Rules
+## 19.3. Error Rules
 
 - No daily limit is consumed when validation or preparation fails.
-- Daily limit is consumed only after official TikTok API acceptance.
+- Daily allowance is reserved only after official TikTok API acceptance.
+- A final TikTok processing failure returns the reserved attempt exactly once, including
+  retryable provider-side `internal` failures.
 - Authorization and platform restriction errors are not retried automatically.
 - Temporary failures can be retried by the queue system.
 
-Queue retry and duplicate-prevention rules are defined in [Queue and Retry Policy](queue-retry-policy.md).
-
-Temporary file handling is defined in [File Storage Policy](file-storage-policy.md).
-
-# 19. TikTok Developer Configuration
+# 20. TikTok Developer Configuration
 
 Группа спецификации: Интеграции
 
 
-## 19.1. Application Configuration
+## 20.1. Application Configuration
 
 - Store `TIKTOK_CLIENT_KEY` and `TIKTOK_CLIENT_SECRET` only in `.env` or a managed secret store.
 - Do not commit TikTok credentials.
@@ -1178,7 +1356,40 @@ Temporary file handling is defined in [File Storage Policy](file-storage-policy.
 - Keep `TIKTOK_REDIRECT_URI` synchronized with the production HTTPS callback URL.
 - Document every TikTok Developer Portal setting change in the operations journal or admin audit log.
 
-## 19.2. OAuth Settings
+### 20.1.1. Production portal values
+
+Use these exact public values for the production application:
+
+| Setting | Value |
+|---|---|
+| Application name | `Tik_Tok_loader` |
+| Web URL | `https://loader.invest-lend.ru/` |
+| Terms of Service URL | `https://loader.invest-lend.ru/legal/terms` |
+| Privacy Policy URL | `https://loader.invest-lend.ru/legal/privacy` |
+| Redirect URI | `https://loader.invest-lend.ru/api/v1/oauth/tiktok/callback` |
+| Webhook URL | `https://loader.invest-lend.ru/api/v1/webhooks/tiktok` |
+| Product | Content Posting API |
+| OAuth scopes | `user.info.basic`, `video.publish` |
+
+The application icon is stored at `app/public/static/app-icon.png`. It is an original 1024 x
+1024 PNG and does not use TikTok or Telegram trademarks.
+
+Recommended short description:
+
+> Telegram bot that lets users securely publish their own videos to TikTok through the official API.
+
+Recommended review explanation:
+
+> Tik_Tok_loader is a Telegram bot for users to publish videos they own to their TikTok account.
+> The user connects TikTok through OAuth 2.0 with user.info.basic and video.publish. Before upload,
+> the bot queries current creator information, shows the target account and available privacy,
+> interaction, and commercial-content settings, and requires explicit confirmation. A background
+> worker transfers the file through the official Content Posting API and reports processing and
+> final status. OAuth tokens are encrypted and users can disconnect at any time. The service does
+> not collect TikTok passwords and does not use unofficial APIs, interface automation, or regional
+> restriction bypasses.
+
+## 20.2. OAuth Settings
 
 Before release, verify:
 
@@ -1190,34 +1401,76 @@ Before release, verify:
 - Refresh token renewal flow works.
 - Token refresh errors do not expose tokens in logs.
 
-## 19.3. Webhook Settings
+## 20.3. Webhook Settings
 
 TikTok webhook configuration must:
 
 - Use HTTPS.
 - Match the production public domain.
-- Include `TIKTOK_WEBHOOK_SECRET` when signature verification is enabled.
-- Verify inbound webhook signatures.
+- Signatures use the TikTok app `TIKTOK_CLIENT_SECRET`; no separate webhook secret is accepted by
+  the official verification algorithm.
+- Verify the `TikTok-Signature` timestamp and HMAC against the unmodified request body.
+- Reject webhook timestamps older than five minutes to limit replay attacks.
 - Process events idempotently.
 - Log delivery, validation, and processing errors without exposing secrets.
 
-## 19.4. Production Pre-Release Check
+## 20.4. Production Pre-Release Check
 
 Before every production release:
 
 1. Confirm TikTok Developer Portal app status.
 2. Confirm production Redirect URI.
 3. Confirm approved scopes.
-4. Confirm webhook URL and secret.
+4. Confirm webhook URL and `TIKTOK_CLIENT_SECRET` signature verification.
 5. Run a test OAuth authorization with a test TikTok account.
 6. Confirm encrypted token storage.
 7. Confirm refresh flow behavior.
 8. Confirm official Content Posting API behavior in staging or controlled production test.
 9. Confirm no bypass, browser automation, or unofficial API behavior exists.
 
-TikTok account persistence rules are documented in [TikTok Accounts Entity](tiktok-accounts-entity.md).
+## 20.5. Review Evidence
 
-## 19.5. Change Control
+The first review submission must include a demo video recorded with a Sandbox account. The demo
+must show the complete user-controlled flow:
+
+1. Start the Telegram bot and accept the service terms.
+2. Open TikTok OAuth and approve only the requested scopes.
+3. Return to the bot with the connected TikTok account displayed.
+4. Upload an owned test video and review creator information.
+5. Manually choose privacy and interaction settings with no preselected privacy value.
+6. Show the video preview, leave commercial-content disclosure off by default, then demonstrate
+   the optional multi-select disclosure controls and the applicable TikTok label.
+7. Show the literal Music Usage Confirmation declaration and, for branded content, the Branded
+   Content Policy declaration immediately before the publish button.
+8. Show the processing status and final private post in the test TikTok account.
+9. Disconnect TikTok and confirm that stored OAuth credentials are removed.
+
+Do not submit the application for review until the portal draft, Sandbox flow, and demo video have
+all been checked against the current production build.
+
+## 20.6. Required Direct Post UX
+
+Before every publication the bot must query `/v2/post/publish/creator_info/query/` and:
+
+1. Display the TikTok creator nickname.
+2. Require a manual choice from the returned privacy options, with no default.
+3. Enforce the creator-specific maximum video duration.
+4. Let the user explicitly enable Comment, Duet, and Stitch only when TikTok allows them.
+5. Collect commercial-content disclosure and prevent branded content with `SELF_ONLY` visibility.
+6. Display a preview of the exact video selected for publication.
+7. Display the applicable Music Usage Confirmation and Branded Content Policy declaration.
+8. Obtain explicit publication consent before any media is transferred to TikTok.
+9. Poll `/v2/post/publish/status/fetch/` or process final Content Posting webhooks.
+
+Unaudited TikTok clients remain restricted to `SELF_ONLY` posts and other platform limits. TikTok
+also requires every target creator account to be set to private at posting time. Keep
+`TIKTOK_APP_AUDITED=false` until the Direct Post audit is approved; the bot then blocks public
+creator accounts before confirmation. The system must report these restrictions and must not
+attempt to bypass them.
+
+TikTok account persistence rules are documented in [TikTok Accounts Entity](#9-tiktok-accounts-entity).
+
+## 20.7. Change Control
 
 Changes to TikTok Developer settings must include:
 
@@ -1229,27 +1482,132 @@ Changes to TikTok Developer settings must include:
 - Verification result.
 - Rollback plan when applicable.
 
-## 19.6. Compliance Rule
+## 20.8. Compliance Rule
 
 If TikTok rejects authorization, scope, publication, region, account, policy, or webhook processing, the application must report the restriction and must not attempt circumvention.
 
-# 20. Robokassa Setup
+# 21. Telegram Stars Payments
 
 Группа спецификации: Интеграции
 
 
-End-to-end payment sequence is documented in [Sequence Flows](sequence-flows.md).
+## 21.1. Scope and Compliance
 
-## 20.1. Tariff Mapping
+PRO, BUSINESS, and UNLIMIT are digital services consumed inside Telegram. Purchases initiated by the bot must
+therefore use Telegram Stars (`XTR`) in accordance with the official Telegram payment rules for
+digital goods and services.
+
+The bot must not present Robokassa, bank-card links, phone transfers, or another currency as an
+alternative checkout method for the same digital subscription inside Telegram.
+
+Official references:
+
+- [Telegram Stars payments for bots](https://core.telegram.org/bots/payments-stars)
+- [Telegram Stars API](https://core.telegram.org/api/stars)
+
+## 21.2. Tariff Configuration
+
+`plans.price_stars` stores the positive integer Stars price for each paid plan. The approved prices
+are `199 XTR` for PRO, `499 XTR` for BUSINESS, and `999 XTR` for UNLIMIT. Values are managed through the administrative API
+and panel and are independent from `price_rub`; no automatic RUB-to-XTR conversion is allowed.
+
+## 21.3. Payment Flow
+
+1. The user selects PRO, BUSINESS, or UNLIMIT.
+2. The backend creates a `payments` row with provider `telegram_stars`, currency `XTR`, and a unique
+   payment UUID.
+3. The bot sends a single-chat invoice with currency `XTR`, omits `provider_token`, and puts the
+   payment UUID in the invoice payload. Forwarded copies cannot be paid directly.
+4. The bot validates the `pre_checkout_query` user, currency, amount, plan, and payment status and
+   answers within the Telegram deadline.
+5. A subscription is activated only after the bot receives `successful_payment`.
+6. `telegram_payment_charge_id` is stored as `provider_charge_id` and is unique per provider.
+7. Duplicate delivery returns the previously processed result and never creates another subscription.
+
+## 21.4. Security and Support
+
+- Do not activate a plan from an invoice send result or pre-checkout request.
+- Stars availability and checkout must depend on `price_stars`, not on the independent RUB price.
+- A definitive Bot API rejection marks the local order `failed`. A transport-level ambiguous result
+  leaves it `created` so a delivered invoice can still pass pre-checkout validation.
+- Do not trust invoice payload, user ID, amount, or currency without a database comparison.
+- Never log Telegram bot tokens, payment credentials, or user banking data.
+- Keep `/paysupport` available and provide a safe support process.
+- Keep `/terms` available so users can review the accepted terms before and after checkout.
+- Register `/terms`, `/paysupport`, and the other supported commands in Telegram when configuring
+  the production webhook.
+- Refunds must use Telegram's `refundStarPayment` method and update the immutable payment history to
+  `refunded`; they must not be implemented as an undocumented manual balance adjustment.
+- ADMIN and SUPER_ADMIN perform eligible refunds through
+  `POST /api/v1/admin/payments/{payment_id}/refund-stars`. The operation first commits a
+  `refund_pending` claim under a database row lock, then calls Telegram outside the transaction.
+- A repeated request while `refund_pending` never sends a second refund. A definitive rejection
+  returns the payment to `paid`; an ambiguous network result stays pending for reconciliation.
+- Telegram's `refunded_payment` service event finalizes local payment and subscription state if the
+  provider refund succeeded but the API process failed before its final database commit.
+- If a network result remains ambiguous and no service event arrives, an ADMIN can perform a
+  provider-side check and use the guarded reconciliation endpoint to finalize `refunded` or restore
+  `paid`; the decision is recorded in `admin_actions`.
+- A delayed duplicate `successful_payment` is accepted only while the local payment is `created`;
+  it can never reactivate `refund_pending` or `refunded` state.
+- Requested and completed refund stages are recorded in the administrator audit log. A completed
+  refund returns the affected active subscription to FREE.
+
+## 21.5. Acceptance Criteria
+
+- Exact user, amount, currency, provider, and payment ID are validated.
+- Concurrent duplicate confirmations activate one subscription.
+- Reuse of a charge ID for another payment is rejected.
+- PRO is invoiced for `199 XTR`, BUSINESS for `499 XTR`, and UNLIMIT for `999 XTR` by default.
+- Paid-plan Stars prices can be changed without a source-code release.
+- `/terms` and `/paysupport` remain available in production.
+- RUB and XTR revenue are reported separately.
+- Repeated Stars refund requests do not call Telegram or alter subscription state twice.
+- Ambiguous refund results remain recoverable and are finalized idempotently from Telegram's service
+  event or through permission-checked, CSRF-protected, audited manual reconciliation.
+
+## 21.6. Production Acceptance Evidence
+
+The provider-backed Telegram Stars scenario was completed on 2026-07-17 against the production
+bot. The PRO Stars price was changed through the audited administrative API from the approved
+`199 XTR` value to a temporary `10 XTR` acceptance value; RUB pricing was not changed.
+
+- Telegram confirmed one `10 XTR` payment and the application persisted one unique provider charge.
+- The successful payment activated one PRO subscription; two independently created but unpaid
+  invoices remained non-activating records.
+- The official `refundStarPayment` operation returned success, the payment moved to `refunded`,
+  and the test PRO subscription moved to `cancelled`.
+- Exactly one FREE subscription became active after the refund.
+- The PRO Stars price was restored to `199 XTR` through the administrative API.
+- Price changes and both refund stages are present in `admin_actions`; provider charge identifiers
+  and personal data are intentionally excluded from this document.
+- Public health, readiness, metrics, OpenAPI, security-header, and Telegram webhook smoke checks
+  passed after the scenario.
+
+# 22. Robokassa Setup
+
+Группа спецификации: Интеграции
+
+
+> Policy boundary: PRO, BUSINESS, and UNLIMIT are digital services consumed inside Telegram. The bot must use
+> Telegram Stars for in-bot checkout and must not show Robokassa as an alternative payment method.
+> This integration remains available only for an approved external sales channel. Operators create
+> checkout links through the authenticated admin API; the Telegram bot itself continues to offer
+> Stars only.
+
+End-to-end payment sequence is documented in [Sequence Flows](#4-sequence-flows).
+
+## 22.1. Tariff Mapping
 
 | Plan | Amount | Period |
 | --- | ---: | --- |
 | PRO | 499 RUB | 30 days |
 | Business | 999 RUB | 30 days |
+| UNLIMIT | 1999 RUB | 30 days |
 
 FREE does not use Robokassa.
 
-## 20.2. Signature Rules
+## 22.2. Signature Rules
 
 Payment link signature:
 
@@ -1263,15 +1621,33 @@ Result URL signature:
 OutSum:InvId:Password2
 ```
 
-The bot contains helpers for both operations in `app.services.robokassa`.
+`ROBOKASSA_HASH_ALGORITHM` must match the technical settings of the shop and accepts `md5`,
+`sha256`, or `sha512`. Signatures are compared in constant time. The application formats `OutSum`
+with two decimal places when it creates a checkout and validates the exact callback value returned
+by Robokassa.
 
-## 20.3. Activation Rules
+## 22.3. External Checkout
+
+An ADMIN or SUPER_ADMIN creates an order for an existing Telegram user with:
+
+```http
+POST /api/v1/admin/payments/robokassa/orders
+Content-Type: application/json
+
+{"telegram_user_id": 123456789, "plan_id": "pro"}
+```
+
+The endpoint requires the admin bearer token, admin Telegram ID, and CSRF token. It returns a
+single signed `checkout_url`, records an audit action, and never returns either Robokassa password.
+Do not place this endpoint or its checkout link in the Telegram digital-goods flow.
+
+## 22.4. Activation Rules
 
 Only Result URL activates a subscription. Success URL is informational and never changes payment or subscription status.
 
-Subscription state and history rules are documented in [Subscriptions Entity](subscriptions-entity.md).
+Subscription state and history rules are documented in [Subscriptions Entity](#10-subscriptions-entity).
 
-Payment storage and idempotency rules are documented in [Payments Entity](payments-entity.md).
+Payment storage and idempotency rules are documented in [Payments Entity](#11-payments-entity).
 
 The backend validates:
 
@@ -1283,7 +1659,29 @@ The backend validates:
 
 Robokassa merchant credentials must stay only in `.env`.
 
-# 21. API Documentation
+Payment activation and the payment-success notification outbox are committed atomically. ResultURL
+returns `OK{InvId}` after the payment transaction commits even if Redis or Telegram is temporarily
+unavailable. The scheduler retries pending notification events; permanent recipient errors become
+terminal `rejected` events and do not block later deliveries.
+
+## 22.5. Sandbox Acceptance
+
+1. Use the dedicated test Password #1 and Password #2 and set `ROBOKASSA_TEST_MODE=true`.
+2. Confirm the configured hash algorithm matches the shop settings.
+3. Create a fresh external checkout through the admin API and open the returned URL.
+4. Complete the simulated payment in Robokassa; no real money is charged.
+5. Verify the public ResultURL returned `OK{InvId}`, the payment became `paid`, exactly one paid
+   subscription is active, and a duplicate callback does not activate another subscription.
+6. Store only sanitized evidence: timestamp, release SHA, invoice ID, amount, HTTP outcome, payment
+   status, active-subscription count, and webhook status.
+
+The current sanitized acceptance record is stored in
+[Robokassa sandbox acceptance evidence](../test-evidence/robokassa-sandbox-2026-07-16.md).
+
+Production passwords and `ROBOKASSA_TEST_MODE=false` may be installed only after this scenario
+passes against the same release candidate.
+
+# 23. API Documentation
 
 Группа спецификации: API
 
@@ -1294,13 +1692,13 @@ OpenAPI and Swagger UI are available at:
 - `/docs`
 - `/redoc`
 
-OpenAPI contract maintenance rules are documented in [OpenAPI and Contract Documentation](openapi-contracts.md).
+OpenAPI contract maintenance rules are documented in [OpenAPI and Contract Documentation](#28-openapi-and-contract-documentation).
 
-REST response envelopes, compatibility rules, and tracing requirements are defined in [REST API Standards](rest-api-standards.md).
+REST response envelopes, compatibility rules, and tracing requirements are defined in [REST API Standards](#24-rest-api-standards).
 
-Public endpoint requirements are documented in [Public REST API](public-rest-api.md).
+Public endpoint requirements are documented in [Public REST API](#26-public-rest-api).
 
-## 21.1. Public and Service Endpoints
+## 23.1. Public and Service Endpoints
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -1315,15 +1713,17 @@ Public endpoint requirements are documented in [Public REST API](public-rest-api
 | GET | `/api/v1/payments/robokassa/success` | Informational success response |
 | GET | `/api/v1/payments/robokassa/fail` | Informational failure response |
 
-## 21.2. TikTok OAuth Start
+## 23.2. TikTok OAuth Start
 
 ```http
-GET /api/v1/oauth/tiktok/start?telegram_id=123456&username=creator
+GET /api/v1/oauth/tiktok/start?state=<one-time-state-created-by-bot>
 ```
 
-Returns a redirect to official TikTok OAuth.
+The Telegram bot creates the short-lived state and sends this URL to the user. The endpoint
+rejects missing, unknown, and expired states, then redirects to official TikTok OAuth. It never
+accepts a Telegram user identifier from the public request.
 
-## 21.3. Robokassa Result
+## 23.3. Robokassa Result
 
 Robokassa must call:
 
@@ -1341,7 +1741,7 @@ Only this endpoint can activate a paid subscription.
 
 Robokassa requires a plain text `OK{InvId}` response. Other API responses use JSON.
 
-## 21.4. Error Format
+## 23.4. Error Format
 
 ```json
 {
@@ -1355,18 +1755,20 @@ Robokassa requires a plain text `OK{InvId}` response. Other API responses use JS
 }
 ```
 
-API validation and data integrity rules are documented in [Data Quality and Integrity](data-quality-integrity.md).
+API validation and data integrity rules are documented in [Data Quality and Integrity](../data-quality-integrity.md).
 
-Error code catalog and exception handling rules are documented in [Error Codes and Exception Handling](error-handling.md).
+Error code catalog and exception handling rules are documented in [Error Codes and Exception Handling](#29-error-codes-and-exception-handling).
 
-## 21.5. Authorization
+## 23.5. Authorization
 
 Admin endpoints require:
 
 ```text
 Authorization: Bearer <ADMIN_API_TOKEN>
-X-Admin-Telegram-Id: <telegram_id>
 ```
+
+The bearer token is bound server-side to `ADMIN_API_TELEGRAM_ID`. Client-controlled identity
+headers are ignored and must not be used for authorization.
 
 Mutating admin requests also require:
 
@@ -1374,42 +1776,55 @@ Mutating admin requests also require:
 X-CSRF-Token: <ADMIN_CSRF_TOKEN>
 ```
 
+Payment administration adds:
+
+- `POST /api/v1/admin/payments/robokassa/orders` to create an audited external-channel checkout.
+- `POST /api/v1/admin/payments/{payment_id}/refund-stars` to refund a paid Stars transaction through
+  Telegram. It returns `refund_pending` without a second provider call while an earlier ambiguous
+  result awaits reconciliation, and persists `refunded` only after provider confirmation.
+- `POST /api/v1/admin/payments/{payment_id}/reconcile-stars-refund` with outcome `refunded` or
+  `not_refunded` after a provider-side check. This guarded operation finalizes or releases a pending
+  refund and records the decision in `admin_actions`.
+
 Telegram webhook requests can use:
 
 ```text
 X-Telegram-Bot-Api-Secret-Token: <TELEGRAM_WEBHOOK_SECRET>
 ```
 
-TikTok webhook requests must include `X-TikTok-Signature` when `TIKTOK_WEBHOOK_SECRET` is configured.
+TikTok webhook requests must include `TikTok-Signature` in the official `t=<timestamp>,s=<hmac>`
+format. The API validates HMAC-SHA256 over `<timestamp>.<raw_body>` with
+`TIKTOK_CLIENT_SECRET` and rejects timestamps outside the five-minute replay window.
 
-TikTok OAuth, webhook, and developer portal checks are documented in [TikTok Developer Configuration](tiktok-developer-configuration.md).
+TikTok OAuth, webhook, and developer portal checks are documented in [TikTok Developer Configuration](#20-tiktok-developer-configuration).
 
-## 21.6. Examples
+## 23.6. Examples
 
 Start TikTok OAuth:
 
 ```bash
-curl "https://your-domain.example/api/v1/oauth/tiktok/start?telegram_id=123456"
+curl "https://your-domain.example/api/v1/oauth/tiktok/start?state=$OAUTH_STATE"
 ```
 
 List upload jobs:
 
 ```bash
-curl "https://your-domain.example/admin/upload-jobs?limit=50&offset=0" \
-  -H "Authorization: Bearer $ADMIN_API_TOKEN" \
-  -H "X-Admin-Telegram-Id: $ADMIN_TELEGRAM_ID"
+curl "https://your-domain.example/api/v1/admin/upload-jobs?limit=50&offset=0" \
+  -H "Authorization: Bearer $ADMIN_API_TOKEN"
 ```
 
-## 21.7. Admin API
+## 23.7. Admin API
 
-See [Administrator Guide](admin.md) and [Administrative REST API](admin-rest-api.md).
+The browser console is available at `/admin-ui/`. Its API is served under `/api/v1/admin`.
 
-# 22. REST API Standards
+See [Administrator Guide](#17-administrator-guide) and [Administrative REST API](#27-administrative-rest-api).
+
+# 24. REST API Standards
 
 Группа спецификации: API
 
 
-## 22.1. General Rules
+## 24.1. General Rules
 
 - Public REST methods use the `/api/v1` prefix.
 - JSON is the default exchange format.
@@ -1419,17 +1834,17 @@ See [Administrator Guide](admin.md) and [Administrative REST API](admin-rest-api
 - Include Correlation ID when the operation belongs to a broader workflow.
 - Document API changes in OpenAPI and `CHANGELOG.md`.
 
-OpenAPI contract rules are documented in [OpenAPI and Contract Documentation](openapi-contracts.md).
+OpenAPI contract rules are documented in [OpenAPI and Contract Documentation](#28-openapi-and-contract-documentation).
 
-API version lifecycle and client compatibility rules are documented in [API Versioning and Client Compatibility](api-versioning-compatibility.md).
+API version lifecycle and client compatibility rules are documented in [API Versioning and Client Compatibility](#25-api-versioning-and-client-compatibility).
 
 Robokassa ResultURL is the only intentional exception when a plain text `OK{InvId}` response is required by Robokassa.
 
-Administrative endpoints follow [Administrative REST API](admin-rest-api.md).
+Administrative endpoints follow [Administrative REST API](#27-administrative-rest-api).
 
-Public endpoints follow [Public REST API](public-rest-api.md).
+Public endpoints follow [Public REST API](#26-public-rest-api).
 
-## 22.2. Successful Response
+## 24.2. Successful Response
 
 ```json
 {
@@ -1450,7 +1865,7 @@ When available, include:
 }
 ```
 
-## 22.3. Error Response
+## 24.3. Error Response
 
 ```json
 {
@@ -1464,9 +1879,9 @@ When available, include:
 }
 ```
 
-Error codes are defined in [Error Codes and Exception Handling](error-handling.md).
+Error codes are defined in [Error Codes and Exception Handling](#29-error-codes-and-exception-handling).
 
-## 22.4. Compatibility
+## 24.4. Compatibility
 
 - Do not remove existing response fields within the same major API version.
 - Add new fields as optional.
@@ -1475,23 +1890,23 @@ Error codes are defined in [Error Codes and Exception Handling](error-handling.m
 - Document request, response, and error changes in OpenAPI.
 - Update `CHANGELOG.md` for behavior changes.
 
-## 22.5. Request Tracing
+## 24.5. Request Tracing
 
 Each request should have:
 
 - Request ID for the specific inbound request.
 - Correlation ID for related operations across API, bot, worker, webhooks, payments, and logs.
 
-Tracing rules are documented in [Observability and Diagnostics](observability-diagnostics.md).
+Tracing rules are documented in [Observability and Diagnostics](#55-observability-and-diagnostics).
 
-# 23. API Versioning and Client Compatibility
+# 25. API Versioning and Client Compatibility
 
 Группа спецификации: API
 
 
 This document defines the public API versioning strategy, client compatibility rules, and deprecation process for Tik_Tok_Loader.
 
-## 23.1. Versioning Strategy
+## 25.1. Versioning Strategy
 
 - Current public REST API methods use the `/api/v1` prefix.
 - Backward-incompatible changes must be released only under a new major API prefix, such as `/api/v2`.
@@ -1499,7 +1914,7 @@ This document defines the public API versioning strategy, client compatibility r
 - Each active API version must have current documentation and OpenAPI coverage.
 - Robokassa ResultURL response format exceptions must remain documented because Robokassa may require plain text responses.
 
-## 23.2. Compatible Changes
+## 25.2. Compatible Changes
 
 The following changes are allowed within the same major version when documented:
 
@@ -1510,7 +1925,7 @@ The following changes are allowed within the same major version when documented:
 - Improving validation messages without exposing internal details.
 - Extending enum-like values only when existing clients can safely ignore new values.
 
-## 23.3. Breaking Changes
+## 25.3. Breaking Changes
 
 The following require a new major version or an approved migration path:
 
@@ -1522,7 +1937,7 @@ The following require a new major version or an approved migration path:
 - Changing status codes or error response shape in a way that breaks existing clients.
 - Changing idempotency behavior for webhooks, payments, or upload jobs.
 
-## 23.4. Version Lifecycle
+## 25.4. Version Lifecycle
 
 | Stage | Description |
 | --- | --- |
@@ -1533,7 +1948,7 @@ The following require a new major version or an approved migration path:
 | Deprecation | Clients are warned about planned retirement and migration path. |
 | Retirement | Version is removed only after the transition period and release approval. |
 
-## 23.5. Deprecation Policy
+## 25.5. Deprecation Policy
 
 - Announce deprecation before retirement.
 - Document the replacement endpoint, field, or behavior.
@@ -1542,7 +1957,7 @@ The following require a new major version or an approved migration path:
 - Log and monitor usage of deprecated endpoints when practical.
 - Include deprecation and retirement dates in release notes when known.
 
-## 23.6. Compatibility Criteria
+## 25.6. Compatibility Criteria
 
 New versions should preserve, where possible:
 
@@ -1556,35 +1971,35 @@ New versions should preserve, where possible:
 
 All exceptions must be described in documentation, OpenAPI, `CHANGELOG.md`, and release notes.
 
-## 23.7. Release Requirements
+## 25.7. Release Requirements
 
 Before releasing an API change:
 
-- Update [OpenAPI and Contract Documentation](openapi-contracts.md).
-- Update [REST API Standards](rest-api-standards.md) when shared rules change.
+- Update [OpenAPI and Contract Documentation](#28-openapi-and-contract-documentation).
+- Update [REST API Standards](#24-rest-api-standards) when shared rules change.
 - Update public or administrative API documentation.
 - Add or update tests for compatibility and error behavior.
 - Document deprecation or migration steps when needed.
-- Review impact through [Change Acceptance Policy](change-acceptance-policy.md).
+- Review impact through [Change Acceptance Policy](#66-change-acceptance-policy).
 
-# 24. Public REST API
+# 26. Public REST API
 
 Группа спецификации: API
 
 
-## 24.1. General Requirements
+## 26.1. General Requirements
 
 - Public endpoints use the `/api/v1` prefix.
 - JSON is the default exchange format.
 - Standard HTTP status codes are used.
 - Every request receives a Request ID.
 - Related operations should include a Correlation ID.
-- Responses follow [REST API Standards](rest-api-standards.md).
-- Errors follow [Error Codes and Exception Handling](error-handling.md).
+- Responses follow [REST API Standards](#24-rest-api-standards).
+- Errors follow [Error Codes and Exception Handling](#29-error-codes-and-exception-handling).
 
 Robokassa ResultURL may return plain text `OK{InvId}` when required by Robokassa.
 
-## 24.2. Core Endpoints
+## 26.2. Core Endpoints
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
@@ -1595,9 +2010,12 @@ Robokassa ResultURL may return plain text `OK{InvId}` when required by Robokassa
 | POST | `/api/v1/webhooks/tiktok` | Receive TikTok webhook |
 | POST | `/api/v1/payments/robokassa/result` | Process Robokassa ResultURL |
 
-Additional service endpoints, such as Telegram webhook and metrics, are documented in [API Documentation](api.md).
+Additional service endpoints, such as Telegram webhook and metrics, are documented in [API Documentation](#23-api-documentation).
 
-## 24.3. Compatibility Requirements
+The OAuth start endpoint accepts only a short-lived random `state` previously created by the
+Telegram bot. Public callers cannot select a Telegram user identifier or create an account link.
+
+## 26.3. Compatibility Requirements
 
 - Do not remove existing response fields without a new API version.
 - Add new response fields as optional.
@@ -1605,9 +2023,9 @@ Additional service endpoints, such as Telegram webhook and metrics, are document
 - Document changes in OpenAPI.
 - Update `CHANGELOG.md` for behavior changes.
 
-Detailed API lifecycle and deprecation rules are documented in [API Versioning and Client Compatibility](api-versioning-compatibility.md).
+Detailed API lifecycle and deprecation rules are documented in [API Versioning and Client Compatibility](#25-api-versioning-and-client-compatibility).
 
-## 24.4. Error Handling
+## 26.4. Error Handling
 
 Errors use the shared response envelope:
 
@@ -1624,40 +2042,58 @@ Errors use the shared response envelope:
 
 Internal implementation details, stack traces, tokens, secrets, SQL errors, and raw external service responses must not be exposed to users.
 
-# 25. Administrative REST API
+# 27. Administrative REST API
 
 Группа спецификации: API
 
 
-## 25.1. Access Requirements
+## 27.1. Access Requirements
 
 - All administrative endpoints require authentication.
+- The bearer token maps to `ADMIN_API_TELEGRAM_ID` on the server; callers cannot select their RBAC
+  identity through a request header.
 - Role and permission checks are enforced on the server.
 - Mutating requests require CSRF protection where applicable.
 - Every administrative request should have a Request ID.
 - Related operations should include a Correlation ID.
 - Administrative changes must be recorded in `admin_actions`.
-- Responses use JSON and follow [REST API Standards](rest-api-standards.md).
-- Errors use [Error Codes and Exception Handling](error-handling.md).
+- Responses use JSON and follow [REST API Standards](#24-rest-api-standards).
+- Errors use [Error Codes and Exception Handling](#29-error-codes-and-exception-handling).
 
-API version lifecycle and compatibility rules are documented in [API Versioning and Client Compatibility](api-versioning-compatibility.md).
+API version lifecycle and compatibility rules are documented in [API Versioning and Client Compatibility](#25-api-versioning-and-client-compatibility).
 
-## 25.2. Recommended Endpoints
+## 27.2. Implemented Endpoints
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
+| GET | `/api/v1/admin/session` | Current role and permissions |
+| GET | `/api/v1/admin/dashboard` | Operational counters |
+| GET | `/api/v1/admin/analytics` | Tariff, registration, upload, and revenue analytics |
 | GET | `/api/v1/admin/users` | User list |
 | GET | `/api/v1/admin/users/{id}` | User profile |
 | POST | `/api/v1/admin/users/{id}/block` | Block user |
 | POST | `/api/v1/admin/users/{id}/unblock` | Unblock user |
-| GET | `/api/v1/admin/payments` | Payment list |
+| POST | `/api/v1/admin/users/{id}/force-free` | Expire active plan and create FREE subscription |
+| POST | `/api/v1/admin/users/{id}/anonymize` | Apply the approved anonymization procedure |
+| PATCH | `/api/v1/admin/users/{id}/role` | Change role; SUPER_ADMIN only |
+| GET | `/api/v1/admin/plans` | Tariff list |
+| PATCH | `/api/v1/admin/plans/{id}` | Update tariff parameters |
+| GET | `/api/v1/admin/payments` | Provider-neutral payment list with RUB/XTR amounts |
+| POST | `/api/v1/admin/payments/robokassa/orders` | Create an audited external Robokassa checkout |
+| POST | `/api/v1/admin/payments/{id}/refund-stars` | Refund a paid Stars transaction through Telegram |
+| POST | `/api/v1/admin/payments/{id}/reconcile-stars-refund` | Audit and resolve an ambiguous Stars refund |
 | GET | `/api/v1/admin/upload-jobs` | Publication queue |
+| GET | `/api/v1/admin/errors` | Failed publications |
+| POST | `/api/v1/admin/upload-jobs/{id}/retry` | Retry an eligible temporary failure |
 | GET | `/api/v1/admin/settings` | System settings |
-| PUT | `/api/v1/admin/settings` | Update system settings |
+| PUT | `/api/v1/admin/settings/{key}` | Update one typed system setting |
+| GET | `/api/v1/admin/audit-actions` | Filterable audit journal |
+| GET | `/api/v1/admin/configuration/export` | Export non-secret runtime configuration |
+| POST | `/api/v1/admin/configuration/import` | Validate and import runtime configuration |
 
-Additional administrative endpoints may be added when they follow the same authentication, RBAC, audit, and response-format rules.
+Legacy `/admin/*` aliases are temporarily supported but omitted from OpenAPI.
 
-## 25.3. Transaction Rules
+## 27.3. Transaction Rules
 
 Mutating operations must be transactional:
 
@@ -1667,10 +2103,14 @@ Mutating operations must be transactional:
 - Manual subscription changes.
 - Safe task restart.
 - Configuration import.
+- Robokassa order creation, Telegram Stars refunds, and refund reconciliation.
+
+The safe retry endpoint rejects jobs already accepted by TikTok and any error that is not explicitly
+classified as temporary. It also verifies that the local source file still exists.
 
 The audit record must be created in the same transaction as the change when possible.
 
-## 25.4. Audit Requirements
+## 27.4. Audit Requirements
 
 Log in `admin_actions`:
 
@@ -1684,19 +2124,19 @@ Log in `admin_actions`:
 
 Do not write secrets, raw tokens, passwords, or Robokassa credentials to audit details.
 
-## 25.5. Compatibility
+## 27.5. Compatibility
 
 - Keep `/api/v1/admin` backward compatible within the same major API version.
 - Add new response fields as optional.
 - Document endpoint changes in OpenAPI and `CHANGELOG.md`.
-- Follow [Change Acceptance Policy](change-acceptance-policy.md) before release.
+- Follow [Change Acceptance Policy](#66-change-acceptance-policy) before release.
 
-# 26. OpenAPI and Contract Documentation
+# 28. OpenAPI and Contract Documentation
 
 Группа спецификации: API
 
 
-## 26.1. Required OpenAPI Contents
+## 28.1. Required OpenAPI Contents
 
 OpenAPI must include:
 
@@ -1710,7 +2150,7 @@ OpenAPI must include:
 - Error request examples.
 - API versioning details.
 
-## 26.2. Contract Requirements
+## 28.2. Contract Requirements
 
 - Any API change must update OpenAPI in the same change set.
 - Changes must be checked for backward compatibility.
@@ -1719,9 +2159,9 @@ OpenAPI must include:
 - API contracts are the source for generated documentation.
 - `CHANGELOG.md` must describe behavior or contract changes.
 
-API versioning and deprecation rules are documented in [API Versioning and Client Compatibility](api-versioning-compatibility.md).
+API versioning and deprecation rules are documented in [API Versioning and Client Compatibility](#25-api-versioning-and-client-compatibility).
 
-## 26.3. Availability
+## 28.3. Availability
 
 Developers can use:
 
@@ -1731,7 +2171,7 @@ Developers can use:
 
 Swagger UI or equivalent interactive documentation is recommended for internal administrator and developer use only.
 
-## 26.4. Release Quality Criteria
+## 28.4. Release Quality Criteria
 
 Before release:
 
@@ -1742,27 +2182,27 @@ Before release:
 - Examples remain accurate.
 - Compatibility impact is documented.
 
-## 26.5. Development Requirement
+## 28.5. Development Requirement
 
 Any endpoint, schema, status code, error code, authentication requirement, or response envelope change must update this contract documentation and related tests.
 
-# 27. Error Codes and Exception Handling
+# 29. Error Codes and Exception Handling
 
 Группа спецификации: API
 
 
-## 27.1. Error Code Prefixes
+## 29.1. Error Code Prefixes
 
 | Prefix | Area |
 | --- | --- |
 | `AUTH` | Authorization and authentication |
-| `PAY` | Robokassa payments |
+| `PAY` | Telegram Stars and Robokassa payments |
 | `TT` | TikTok API |
 | `VAL` | Validation |
 | `SYS` | System errors |
 | `NET` | Network errors |
 
-## 27.2. Code Format
+## 29.2. Code Format
 
 Use stable unique codes:
 
@@ -1791,7 +2231,7 @@ Examples:
 | `NET-001` | Temporary network failure | Yes |
 | `NET-002` | External service timeout | Yes |
 
-## 27.3. REST Error Format
+## 29.3. REST Error Format
 
 REST APIs return a consistent JSON structure:
 
@@ -1807,13 +2247,13 @@ REST APIs return a consistent JSON structure:
 }
 ```
 
-REST response envelope rules are documented in [REST API Standards](rest-api-standards.md).
+REST response envelope rules are documented in [REST API Standards](#24-rest-api-standards).
 
-Public API error behavior is documented in [Public REST API](public-rest-api.md).
+Public API error behavior is documented in [Public REST API](#26-public-rest-api).
 
 The public `message` must be safe for users and must not expose tokens, secrets, stack traces, internal paths, SQL errors, or raw external API responses.
 
-## 27.4. Logging Rules
+## 29.4. Logging Rules
 
 Technical details belong in structured JSON logs, not in user-facing messages.
 
@@ -1831,7 +2271,7 @@ Logs should include:
 
 Logs must mask secrets and tokens.
 
-## 27.5. User Messages
+## 29.5. User Messages
 
 User messages should:
 
@@ -1840,7 +2280,7 @@ User messages should:
 - Avoid internal details.
 - Distinguish temporary failures from required user/admin action.
 
-## 27.6. Retry Strategy
+## 29.6. Retry Strategy
 
 Retry only:
 
@@ -1857,7 +2297,7 @@ Do not retry automatically:
 - Invalid user input.
 - Invalid video files.
 
-## 27.7. Development Requirement
+## 29.7. Development Requirement
 
 Every new failure path must define:
 
@@ -1867,34 +2307,35 @@ Every new failure path must define:
 - Retry classification.
 - Test coverage for expected handling.
 
-# 28. Security, Backup, and Monitoring
+# 30. Security, Backup, and Monitoring
 
 Группа спецификации: Безопасность
 
 
-Security and reliability non-functional requirements are summarized in [Non-Functional Requirements](non-functional-requirements.md).
+Security and reliability non-functional requirements are summarized in [Non-Functional Requirements](#6-non-functional-requirements).
 
-Security logging and audit requirements are defined in [Security Logging and Audit](security-logging-audit.md).
+Security logging and audit requirements are defined in [Security Logging and Audit](#31-security-logging-and-audit).
 
-Confidential data handling rules are defined in [Confidential Data Policy](confidential-data-policy.md).
+Confidential data handling rules are defined in [Confidential Data Policy](#32-confidential-data-policy).
 
-## 28.1. Application Security
+## 30.1. Application Security
 
 - External callbacks must use HTTPS.
 - Secrets stay only in `.env` or a managed secret store.
 - TikTok OAuth tokens are encrypted before database storage.
 - Internal business IDs use UUID where the domain does not require a stable public code.
 - Robokassa ResultURL signatures are verified before activation.
-- TikTok webhook signatures are checked when `TIKTOK_WEBHOOK_SECRET` is configured.
+- TikTok webhook signatures are always checked with `TIKTOK_CLIENT_SECRET`, the raw request body,
+  and a five-minute timestamp tolerance.
 - API rate limiting uses Redis.
 - Logs are JSON and must not include tokens, passwords, or Robokassa secrets.
-- Uploaded files must follow [File Storage Policy](file-storage-policy.md).
+- Uploaded files must follow [File Storage Policy](#50-file-storage-policy).
 
-TikTok account token storage rules are documented in [TikTok Accounts Entity](tiktok-accounts-entity.md).
+TikTok account token storage rules are documented in [TikTok Accounts Entity](#9-tiktok-accounts-entity).
 
-Webhook storage and validation rules are documented in [Webhook Events Entity](webhook-events-entity.md).
+Webhook storage and validation rules are documented in [Webhook Events Entity](#14-webhook-events-entity).
 
-## 28.2. Server Baseline
+## 30.2. Server Baseline
 
 Ubuntu 24.04 LTS:
 
@@ -1912,7 +2353,7 @@ sudo ufw enable
 
 Use SSH keys in Termius. Do not enable password login.
 
-## 28.3. Backups
+## 30.3. Backups
 
 Run before every update:
 
@@ -1930,11 +2371,11 @@ docker compose exec postgres pg_restore --clean --if-exists --username tiktok --
 
 Test restore on a staging server before relying on backups.
 
-Full backup and recovery rules are documented in [Backup and Restore Policy](backup-restore-policy.md).
+Full backup and recovery rules are documented in [Backup and Restore Policy](#47-backup-and-restore-policy).
 
-Infrastructure update controls are documented in [Infrastructure Dependency Management](infrastructure-dependency-management.md).
+Infrastructure update controls are documented in [Infrastructure Dependency Management](#61-infrastructure-dependency-management).
 
-## 28.4. Update and Rollback
+## 30.4. Update and Rollback
 
 1. Create a PostgreSQL and config backup.
 2. Pull the new release.
@@ -1943,23 +2384,23 @@ Infrastructure update controls are documented in [Infrastructure Dependency Mana
 5. Start services.
 6. If health/readiness fail, restore the previous image and database backup.
 
-## 28.5. Monitoring
+## 30.5. Monitoring
 
 - `GET /health` for liveness.
 - `GET /ready` for PostgreSQL and Redis readiness.
 - `GET /metrics` for Prometheus-compatible counters.
 - JSON logs can be collected by Docker logging drivers or an external collector.
 
-# 29. Security Logging and Audit
+# 31. Security Logging and Audit
 
 Группа спецификации: Безопасность
 
 
 This document defines logging, security audit, and incident investigation requirements for Tik_Tok_Loader.
 
-Confidential data masking and secret-handling rules are defined in [Confidential Data Policy](confidential-data-policy.md).
+Confidential data masking and secret-handling rules are defined in [Confidential Data Policy](#32-confidential-data-policy).
 
-## 29.1. Log Categories
+## 31.1. Log Categories
 
 The system must maintain structured logs for:
 
@@ -1970,7 +2411,7 @@ The system must maintain structured logs for:
 - Security events.
 - Administrative audit actions.
 
-## 29.2. Required Events
+## 31.2. Required Events
 
 The following events must be logged or audited with sanitized context:
 
@@ -1986,7 +2427,7 @@ The following events must be logged or audited with sanitized context:
 | Authorization failure | Security log with error code, request context, and masked identity details. |
 | Access denial | Security log with role, permission, endpoint/action, and request context. |
 
-## 29.3. Storage Requirements
+## 31.3. Storage Requirements
 
 Logs and audit records must:
 
@@ -1998,9 +2439,9 @@ Logs and audit records must:
 - Support search by Request ID, Correlation ID, user, upload job, payment, webhook event, and administrator.
 - Follow configured retention periods for logs, audit records, webhook events, and backups.
 
-Retention rules are defined in [Data Retention](data-retention.md).
+Retention rules are defined in [Data Retention](#49-data-retention).
 
-## 29.4. Investigation Use
+## 31.4. Investigation Use
 
 Logs are used for:
 
@@ -2010,30 +2451,30 @@ Logs are used for:
 - External integration troubleshooting.
 - Payment and publication status reconciliation.
 
-Incident response must use logs together with database audit records, webhook history, payment history, and upload lifecycle events. Procedures are documented in [Incident Response and Disaster Recovery](incident-response.md) and [Incident Management](incident-management.md).
+Incident response must use logs together with database audit records, webhook history, payment history, and upload lifecycle events. Procedures are documented in [Incident Response and Disaster Recovery](#45-incident-response-and-disaster-recovery) and [Incident Management](#46-incident-management).
 
-## 29.5. Access Control
+## 31.5. Access Control
 
 - Security logs and administrative audit logs are available only to authorized administrator roles.
 - Sensitive log exports must be protected like production data.
 - Audit records must not be changed after creation except through approved retention or archival procedures.
 
-Administrative audit storage is documented in [Admin Actions Entity](admin-actions-entity.md).
+Administrative audit storage is documented in [Admin Actions Entity](#15-admin-actions-entity).
 
-## 29.6. Acceptance Rule
+## 31.6. Acceptance Rule
 
 A release is not production-ready unless security logging, masking, searchable request context, audit storage, and retention behavior are verified for critical user, payment, publication, OAuth, and administrative flows.
 
-# 30. Confidential Data Policy
+# 32. Confidential Data Policy
 
 Группа спецификации: Безопасность
 
 
 This document defines how Tik_Tok_Loader handles, stores, protects, audits, and rotates confidential data.
 
-Environment-specific secret control rules are defined in [Environment Configuration and Secrets Control](environment-configuration-secrets.md).
+Environment-specific secret control rules are defined in [Environment Configuration and Secrets Control](#33-environment-configuration-and-secrets-control).
 
-## 30.1. Confidential Data Categories
+## 32.1. Confidential Data Categories
 
 | Category | Examples |
 | --- | --- |
@@ -2044,7 +2485,7 @@ Environment-specific secret control rules are defined in [Environment Configurat
 | Backups with personal data | PostgreSQL dumps, configuration backups, audit exports |
 | Production configuration | `.env`, Nginx production configuration with sensitive paths or headers |
 
-## 30.2. Storage Rules
+## 32.2. Storage Rules
 
 - Store secrets only in `.env` files on the server or in an approved secret store.
 - Store TikTok OAuth tokens only in encrypted form in PostgreSQL.
@@ -2054,7 +2495,7 @@ Environment-specific secret control rules are defined in [Environment Configurat
 - Keep critical secrets out of `system_settings`; database settings are for non-secret runtime configuration only.
 - Protect backups that may contain personal data or encrypted tokens with access controls and retention limits.
 
-## 30.3. Access Control
+## 32.3. Access Control
 
 - Apply least-privilege access for administrators, operators, service accounts, containers, and CI jobs.
 - Restrict administrative access to authorized roles.
@@ -2062,7 +2503,7 @@ Environment-specific secret control rules are defined in [Environment Configurat
 - Log administrative operations involving confidential data with masked values.
 - Do not display raw secrets in dashboards, admin panels, logs, error messages, or support exports.
 
-## 30.4. Runtime Handling
+## 32.4. Runtime Handling
 
 - Load secrets from environment variables during service startup.
 - Validate required secrets at startup and fail safely when configuration is incomplete.
@@ -2070,7 +2511,7 @@ Environment-specific secret control rules are defined in [Environment Configurat
 - Do not store sensitive values in Telegram FSM state, Redis cache, or task payloads unless required and protected by expiration and masking.
 - Avoid passing raw tokens between services when an internal identifier can be used instead.
 
-## 30.5. Rotation
+## 32.5. Rotation
 
 The system must support planned replacement of:
 
@@ -2082,37 +2523,37 @@ The system must support planned replacement of:
 
 Rotation should be possible without changing application architecture and with minimal downtime.
 
-## 30.6. Backup and Recovery
+## 32.6. Backup and Recovery
 
 - Treat PostgreSQL backups, configuration backups, and audit exports as confidential data.
 - Store production `.env` outside Git and restore it only from a protected source.
 - Do not copy production backups into development environments unless data is anonymized or access is approved.
-- Verify retention and deletion of old backups according to [Data Retention](data-retention.md).
+- Verify retention and deletion of old backups according to [Data Retention](#49-data-retention).
 
-## 30.7. Audit and Incident Handling
+## 32.7. Audit and Incident Handling
 
 - Log access changes, administrative secret-related operations, token disconnects, and configuration changes with masked details.
-- Investigate suspected secret exposure through [Security Logging and Audit](security-logging-audit.md) and [Incident Response and Disaster Recovery](incident-response.md).
+- Investigate suspected secret exposure through [Security Logging and Audit](#31-security-logging-and-audit) and [Incident Response and Disaster Recovery](#45-incident-response-and-disaster-recovery).
 - Rotate affected secrets after confirmed or suspected exposure.
 - Document incident scope, affected data, actions taken, and preventive measures.
 
-## 30.8. Related Documents
+## 32.8. Related Documents
 
-- [Configuration](configuration.md)
-- [Security, Backup, and Monitoring](security.md)
-- [Security Logging and Audit](security-logging-audit.md)
-- [Backup and Restore Policy](backup-restore-policy.md)
-- [TikTok Accounts Entity](tiktok-accounts-entity.md)
-- [Data Retention](data-retention.md)
+- [Configuration](#34-configuration)
+- [Security, Backup, and Monitoring](#30-security-backup-and-monitoring)
+- [Security Logging and Audit](#31-security-logging-and-audit)
+- [Backup and Restore Policy](#47-backup-and-restore-policy)
+- [TikTok Accounts Entity](#9-tiktok-accounts-entity)
+- [Data Retention](#49-data-retention)
 
-# 31. Environment Configuration and Secrets Control
+# 33. Environment Configuration and Secrets Control
 
 Группа спецификации: Безопасность
 
 
 This document defines how Tik_Tok_Loader manages configuration across environments and protects secrets used by the application.
 
-## 31.1. Environments
+## 33.1. Environments
 
 | Environment | Purpose |
 | --- | --- |
@@ -2120,7 +2561,7 @@ This document defines how Tik_Tok_Loader manages configuration across environmen
 | Staging | Integration, pre-release, and acceptance testing. |
 | Production | User-facing runtime operation. |
 
-## 31.2. Configuration Requirements
+## 33.2. Configuration Requirements
 
 - Use a separate `.env` file for every environment.
 - Do not copy production secrets into development or staging.
@@ -2129,9 +2570,9 @@ This document defines how Tik_Tok_Loader manages configuration across environmen
 - Record configuration changes in `CHANGELOG.md`, the operations journal, or `admin_actions`, depending on the change type.
 - Validate required configuration values at startup.
 - Fail startup safely when required parameters are missing or invalid.
-- Keep environment configuration aligned with [Configuration](configuration.md) and `.env.example`.
+- Keep environment configuration aligned with [Configuration](#34-configuration) and `.env.example`.
 
-## 31.3. Secrets Management
+## 33.3. Secrets Management
 
 - Store secrets outside the repository.
 - Limit access by least privilege.
@@ -2141,9 +2582,9 @@ This document defines how Tik_Tok_Loader manages configuration across environmen
 - Do not expose secrets through logs, admin UI, support exports, metrics, OpenAPI examples, or error messages.
 - Do not store sensitive values in Telegram FSM state or long-lived Redis records.
 
-Secret categories and rotation rules are defined in [Confidential Data Policy](confidential-data-policy.md).
+Secret categories and rotation rules are defined in [Confidential Data Policy](#32-confidential-data-policy).
 
-## 31.4. Environment Separation
+## 33.4. Environment Separation
 
 Development, staging, and production must have separate values for:
 
@@ -2153,9 +2594,11 @@ Development, staging, and production must have separate values for:
 - PostgreSQL and Redis credentials.
 - Token encryption keys.
 - Administrative API and CSRF secrets.
+- The fixed administrative API principal ID; it must be allowlisted and must not be accepted from a
+  client-controlled identity header.
 - Public base URL.
 
-## 31.5. Release Compliance Check
+## 33.5. Release Compliance Check
 
 Before every release, verify:
 
@@ -2166,24 +2609,36 @@ Before every release, verify:
 - Callback URLs match the target environment.
 - Any configuration changes are documented.
 
-## 31.6. Incident Rule
+Run the target-specific gate before staging or production deployment:
 
-If a secret may be compromised, treat it as a security incident, rotate the affected secret, review logs and audit records, and document the response through [Security Logging and Audit](security-logging-audit.md) and [Incident Response and Disaster Recovery](incident-response.md).
+```bash
+python3 tools/validate_deploy_env.py --env-file .env --environment production
+```
 
-# 32. Configuration
+The validator reports variable names and validation rules only; it never prints configured secret
+values.
+
+## 33.6. Incident Rule
+
+If a secret may be compromised, treat it as a security incident, rotate the affected secret, review logs and audit records, and document the response through [Security Logging and Audit](#31-security-logging-and-audit) and [Incident Response and Disaster Recovery](#45-incident-response-and-disaster-recovery).
+
+# 34. Configuration
 
 Группа спецификации: Конфигурация
 
 
 Only `.env.example` is stored in Git. Real `.env` files are environment-specific and must not be committed.
 
-Confidential data handling and secret rotation rules are defined in [Confidential Data Policy](confidential-data-policy.md).
+Confidential data handling and secret rotation rules are defined in [Confidential Data Policy](#32-confidential-data-policy).
 
-Environment-specific configuration and secret control rules are defined in [Environment Configuration and Secrets Control](environment-configuration-secrets.md).
+Environment-specific configuration and secret control rules are defined in [Environment Configuration and Secrets Control](#33-environment-configuration-and-secrets-control).
 
 Use separate files for development, staging, and production, then copy the selected file to `.env` on the server.
 
 Application: `APP_ENV`, `APP_VERSION`, `APP_HOST`, `APP_PORT`, `PUBLIC_BASE_URL`, `TIMEZONE`.
+
+Ingress: `DEPLOY_INGRESS` is `nginx` for direct TLS termination or `cloudflared` when a dedicated
+Cloudflare Tunnel publishes the loopback API port.
 
 Telegram: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_ADMIN_IDS`.
 
@@ -2191,13 +2646,37 @@ Database: `DATABASE_URL`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`.
 
 Redis: `REDIS_URL`.
 
-TikTok API: `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `TIKTOK_REDIRECT_URI`, `TIKTOK_WEBHOOK_SECRET`.
+TikTok API: `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `TIKTOK_REDIRECT_URI`,
+`TIKTOK_PUBLISH_ENABLED`, and `TIKTOK_APP_AUDITED`. Keep `TIKTOK_APP_AUDITED=false` until TikTok
+approves the Direct Post audit; unaudited clients can post only to TikTok accounts that are private
+at posting time and only with `SELF_ONLY` visibility.
 
-TikTok Developer Portal setup and pre-release checks are described in [TikTok Developer Configuration](tiktok-developer-configuration.md).
+Telegram delivery: `TELEGRAM_DELIVERY_MODE` is `polling` for local development and `webhook` for
+production. Webhook mode also requires `TELEGRAM_WEBHOOK_SECRET`,
+`TELEGRAM_WEBHOOK_PATH`, and an HTTPS `PUBLIC_BASE_URL`.
+`TELEGRAM_WEBHOOK_CHECK_SECONDS` controls the read-only production drift monitor and must be at
+least 30 seconds.
 
-Robokassa: `ROBOKASSA_MERCHANT_LOGIN`, `ROBOKASSA_PASSWORD_1`, `ROBOKASSA_PASSWORD_2`, `ROBOKASSA_RESULT_URL`, `ROBOKASSA_SUCCESS_URL`, `ROBOKASSA_FAIL_URL`.
+`TIKTOK_WEBHOOK_SECRET` is retained only as a deprecated compatibility variable. Official TikTok
+webhook verification uses `TIKTOK_CLIENT_SECRET`.
 
-Security: `TOKEN_ENCRYPTION_KEY`, `ADMIN_API_TOKEN`, `ADMIN_CSRF_TOKEN`.
+TikTok Developer Portal setup and pre-release checks are described in [TikTok Developer Configuration](#20-tiktok-developer-configuration).
+
+Robokassa: `ROBOKASSA_MERCHANT_LOGIN`, `ROBOKASSA_PASSWORD_1`, `ROBOKASSA_PASSWORD_2`,
+`ROBOKASSA_RESULT_URL`, `ROBOKASSA_SUCCESS_URL`, `ROBOKASSA_FAIL_URL`,
+`ROBOKASSA_TEST_MODE`, and `ROBOKASSA_HASH_ALGORITHM`. The hash algorithm must be `md5`, `sha256`,
+or `sha512` and must match the shop's technical settings.
+
+Security: `TOKEN_ENCRYPTION_KEY`, `ADMIN_API_TOKEN`, `ADMIN_API_TELEGRAM_ID`,
+`ADMIN_CSRF_TOKEN`. The API principal ID must be numeric, included in `TELEGRAM_ADMIN_IDS`, and
+provisioned in PostgreSQL with a non-USER administrative role.
+
+Scheduler: `SCHEDULER_TICK_SECONDS`, `SUBSCRIPTION_SWEEP_SECONDS`,
+`TOKEN_REFRESH_SWEEP_SECONDS`, `RETENTION_SWEEP_SECONDS`, `STATUS_RECONCILE_SECONDS`,
+`TOKEN_REFRESH_LEAD_SECONDS`, and `MAINTENANCE_BATCH_SIZE`.
+
+The scheduler uses Redis leases so multiple instances do not enqueue the same periodic task in
+one interval. Values must remain above the minimums validated by `Settings`.
 
 Generate Fernet key:
 
@@ -2211,39 +2690,38 @@ After `.env` is filled, local deployment starts with:
 docker compose up -d
 ```
 
-Runtime non-secret settings and tariffs can be exported/imported through the admin API. See [Configuration Management](configuration-management.md).
+Runtime non-secret settings and tariffs can be exported/imported through the admin API. See [Configuration Management](#35-configuration-management).
 
-# 33. Configuration Management
+# 35. Configuration Management
 
 Группа спецификации: Конфигурация
 
 
-## 33.1. Sources
+## 35.1. Sources
 
 - Secrets are stored only in `.env` or a managed secret store.
 - Runtime non-secret settings are stored in PostgreSQL `system_settings`.
-- Tariffs are stored in PostgreSQL `plans`.
+- Tariffs, RUB reference prices, and independent Telegram Stars prices are stored in PostgreSQL
+  `plans`.
 
-System setting storage rules are documented in [System Settings Entity](system-settings-entity.md).
+System setting storage rules are documented in [System Settings Entity](#16-system-settings-entity).
 
-Environment-specific `.env` and secret management rules are documented in [Environment Configuration and Secrets Control](environment-configuration-secrets.md).
+Environment-specific `.env` and secret management rules are documented in [Environment Configuration and Secrets Control](#33-environment-configuration-and-secrets-control).
 
-## 33.2. Export
+## 35.2. Export
 
 ```bash
 curl https://your-domain.example/admin/configuration/export \
-  -H "Authorization: Bearer $ADMIN_API_TOKEN" \
-  -H "X-Admin-Telegram-Id: $ADMIN_TELEGRAM_ID"
+  -H "Authorization: Bearer $ADMIN_API_TOKEN"
 ```
 
 The export contains no secret-like keys such as passwords, tokens, keys, or secrets.
 
-## 33.3. Import
+## 35.3. Import
 
 ```bash
 curl -X POST https://your-domain.example/admin/configuration/import \
   -H "Authorization: Bearer $ADMIN_API_TOKEN" \
-  -H "X-Admin-Telegram-Id: $ADMIN_TELEGRAM_ID" \
   -H "X-CSRF-Token: $ADMIN_CSRF_TOKEN" \
   -H "Content-Type: application/json" \
   -d @runtime-config.json
@@ -2251,7 +2729,7 @@ curl -X POST https://your-domain.example/admin/configuration/import \
 
 Before import, the current runtime configuration is recorded in `admin_actions` as an audit backup.
 
-## 33.4. Audit
+## 35.4. Audit
 
 The following are recorded:
 
@@ -2261,22 +2739,22 @@ The following are recorded:
 - Configuration import.
 - Administrative actions.
 
-## 33.5. Startup Validation
+## 35.5. Startup Validation
 
 Required settings are validated during startup. Missing required parameters cause safe startup failure without logging secrets.
 
-## 33.6. Documentation Rule
+## 35.6. Documentation Rule
 
 Any configuration change that affects behavior must update this guide, `.env.example`, and related tests where applicable.
 
-# 34. Deployment
+# 36. Deployment
 
 Группа спецификации: Эксплуатация
 
 
 Target: VPS in the Netherlands, managed through Termius or any SSH client.
 
-## 34.1. Server Checklist
+## 36.1. Server Checklist
 
 1. Create an Ubuntu 24.04 VPS in the Netherlands.
 2. Point a domain or subdomain to the server.
@@ -2289,11 +2767,11 @@ Target: VPS in the Netherlands, managed through Termius or any SSH client.
 9. Configure Telegram, TikTok, and Robokassa webhooks.
 10. Check service health.
 
-For first go-live, follow [Production Launch Plan](production-launch.md).
+For first go-live, follow [Production Launch Plan](#40-production-launch-plan).
 
-Infrastructure runtime updates must follow [Infrastructure Dependency Management](infrastructure-dependency-management.md).
+Infrastructure runtime updates must follow [Infrastructure Dependency Management](#61-infrastructure-dependency-management).
 
-## 34.2. Commands
+## 36.2. Commands
 
 ```bash
 git clone https://github.com/kredavto/Tik-Tok-bot-Rus-2.git
@@ -2301,8 +2779,39 @@ cd Tik-Tok-bot-Rus-2
 cp .env.example .env
 nano .env
 docker compose up -d --build
-docker compose logs -f api bot worker
+docker compose logs -f api bot worker scheduler
 ```
+
+When the host already uses ports 80/443 and Cloudflare Tunnel provides HTTPS, keep the application
+on an isolated loopback port and omit the bundled Nginx service. Set:
+
+```dotenv
+DEPLOY_INGRESS=cloudflared
+API_HOST_PORT=8081
+```
+
+The override publishes only the API on `127.0.0.1:${API_HOST_PORT:-8081}` and places `nginx` behind
+an explicit profile. Configure the tunnel hostname to `http://localhost:8081`. PostgreSQL and Redis
+remain unexposed. Use a different `API_HOST_PORT` for every stack on the same server. The checked
+`preflight`, `deploy`, and `rollback` scripts read `DEPLOY_INGRESS` and apply the override
+automatically.
+
+For staging and production, use the checked automation instead of running these commands
+individually:
+
+```bash
+ENV_FILE=.env bash deploy/preflight.sh production
+ENV_FILE=.env bash deploy/deploy.sh production vX.Y.Z
+```
+
+The checked-out application version must equal `APP_VERSION` in `.env`. A release candidate such as
+`0.2.0-rc.1` is accepted for staging and rejected for production until promoted to a stable SemVer.
+Each deployment records a deterministic source manifest under `.deploy/release-manifest.json`.
+The one-shot `runtime-init` service gives the unprivileged application user access to the bind-mounted
+`data/` and `backups/` directories before API, bot, and worker processes start.
+
+The complete certificate bootstrap, deployment, backup, restore, rollback, and CI procedure is in
+[CI/CD and Deployment Automation](#37-cicd-and-deployment-automation).
 
 Run migrations explicitly before first start or during deploy:
 
@@ -2310,7 +2819,7 @@ Run migrations explicitly before first start or during deploy:
 docker compose run --rm api alembic upgrade head
 ```
 
-Migration safety, compatibility, and rollback rules are documented in [Migration and Version Compatibility Plan](migration-compatibility-plan.md).
+Migration safety, compatibility, and rollback rules are documented in [Migration and Version Compatibility Plan](#63-migration-and-version-compatibility-plan).
 
 Health checks:
 
@@ -2318,28 +2827,59 @@ Health checks:
 curl https://your-domain.example/health
 curl https://your-domain.example/ready
 curl https://your-domain.example/metrics
+docker compose ps scheduler
 ```
 
-## 34.3. Systemd Alternative
+After HTTPS is active, open the administrative console at:
+
+```text
+https://your-domain.example/admin-ui/
+```
+
+Access requires `ADMIN_API_TOKEN`, `ADMIN_CSRF_TOKEN`, and a server-bound
+`ADMIN_API_TELEGRAM_ID` listed in `TELEGRAM_ADMIN_IDS`. Provision that database user with an
+administrative role before first access. Generate independent high-entropy values for production.
+The browser console does not persist credentials after the page is reloaded or closed.
+
+The API image contains `alembic.ini` and the complete `alembic/` migration tree. The scheduler
+healthcheck reads its Redis heartbeat; an unhealthy scheduler means subscription expiry, token
+refresh, and retention cleanup are not being dispatched.
+
+## 36.3. Systemd Alternative
 
 Use Docker Compose for the first deployment. If systemd is required, copy
 `deploy/tiktok-loader-bot.service` to `/etc/systemd/system/` and adjust paths.
 
-## 34.4. Robokassa URLs
+## 36.4. Robokassa URLs
 
 Configure these in the Robokassa dashboard after the HTTP webhook service is added:
 
-- Result URL: `https://your-domain.example/payments/robokassa/result`
-- Success URL: `https://your-domain.example/payments/robokassa/success`
-- Fail URL: `https://your-domain.example/payments/robokassa/fail`
+- Result URL: `https://your-domain.example/api/v1/payments/robokassa/result`
+- Success URL: `https://your-domain.example/api/v1/payments/robokassa/success`
+- Fail URL: `https://your-domain.example/api/v1/payments/robokassa/fail`
 
 The FastAPI service exposes Robokassa result, success, and fail endpoints.
 
-## 34.5. Telegram Webhook
+## 36.5. Telegram Webhook
 
-The current bot service uses long polling. If webhook mode is introduced later, expose it through FastAPI/Nginx and document the endpoint before enabling it in production.
+Development can use `TELEGRAM_DELIVERY_MODE=polling`. Production uses
+`TELEGRAM_DELIVERY_MODE=webhook`; the deployment command registers and verifies
+`https://<domain>/api/v1/webhooks/telegram`, FastAPI verifies
+`X-Telegram-Bot-Api-Secret-Token` and dispatches the update through aiogram. FSM data is stored in
+Redis so multiple API instances share state. The bot service monitors the registered URL for
+configuration drift without changing it automatically.
 
-## 34.6. Environments
+Manage the webhook explicitly inside the container when diagnosing a deployment:
+
+```bash
+docker compose run --rm --no-deps bot python -m app.bot.webhook verify
+docker compose run --rm --no-deps bot python -m app.bot.webhook configure
+```
+
+Never configure a bot token that has appeared in chat, logs, source files, or Git. Revoke it in
+BotFather and place the replacement only in the server-side `.env`.
+
+## 36.6. Environments
 
 Use separate files outside Git for each environment:
 
@@ -2349,39 +2889,201 @@ Use separate files outside Git for each environment:
 
 Copy the selected file to `.env` on the server. Never commit real `.env` files.
 
-# 35. Containerization
+With `DEPLOY_INGRESS=nginx`, staging and production use
+`NGINX_TEMPLATE=https.conf.template`, set `DOMAIN` to the `PUBLIC_BASE_URL` host, and provide
+`fullchain.pem` and `privkey.pem` under `TLS_CERT_DIR`. With `DEPLOY_INGRESS=cloudflared`, the
+dedicated tunnel terminates public TLS and the checked deploy scripts skip local certificate-file
+validation while keeping the API bound to loopback.
+
+# 37. CI/CD and Deployment Automation
 
 Группа спецификации: Эксплуатация
 
 
-## 35.1. Services
+This document defines the automated quality gates and the supported staging and production
+deployment procedure for Tik_Tok_Loader.
+
+## 37.1. CI Pipeline
+
+GitHub Actions runs four jobs:
+
+- `Quality and security`: Ruff formatting and linting, MyPy, OpenAPI contract validation, Python
+  bytecode compilation, Bash syntax, ShellCheck, and secret scanning.
+- `Migrations and tests`: PostgreSQL 16 and Redis integration services, Alembic upgrade/check,
+  downgrade-to-base/upgrade verification on a disposable database, the full test suite, XML
+  coverage output, and a 45% project coverage floor.
+- `Container build`: Docker Compose model validation, application image build, and verification
+   that the runtime image uses the unprivileged `appuser` account.
+- `Release candidate manifest`: runs only after the preceding jobs, validates version consistency
+  and migration topology, hashes the tracked source tree, and uploads deterministic release
+  evidence for 30 days.
+
+The container job starts only after the quality and integration jobs pass. Manifest generation
+starts only after all three preceding jobs pass. The workflow has read-only repository permissions
+and cancels superseded runs for the same branch or pull request.
+
+## 37.2. Secret Gate
+
+`python tools/check_secrets.py` compares the current scan with `.secrets.baseline`. New findings
+fail CI and report only the file, line, and detector type. A second non-baselined check always
+rejects Telegram bot token patterns and private-key blocks.
+
+The two approved generated specification artifacts are not opaque exceptions: the gate extracts
+text from DOCX and PDF and applies the same high-risk token and private-key checks. Every other
+tracked DOCX or PDF is rejected.
+
+Baseline changes require code review. A finding must never be added to the baseline to conceal a
+real credential. Rotate any credential that has appeared in chat, source, a pull request, logs, or
+CI output before using the project in staging or production.
+
+## 37.3. Server Prerequisites
+
+- Ubuntu 24.04 LTS.
+- Docker Engine with the Compose plugin.
+- Git, Python 3, curl, and SSH key access.
+- A domain pointing to the server.
+- A real environment file at `.env`, readable only by the deployment operator.
+- For `DEPLOY_INGRESS=nginx`, TLS files at `${TLS_CERT_DIR}/fullchain.pem` and
+  `${TLS_CERT_DIR}/privkey.pem`; Cloudflare ingress validates the dedicated tunnel separately.
+
+Run the configuration gate before a release:
+
+```bash
+ENV_FILE=.env bash deploy/preflight.sh staging
+ENV_FILE=.env bash deploy/preflight.sh production
+```
+
+The gate validates environment identity, exact HTTPS callback contracts, domain consistency,
+webhook mode, secret length and uniqueness, Fernet key format, Robokassa mode, and required TikTok
+credentials when publication is enabled. It also validates certificate lifetime, hostname and
+private-key matching, the Docker daemon, the Compose model, and available disk space. It never
+prints secret values.
+
+## 37.4. TLS Bootstrap
+
+For the first certificate, temporarily start the HTTP Nginx template and use Certbot webroot:
+
+```bash
+NGINX_TEMPLATE=http.conf.template docker compose up -d api nginx
+sudo certbot certonly --webroot \
+  --webroot-path "$(pwd)/deploy/nginx/acme" \
+  --domain loader.example.net
+sudo install -m 0644 /etc/letsencrypt/live/loader.example.net/fullchain.pem \
+  deploy/nginx/certs/fullchain.pem
+sudo install -m 0600 /etc/letsencrypt/live/loader.example.net/privkey.pem \
+  deploy/nginx/certs/privkey.pem
+docker compose restart nginx
+```
+
+Replace the example domain. Keep `NGINX_TEMPLATE=https.conf.template` in staging and production.
+Automate certificate renewal with a root-owned Certbot deploy hook that refreshes the two copied
+files and runs `docker compose exec -T nginx nginx -s reload`.
+
+## 37.5. Automated Deployment
+
+Deploy an immutable tag or reviewed commit:
+
+```bash
+ENV_FILE=.env bash deploy/deploy.sh staging v0.2.0
+ENV_FILE=.env bash deploy/deploy.sh production v0.2.0
+```
+
+The script:
+
+- runs the full environment, TLS, Docker, Compose, and disk preflight;
+- rejects tracked local changes;
+- creates and verifies a PostgreSQL backup;
+- records the previous Git revision under ignored `.deploy/`;
+- fetches and checks out the requested commit in detached mode;
+- verifies version consistency and writes `.deploy/release-manifest.json` before image construction;
+- builds images with refreshed base layers;
+- applies Alembic migrations;
+- requires the one-shot `migrate` service to complete before application services start;
+- starts Compose services;
+- configures and verifies the Telegram webhook without dropping pending updates; and
+- checks versioned health/readiness/metrics, OpenAPI callbacks, admin security headers, and the
+  Telegram webhook through the public URL.
+
+The deployment operator must still configure Telegram, TikTok, and Robokassa dashboards and run
+the acceptance scenarios. Termius is an SSH client for these server-side commands; it does not
+change the deployment procedure.
+
+The full automated test-layer map and external acceptance boundary are documented in
+[Test Strategy and Quality Gates](#68-test-strategy-and-quality-gates).
+The provider-backed rehearsal and evidence format are defined in
+[Staging Acceptance Runbook](#39-staging-acceptance-runbook).
+The deterministic artifact contract is defined in
+[Release Candidate Manifest](#64-release-candidate-manifest).
+
+## 37.6. Backup and Restore
+
+Create a verified custom-format PostgreSQL archive:
+
+```bash
+ENV_FILE=.env bash deploy/backup_postgres.sh
+```
+
+The command uses the database container's configured user and database, verifies the archive with
+`pg_restore --list`, writes a SHA-256 sidecar and metadata, applies mode `0600`, and removes files
+older than `BACKUP_RETENTION_DAYS`.
+
+Restore is destructive and requires explicit confirmation:
+
+```bash
+ENV_FILE=.env bash deploy/restore_postgres.sh \
+  backups/tiktok_loader_YYYYMMDDTHHMMSSZ.dump --confirm
+```
+
+The restore verifies the checksum and archive, creates a pre-restore safety backup, stops public
+and background application services, recreates the database, restores data, applies migrations,
+starts services, and runs smoke tests. On failure, application services remain stopped for
+investigation. Use `--skip-pre-backup` only in a documented disaster-recovery case.
+
+## 37.7. Application Rollback
+
+```bash
+ENV_FILE=.env bash deploy/rollback.sh production <previous-tag-or-commit> --confirm
+```
+
+Rollback creates a fresh backup and changes application code only. It never runs `alembic
+downgrade`. The target application must be schema-compatible. Restore an older database backup
+only after impact review and according to the recovery plan.
+
+# 38. Containerization
+
+Группа спецификации: Эксплуатация
+
+
+## 38.1. Services
 
 - `bot`: Telegram bot on aiogram.
 - `api`: FastAPI backend.
 - `worker`: Dramatiq background workers.
+- `scheduler`: recurring task dispatch with Redis leases and heartbeat.
+- `migrate`: one-shot Alembic migration gate that must complete before application services start.
 - `postgres`: PostgreSQL 16.
 - `redis`: Redis cache, locks, and queue backend.
 - `nginx`: reverse proxy for public HTTP/HTTPS traffic.
 
-## 35.2. Startup
+## 38.2. Startup
 
 ```bash
 cp .env.example .env
 docker compose up -d
 ```
 
-## 35.3. Networking
+## 38.3. Networking
 
 PostgreSQL and Redis are not published to the host. Application services communicate over the dedicated `internal` Docker network. Nginx is attached to both `internal` and `public` networks and is the only public entrypoint.
 
-## 35.4. Volumes
+## 38.4. Volumes
 
 - `postgres_data`: persistent PostgreSQL data.
 - `redis_data`: Redis persistence.
 - `./data`: uploaded video workspace.
 - `./backups`: database and configuration backups.
 
-## 35.5. Healthchecks
+## 38.5. Healthchecks
 
 Compose includes healthchecks for:
 
@@ -2389,24 +3091,112 @@ Compose includes healthchecks for:
 - Redis via `redis-cli ping`.
 - API via `/health`.
 - Nginx via `/health` proxy.
+- Scheduler via its Redis heartbeat.
 
-Service continuity requirements are documented in [Service Continuity Plan](service-continuity-plan.md).
+API, bot, worker, and scheduler wait for the one-shot `migrate` service. This prevents concurrent
+schema upgrades when API or worker processes are scaled horizontally.
 
-## 35.6. Production Notes
+Service continuity requirements are documented in [Service Continuity Plan](#48-service-continuity-plan).
+
+## 38.6. Production Notes
 
 - Keep secrets only in `.env`.
 - Do not expose PostgreSQL or Redis ports.
-- Put TLS certificates under `deploy/nginx/certs` or terminate HTTPS at a managed load balancer.
+- Use `NGINX_TEMPLATE=https.conf.template` and put copied TLS certificate/key files under
+  `TLS_CERT_DIR`, or terminate HTTPS at a managed load balancer with an approved Compose override.
+- Application containers run as `appuser`, drop Linux capabilities, enable `no-new-privileges`,
+  and use an isolated temporary filesystem.
 - Update base images regularly.
 
-# 36. Production Launch Plan
+# 39. Staging Acceptance Runbook
 
 Группа спецификации: Эксплуатация
 
 
-End-to-end implementation stages are documented in [Implementation Roadmap](implementation-roadmap.md).
+This runbook is the mandatory rehearsal before the first production deployment. Use isolated
+staging credentials, a staging domain, Robokassa test mode, and a TikTok test account approved for
+the application's official scopes.
 
-## 36.1. Preparation
+## 39.1. Entry Criteria
+
+- The release commit passed all GitHub Actions jobs.
+- The CI run contains the `release-candidate-manifest` artifact for the same full Git SHA.
+- DNS points the staging domain to the Netherlands VPS.
+- A valid TLS certificate and matching private key are installed.
+- The Telegram token has never appeared in chat, source, logs, or Git.
+- TikTok Developer Portal contains the exact staging Redirect URI and webhook URL.
+- Robokassa test settings contain the exact ResultURL, SuccessURL, and FailURL.
+- A verified PostgreSQL backup can be created and restored on a disposable database.
+
+## 39.2. Automated Gate
+
+Copy `deploy/env.staging.example` to the server-side `.env`, replace every placeholder, and run:
+
+```bash
+ENV_FILE=.env bash deploy/preflight.sh staging
+ENV_FILE=.env bash deploy/deploy.sh staging <reviewed-tag-or-commit>
+docker compose ps
+```
+
+The preflight validates the environment without printing secrets, checks certificate lifetime,
+hostname and key matching, validates the Compose model, checks Docker, and enforces a free-disk
+floor. Deployment creates a verified database backup, applies migrations, starts services,
+configures the Telegram webhook, runs public smoke tests, and writes the server-side release
+manifest before image construction.
+
+The public smoke test verifies the versioned health, readiness and metrics endpoints, required
+OpenAPI paths, admin security headers, and the webhook URL returned by Telegram. It does not send
+messages, create payments, or publish a video.
+
+## 39.3. Manual Acceptance Scenarios
+
+Record the UTC start/end time, release commit, operator, test account identifiers, and sanitized
+result for every scenario. Never attach tokens, signatures, passwords, payment credentials, or raw
+OAuth payloads.
+
+| ID | Scenario | Expected result |
+| --- | --- | --- |
+| `QA-REG-001` | New user runs `/start` and accepts terms | User and active FREE subscription are created once |
+| `QA-OAUTH-001` | User connects TikTok through OAuth 2.0 | Account metadata is stored and tokens are encrypted |
+| `QA-LIMIT-001` | FREE user submits within and beyond the daily limit | Two accepted posts are allowed; the next request is rejected |
+| `QA-PAY-001` | User pays for PRO through Robokassa test mode | ResultURL activates one 30-day subscription idempotently |
+| `QA-PAY-002` | ResultURL is delivered twice | Payment and subscription are not duplicated |
+| `QA-UPL-001` | User submits a supported test video | Job reaches TikTok through the official API and receives a final status |
+| `QA-UPL-002` | Worker experiences a controlled temporary failure | Retry is bounded and the usage counter is not charged twice |
+| `QA-EXP-001` | A paid subscription is expired in staging data | Scheduler returns the user to FREE and preserves history |
+| `QA-ADM-001` | Administrator reviews users, payments, jobs, settings and audit | RBAC applies and changing actions appear in the audit log |
+| `QA-DR-001` | Backup is restored into a disposable database | Schema and critical record counts match the source backup |
+
+## 39.4. Evidence Package
+
+Store sanitized evidence in the release record or pull request:
+
+- release tag and full Git SHA;
+- release-candidate manifest filename and aggregate source-tree SHA-256;
+- GitHub Actions run URL;
+- preflight and smoke-test pass timestamps;
+- Docker image tag and `docker compose ps` status;
+- Alembic current revision;
+- backup filename, checksum, and restore-test result;
+- the table of manual scenario results;
+- approved exceptions with owner and expiry date.
+
+## 39.5. Exit Decision
+
+Staging is accepted only when all automated checks and critical manual scenarios pass, no P1/P2
+defect remains open, and the rollback target is known. Production credentials must be separate,
+Robokassa test mode must be disabled, and the production launch still requires an explicit owner
+decision. The accepted prerelease must be promoted to a stable SemVer and pass CI again before
+production deployment.
+
+# 40. Production Launch Plan
+
+Группа спецификации: Эксплуатация
+
+
+End-to-end implementation stages are documented in [Implementation Roadmap](#5-implementation-roadmap).
+
+## 40.1. Preparation
 
 - Domain name points to the production server.
 - HTTPS certificate is issued and valid.
@@ -2420,43 +3210,54 @@ End-to-end implementation stages are documented in [Implementation Roadmap](impl
 - Robokassa ResultURL, SuccessURL, and FailURL use the production HTTPS domain.
 - Backup procedure is tested.
 
-Environment and secret readiness must follow [Environment Configuration and Secrets Control](environment-configuration-secrets.md).
+Environment and secret readiness must follow [Environment Configuration and Secrets Control](#33-environment-configuration-and-secrets-control).
 
-## 36.2. First Startup
+## 40.2. First Startup
 
 ```bash
-docker compose up -d
+ENV_FILE=.env bash deploy/preflight.sh production
+ENV_FILE=.env bash deploy/deploy.sh production vX.Y.Z
 docker compose ps
-curl https://your-domain.example/health
-curl https://your-domain.example/ready
-curl https://your-domain.example/metrics
 ```
 
-## 36.3. Smoke Test
+Follow [CI/CD and Deployment Automation](#37-cicd-and-deployment-automation) for first-certificate bootstrap,
+verified backup creation, and deployment behavior.
+
+Production is allowed only after the complete [Staging Acceptance Runbook](#39-staging-acceptance-runbook)
+has passed for the same release commit. A Telegram token previously disclosed in chat, source,
+logs, or Git must be revoked in BotFather; only its replacement may be placed in the production
+`.env`.
+
+## 40.3. Smoke Test
+
+The deployment script automatically verifies versioned health/readiness/metrics endpoints,
+OpenAPI callback contracts, admin security headers, and the Telegram webhook registered at the
+public HTTPS URL. Then perform these provider-backed scenarios:
 
 1. Register a new Telegram user with `/start`.
 2. Accept the user agreement.
 3. Confirm FREE plan is assigned.
 4. Start TikTok OAuth connection.
 5. Confirm TikTok OAuth callback succeeds.
-6. Generate a PRO payment link.
-7. Complete a Robokassa test payment.
-8. Confirm ResultURL activates PRO.
+6. Create a PRO Telegram Stars invoice and complete the in-bot acceptance scenario.
+7. Through the separately approved external channel, generate a Robokassa PRO payment link.
+8. Complete a Robokassa test payment and confirm ResultURL activates PRO exactly once.
 9. Upload one test video.
 10. Confirm validation, preparation, queueing, worker processing, and TikTok API submission.
 11. Confirm admin metrics and logs are visible.
+12. Restore the release backup into a disposable database and compare critical record counts.
 
-## 36.4. Success Criteria
+## 40.4. Success Criteria
 
 - All containers are running.
 - Healthchecks are green.
 - Telegram, TikTok, and Robokassa callbacks work.
-- FREE, PRO, and BUSINESS limits match the specification.
+- FREE, PRO, BUSINESS, and UNLIMIT limits match the specification.
 - No critical errors appear in logs.
 - Metrics are available to administrators.
 - Backups are present and restorable.
 
-## 36.5. Handover
+## 40.5. Handover
 
 Save and hand over:
 
@@ -2469,46 +3270,47 @@ Save and hand over:
 - Operations runbook and incident process.
 - Current Git commit and release version.
 
-# 37. Operations Runbook
+# 41. Operations Runbook
 
 Группа спецификации: Эксплуатация
 
 
-## 37.1. Daily Operations
+## 41.1. Daily Operations
 
 - Check Telegram bot availability.
 - Check FastAPI `/health` and `/ready`.
 - Review `/metrics` for queue size and error counters.
 - Confirm the latest PostgreSQL backup exists.
-- Confirm backup verification follows [Backup and Restore Policy](backup-restore-policy.md).
-- Review critical JSON logs for `api`, `bot`, `worker`, `postgres`, `redis`, and `nginx`.
+- Confirm backup verification follows [Backup and Restore Policy](#47-backup-and-restore-policy).
+- Review critical JSON logs for `api`, `bot`, `worker`, `scheduler`, `postgres`, `redis`, and `nginx`.
+- Confirm the `scheduler` container is healthy and its subscription sweep is running.
 - Use Request ID and Correlation ID when investigating related API, worker, payment, and publication events.
 - Check Robokassa ResultURL events in `webhook_events`.
 
-## 37.2. Weekly Operations
+## 41.2. Weekly Operations
 
 - Check disk usage for Docker volumes, `./data`, and `./backups`.
-- Check storage directories and cleanup health according to [File Storage Policy](file-storage-policy.md).
+- Check storage directories and cleanup health according to [File Storage Policy](#50-file-storage-policy).
 - Review PostgreSQL slow queries and run `EXPLAIN ANALYZE` for suspicious queries.
 - Check dependency updates and base image updates.
 - Verify SSL certificate expiration date.
 - Review worker throughput and retry patterns.
-- Review capacity thresholds according to [Capacity and Performance Management](capacity-management.md).
-- Review operational KPI from [Metrics and KPI](metrics-and-kpi.md).
+- Review capacity thresholds according to [Capacity and Performance Management](#53-capacity-and-performance-management).
+- Review operational KPI from [Metrics and KPI](#54-metrics-and-kpi).
 
-## 37.3. Monthly Operations
+## 41.3. Monthly Operations
 
 - Perform a restore drill from the latest backup on staging.
-- Record restore drill results according to [Backup and Restore Policy](backup-restore-policy.md).
+- Record restore drill results according to [Backup and Restore Policy](#47-backup-and-restore-policy).
 - Verify retention cleanup for temporary videos, webhook logs, audit logs, and backups.
 - Review performance bottlenecks and queue latency.
 - Review resource headroom and scaling needs.
 - Review business and quality KPI trends.
-- Review data quality checks according to [Data Quality and Integrity](data-quality-integrity.md).
+- Review data quality checks according to [Data Quality and Integrity](../data-quality-integrity.md).
 - Confirm scheduled maintenance tasks still run.
 - Review admin audit log for unexpected changes.
 
-## 37.4. Update Checklist
+## 41.4. Update Checklist
 
 Before update:
 
@@ -2519,10 +3321,9 @@ Before update:
 
 During update:
 
-1. Pull the release tag.
-2. Rebuild containers.
-3. Apply Alembic migrations.
-4. Restart services.
+1. Run `ENV_FILE=.env bash deploy/deploy.sh <environment> <release-tag>`.
+2. Preserve `.deploy/previous_revision` with the release record.
+3. Do not run an automatic Alembic downgrade during application rollback.
 
 After update:
 
@@ -2531,26 +3332,29 @@ After update:
 3. Watch logs for at least 15 minutes.
 4. Re-enable intake with `intake_enabled=true`.
 
-## 37.5. Goal
+## 41.5. Goal
 
 Maintenance should keep the service stable, secure, predictable, and recoverable while preserving user data integrity.
 
-Service continuity requirements are documented in [Service Continuity Plan](service-continuity-plan.md).
+Service continuity requirements are documented in [Service Continuity Plan](#48-service-continuity-plan).
 
-## 37.6. Incidents
+## 41.6. Incidents
 
-Use [Incident Management](incident-management.md) to classify P1-P4 incidents, record impact, manage escalation, and run post-incident reviews.
+Use [Incident Management](#46-incident-management) to classify P1-P4 incidents, record impact, manage escalation, and run post-incident reviews.
 
-Standard preflight, post-update, and diagnostic checklists are in [SOP Checklists](sop-checklists.md).
+Standard preflight, post-update, and diagnostic checklists are in [SOP Checklists](#42-sop-checklists).
 
-Tracing, event correlation, and log search requirements are described in [Observability and Diagnostics](observability-diagnostics.md).
+Tracing, event correlation, and log search requirements are described in [Observability and Diagnostics](#55-observability-and-diagnostics).
 
-# 38. SOP Checklists
+Executable release, backup, restore, rollback, and smoke-test procedures are described in
+[CI/CD and Deployment Automation](#37-cicd-and-deployment-automation).
+
+# 42. SOP Checklists
 
 Группа спецификации: Эксплуатация
 
 
-## 38.1. Daily Administrator Checklist
+## 42.1. Daily Administrator Checklist
 
 - Check Telegram bot availability.
 - Check FastAPI `/health` and `/ready`.
@@ -2559,7 +3363,7 @@ Tracing, event correlation, and log search requirements are described in [Observ
 - Review critical JSON logs for `api`, `bot`, and `worker`.
 - Check publication queue size and failed job count.
 
-## 38.2. Weekly Checklist
+## 42.2. Weekly Checklist
 
 - Check disk usage for Docker volumes, temporary video storage, and backups.
 - Check PostgreSQL health and connection count.
@@ -2567,9 +3371,9 @@ Tracing, event correlation, and log search requirements are described in [Observ
 - Review dependency and base image security updates.
 - Verify TLS/SSL certificate expiration date.
 
-Infrastructure update rules are documented in [Infrastructure Dependency Management](infrastructure-dependency-management.md).
+Infrastructure update rules are documented in [Infrastructure Dependency Management](#61-infrastructure-dependency-management).
 
-## 38.3. Production Preflight
+## 42.3. Production Preflight
 
 - Production `.env` is filled and not committed.
 - PostgreSQL is reachable from application containers.
@@ -2583,7 +3387,7 @@ Infrastructure update rules are documented in [Infrastructure Dependency Managem
 - `TOKEN_ENCRYPTION_KEY` is generated and stored securely.
 - Backups are configured and tested.
 
-## 38.4. Configuration Change Checklist
+## 42.4. Configuration Change Checklist
 
 Before changing production configuration:
 
@@ -2596,7 +3400,7 @@ Before changing production configuration:
 7. Verify the affected user or admin scenario.
 8. Record the final result in the admin audit log or operations journal.
 
-## 38.5. Post-Update Checklist
+## 42.5. Post-Update Checklist
 
 - All containers are running.
 - PostgreSQL, Redis, API, and Nginx healthchecks pass.
@@ -2609,7 +3413,7 @@ Before changing production configuration:
 - Worker processes queued jobs.
 - Logs show no new critical errors.
 
-## 38.6. Diagnostics
+## 42.6. Diagnostics
 
 Logs:
 
@@ -2643,7 +3447,7 @@ External services:
 - Check TikTok developer app status.
 - Check Robokassa merchant dashboard.
 
-## 38.7. Incident Documentation
+## 42.7. Incident Documentation
 
 For significant incidents, record:
 
@@ -2654,9 +3458,9 @@ For significant incidents, record:
 - Final resolution.
 - Preventive recommendations.
 
-Use [Incident Management](incident-management.md) for priority classification and post-incident review.
+Use [Incident Management](#46-incident-management) for priority classification and post-incident review.
 
-## 38.8. Emergency Procedure
+## 42.8. Emergency Procedure
 
 For a critical incident:
 
@@ -2667,18 +3471,18 @@ For a critical incident:
 5. Verify `/health`, `/ready`, queues, payments, and publication status integrity.
 6. Document root cause, actions taken, final status, and prevention steps.
 
-# 39. Maintenance Guide
+# 43. Maintenance Guide
 
 Группа спецификации: Эксплуатация
 
 
-## 39.1. Source of Truth
+## 43.1. Source of Truth
 
 GitHub repository `kredavto/Tik-Tok-bot-Rus-2` is the single source of code.
 
 All changes should go through pull requests. Direct production edits are not allowed.
 
-## 39.2. Versioning
+## 43.2. Versioning
 
 Use Semantic Versioning:
 
@@ -2688,7 +3492,7 @@ Use Semantic Versioning:
 
 Every release updates `CHANGELOG.md`.
 
-## 39.3. Production Update Procedure
+## 43.3. Production Update Procedure
 
 1. Create PostgreSQL and configuration backups.
 2. Pull the latest approved release from GitHub.
@@ -2698,7 +3502,7 @@ Every release updates `CHANGELOG.md`.
 6. Check `/health`, `/ready`, `/metrics`.
 7. Watch JSON logs for errors.
 
-## 39.4. Rollback Procedure
+## 43.4. Rollback Procedure
 
 1. Stop application services.
 2. Restore the previous Docker image or Git tag.
@@ -2706,7 +3510,7 @@ Every release updates `CHANGELOG.md`.
 4. Start services.
 5. Validate health and readiness.
 
-## 39.5. Support Operations
+## 43.5. Support Operations
 
 Administrators can use the admin API to inspect:
 
@@ -2718,15 +3522,15 @@ Administrators can use the admin API to inspect:
 
 Users can disconnect TikTok from the bot settings. This deletes stored TikTok OAuth tokens.
 
-## 39.6. Routine Maintenance
+## 43.6. Routine Maintenance
 
-Use [Operations Runbook](operations-runbook.md) for daily, weekly, and monthly checks.
+Use [Operations Runbook](#41-operations-runbook) for daily, weekly, and monthly checks.
 
-After the first production launch, use [Post-Launch Maintenance and Versioning](post-launch-maintenance.md) for release planning, change control, quality gates, and post-release monitoring.
+After the first production launch, use [Post-Launch Maintenance and Versioning](#44-post-launch-maintenance-and-versioning) for release planning, change control, quality gates, and post-release monitoring.
 
-Dependency updates and third-party integration checks are described in [Dependencies and Third-Party Services](dependencies-and-integrations.md).
+Dependency updates and third-party integration checks are described in [Dependencies and Third-Party Services](#60-dependencies-and-third-party-services).
 
-## 39.7. Feature Development
+## 43.7. Feature Development
 
 Before adding a feature, assess:
 
@@ -2737,12 +3541,12 @@ Before adding a feature, assess:
 - Test coverage and documentation updates.
 - Dependency and third-party service compatibility.
 
-# 40. Post-Launch Maintenance and Versioning
+# 44. Post-Launch Maintenance and Versioning
 
 Группа спецификации: Эксплуатация
 
 
-## 40.1. Release Cycle
+## 44.1. Release Cycle
 
 Every production change follows the same controlled cycle:
 
@@ -2754,9 +3558,9 @@ Every production change follows the same controlled cycle:
 6. Deploy to production from an approved release.
 7. Monitor service health, logs, metrics, payments, and publication flow after release.
 
-## 40.2. Maintenance Schedule
+## 44.2. Maintenance Schedule
 
-### 40.2.1. Daily
+### 44.2.1. Daily
 
 - Check Telegram bot availability.
 - Check API health and readiness.
@@ -2764,7 +3568,7 @@ Every production change follows the same controlled cycle:
 - Review publication queue size.
 - Confirm backup job completion.
 
-### 40.2.2. Weekly
+### 44.2.2. Weekly
 
 - Review error logs.
 - Review failed TikTok publication jobs.
@@ -2772,7 +3576,7 @@ Every production change follows the same controlled cycle:
 - Check disk usage and container health.
 - Check for security updates in dependencies and base images.
 
-### 40.2.3. Monthly
+### 44.2.3. Monthly
 
 - Analyze PostgreSQL query performance.
 - Review worker throughput and queue latency.
@@ -2780,9 +3584,9 @@ Every production change follows the same controlled cycle:
 - Review retention cleanup for temporary videos, logs, and backups.
 - Review release notes and pending technical debt.
 
-Technical debt review rules are documented in [Technical Debt Management](technical-debt-management.md).
+Technical debt review rules are documented in [Technical Debt Management](#59-technical-debt-management).
 
-## 40.3. Change Management
+## 44.3. Change Management
 
 Each change must include:
 
@@ -2794,7 +3598,7 @@ Each change must include:
 
 Configuration changes should be made through `.env` or system settings, audited, and backed up before critical updates.
 
-## 40.4. Release Quality Gates
+## 44.4. Release Quality Gates
 
 A release can proceed only when:
 
@@ -2806,7 +3610,7 @@ A release can proceed only when:
 - Staging verification is complete.
 - Rollback path is known and current backup exists.
 
-## 40.5. Post-Release Monitoring
+## 44.5. Post-Release Monitoring
 
 After each production deployment, monitor:
 
@@ -2819,24 +3623,24 @@ After each production deployment, monitor:
 - Worker queue size and retry count.
 - Critical application logs.
 
-## 40.6. Stability Goal
+## 44.6. Stability Goal
 
 The maintenance process must keep development predictable, reduce release risk, and preserve stable service operation while the project evolves.
 
-# 41. Incident Response and Disaster Recovery
+# 45. Incident Response and Disaster Recovery
 
 Группа спецификации: Эксплуатация
 
 
-Incident classification and postmortem process are described in [Incident Management](incident-management.md).
+Incident classification and postmortem process are described in [Incident Management](#46-incident-management).
 
-Backup selection and restore verification must follow [Backup and Restore Policy](backup-restore-policy.md).
+Backup selection and restore verification must follow [Backup and Restore Policy](#47-backup-and-restore-policy).
 
-Continuity measures and planned maintenance rules are documented in [Service Continuity Plan](service-continuity-plan.md).
+Continuity measures and planned maintenance rules are documented in [Service Continuity Plan](#48-service-continuity-plan).
 
-Security investigation logging requirements are defined in [Security Logging and Audit](security-logging-audit.md).
+Security investigation logging requirements are defined in [Security Logging and Audit](#31-security-logging-and-audit).
 
-## 41.1. Critical Failure Procedure
+## 45.1. Critical Failure Procedure
 
 1. Stop intake of new uploads by setting `intake_enabled=false` through the admin settings API.
 2. Check `/health`, `/ready`, and `/metrics`.
@@ -2847,13 +3651,13 @@ Security investigation logging requirements are defined in [Security Logging and
 7. Verify queue integrity before resuming workers.
 8. Set `intake_enabled=true` after recovery.
 
-## 41.2. Queue Recovery
+## 45.2. Queue Recovery
 
 - `NEW`, `VALIDATING`, `PREPARING`, `QUEUED`, and `UPLOADING` jobs can be retried.
 - `PROCESSING` jobs must be checked against TikTok status before retry.
 - Daily usage is consumed only after official TikTok acceptance, so failed video preparation does not consume quota.
 
-## 41.3. Monitoring Checklist
+## 45.3. Monitoring Checklist
 
 - Telegram bot process is running.
 - FastAPI `/ready` returns `ready`.
@@ -2863,7 +3667,7 @@ Security investigation logging requirements are defined in [Security Logging and
 - Nginx serves HTTPS.
 - `/metrics` contains queue size, publication counts, payment counts, and subscription counts.
 
-## 41.4. Audit
+## 45.4. Audit
 
 Critical operations are recorded in:
 
@@ -2871,12 +3675,12 @@ Critical operations are recorded in:
 - `webhook_events` for Telegram, TikTok, and Robokassa events.
 - Structured JSON logs for service-level diagnostics.
 
-# 42. Incident Management
+# 46. Incident Management
 
 Группа спецификации: Эксплуатация
 
 
-## 42.1. Priorities
+## 46.1. Priorities
 
 | Priority | Example | Target Response |
 | --- | --- | --- |
@@ -2885,7 +3689,7 @@ Critical operations are recorded in:
 | P3 | Partial errors in isolated functions | Planned fix |
 | P4 | Cosmetic UI or documentation issue | Backlog |
 
-## 42.2. Response Flow
+## 46.2. Response Flow
 
 1. Record the incident.
 2. Assign priority.
@@ -2895,7 +3699,7 @@ Critical operations are recorded in:
 6. Verify service health and key user flows.
 7. Document results and follow-up actions.
 
-## 42.3. Incident Record Template
+## 46.3. Incident Record Template
 
 ```text
 Incident ID:
@@ -2912,7 +3716,7 @@ Follow-up actions:
 Closed at:
 ```
 
-## 42.4. Availability Checks
+## 46.4. Availability Checks
 
 - Telegram bot responds to `/start`.
 - FastAPI `/health` and `/ready` return success.
@@ -2924,14 +3728,14 @@ Closed at:
 - TikTok API errors are not above baseline.
 - SSL certificate is valid and not close to expiration.
 
-## 42.5. Escalation
+## 46.5. Escalation
 
 - P1: stop intake if uploads or payments may be corrupted, notify project owner, keep checking every 15 minutes.
 - P2: notify project owner, isolate failing integration, keep existing queue data intact.
 - P3: open a tracked issue and schedule a fix.
 - P4: add to documentation or UI backlog.
 
-## 42.6. Post-Incident Review
+## 46.6. Post-Incident Review
 
 After every P1/P2 incident:
 
@@ -2941,14 +3745,14 @@ After every P1/P2 incident:
 4. Update runbooks and deployment checks.
 5. Track follow-up actions to completion.
 
-Risk controls are summarized in [Risk Management](risk-management.md).
+Risk controls are summarized in [Risk Management](#73-risk-management).
 
-# 43. Backup and Restore Policy
+# 47. Backup and Restore Policy
 
 Группа спецификации: Надежность
 
 
-## 43.1. Backup Objects
+## 47.1. Backup Objects
 
 Back up:
 
@@ -2962,9 +3766,9 @@ Back up:
 
 Do not commit production backups or real `.env` files to Git.
 
-Backups containing personal or secret-related data must follow [Confidential Data Policy](confidential-data-policy.md).
+Backups containing personal or secret-related data must follow [Confidential Data Policy](#32-confidential-data-policy).
 
-## 43.2. Backup Policy
+## 47.2. Backup Policy
 
 - Run PostgreSQL backups regularly.
 - Keep multiple backup generations.
@@ -2974,7 +3778,7 @@ Backups containing personal or secret-related data must follow [Confidential Dat
 - Periodically test restore on staging or an isolated recovery host.
 - Apply `BACKUP_RETENTION_DAYS` for backup retention.
 
-## 43.3. Backup Verification
+## 47.3. Backup Verification
 
 For each backup, record:
 
@@ -2989,7 +3793,10 @@ For each backup, record:
 
 Failed backup jobs must be treated as operational incidents.
 
-## 43.4. Restore Procedure
+The supported command is `ENV_FILE=.env bash deploy/backup_postgres.sh`. It creates a PostgreSQL
+custom archive, verifies it with `pg_restore --list`, and writes `.sha256` and `.meta` sidecars.
+
+## 47.4. Restore Procedure
 
 1. Identify the failure cause and affected components.
 2. Stop risky operations, including new upload intake if needed.
@@ -3002,7 +3809,11 @@ Failed backup jobs must be treated as operational incidents.
 9. Verify key user scenarios.
 10. Document the incident and recovery actions.
 
-## 43.5. Recovery Success Criteria
+Use `ENV_FILE=.env bash deploy/restore_postgres.sh <archive> --confirm`. The script keeps
+application services stopped if restoration fails. Full command behavior is documented in
+[CI/CD and Deployment Automation](#37-cicd-and-deployment-automation).
+
+## 47.5. Recovery Success Criteria
 
 After recovery, these must work correctly:
 
@@ -3015,9 +3826,9 @@ After recovery, these must work correctly:
 - Queue state without duplicate publication or duplicate quota consumption.
 - User, subscription, payment, and publication history.
 
-Continuity planning and planned maintenance rules are documented in [Service Continuity Plan](service-continuity-plan.md).
+Continuity planning and planned maintenance rules are documented in [Service Continuity Plan](#48-service-continuity-plan).
 
-## 43.6. Restore Drill
+## 47.6. Restore Drill
 
 At least periodically:
 
@@ -3027,7 +3838,7 @@ At least periodically:
 4. Verify payments, subscriptions, and upload job integrity.
 5. Record restore duration and issues found.
 
-## 43.7. Documentation Requirement
+## 47.7. Documentation Requirement
 
 Every significant recovery must record:
 
@@ -3039,12 +3850,12 @@ Every significant recovery must record:
 - Validation result.
 - Preventive actions.
 
-# 44. Service Continuity Plan
+# 48. Service Continuity Plan
 
 Группа спецификации: Надежность
 
 
-## 44.1. Critical Services
+## 48.1. Critical Services
 
 The service depends on:
 
@@ -3057,7 +3868,7 @@ The service depends on:
 
 Each critical service must have a health check, logs, and a documented recovery path.
 
-## 44.2. Continuity Measures
+## 48.2. Continuity Measures
 
 - Use Docker restart policies for application services.
 - Monitor service state through health checks.
@@ -3067,7 +3878,7 @@ Each critical service must have a health check, logs, and a documented recovery 
 - Keep `.env`, Nginx, and Docker Compose configuration recoverable from protected storage.
 - Use idempotent queue, webhook, and payment processing to support safe restarts.
 
-## 44.3. Planned Maintenance
+## 48.3. Planned Maintenance
 
 When possible:
 
@@ -3080,7 +3891,7 @@ When possible:
 7. Verify registration, TikTok OAuth, upload queueing, Robokassa payment flow, and admin functions.
 8. Document the result and any follow-up actions.
 
-## 44.4. External Service Degradation
+## 48.4. External Service Degradation
 
 If Telegram, TikTok, Robokassa, or another external dependency is degraded:
 
@@ -3090,7 +3901,7 @@ If Telegram, TikTok, Robokassa, or another external dependency is degraded:
 - Notify users with a clear message when a user-facing action cannot be completed.
 - Record external errors in logs and webhook history.
 
-## 44.5. Recovery Readiness
+## 48.5. Recovery Readiness
 
 Operations must keep these ready:
 
@@ -3101,7 +3912,7 @@ Operations must keep these ready:
 - Rollback path.
 - Incident response contacts and procedure.
 
-## 44.6. Success Criteria
+## 48.6. Success Criteria
 
 The service is operating successfully when:
 
@@ -3112,12 +3923,12 @@ The service is operating successfully when:
 - User, subscription, publication, and payment history remain intact.
 - Recovery from component failures is safe and documented.
 
-# 45. Data Retention
+# 49. Data Retention
 
 Группа спецификации: Надежность
 
 
-## 45.1. Configuration
+## 49.1. Configuration
 
 ```env
 VIDEO_RETENTION_HOURS=24
@@ -3126,7 +3937,7 @@ BACKUP_RETENTION_DAYS=14
 AUDIT_LOG_RETENTION_DAYS=365
 ```
 
-## 45.2. Policy
+## 49.2. Policy
 
 - Temporary videos are removed after processing or retention expiry.
 - TikTok OAuth tokens are encrypted and deleted when the user disconnects TikTok.
@@ -3135,9 +3946,9 @@ AUDIT_LOG_RETENTION_DAYS=365
 - Admin audit logs follow `AUDIT_LOG_RETENTION_DAYS`.
 - Backups follow `BACKUP_RETENTION_DAYS`.
 
-Temporary video storage rules are defined in [File Storage Policy](file-storage-policy.md).
+Temporary video storage rules are defined in [File Storage Policy](#50-file-storage-policy).
 
-## 45.3. User Data Deletion
+## 49.3. User Data Deletion
 
 Admin endpoint:
 
@@ -3147,12 +3958,12 @@ POST /admin/users/{user_id}/anonymize
 
 This removes TikTok tokens and anonymizes personal Telegram profile data while preserving records required for financial and legal audit.
 
-# 46. File Storage Policy
+# 50. File Storage Policy
 
 Группа спецификации: Надежность
 
 
-## 46.1. Storage Principles
+## 50.1. Storage Principles
 
 - Store user videos only for the time required to process them.
 - Separate temporary, processing, completed, and failed data.
@@ -3161,7 +3972,7 @@ This removes TikTok tokens and anonymizes personal Telegram profile data while p
 - Do not keep user files longer than the configured retention policy.
 - Store file paths in PostgreSQL only for internal processing and audit.
 
-## 46.2. Directory Structure
+## 50.2. Directory Structure
 
 Recommended production layout:
 
@@ -3184,7 +3995,7 @@ Directory purpose:
 | `failed/` | Files kept briefly after failed validation or processing when allowed by retention policy |
 | `temp/` | Short-lived intermediate files |
 
-## 46.3. Cleanup Policy
+## 50.3. Cleanup Policy
 
 - Delete temporary files after successful or failed processing.
 - Delete expired files on a scheduled cleanup task.
@@ -3193,7 +4004,7 @@ Directory purpose:
 - Alert administrators before disk usage becomes critical.
 - Follow `VIDEO_RETENTION_HOURS` for video retention.
 
-## 46.4. Security Requirements
+## 50.4. Security Requirements
 
 - Never execute uploaded files.
 - Validate MIME type, extension, container signature, size, duration, and FFprobe metadata.
@@ -3203,7 +4014,7 @@ Directory purpose:
 - Do not expose internal storage paths in Telegram messages, API responses, or admin UI.
 - Keep PostgreSQL and Redis separate from file storage volumes.
 
-## 46.5. Operational Checks
+## 50.5. Operational Checks
 
 Administrators should monitor:
 
@@ -3214,7 +4025,7 @@ Administrators should monitor:
 - Upload jobs pointing to missing files.
 - Unexpected files outside the allowed directory structure.
 
-## 46.6. Recovery Notes
+## 50.6. Recovery Notes
 
 If disk space is exhausted:
 
@@ -3225,12 +4036,12 @@ If disk space is exhausted:
 5. Restart affected workers.
 6. Re-enable upload intake after health checks pass.
 
-# 47. Queue and Retry Policy
+# 51. Queue and Retry Policy
 
 Группа спецификации: Надежность
 
 
-## 47.1. Background Task Types
+## 51.1. Background Task Types
 
 The worker layer handles:
 
@@ -3241,8 +4052,9 @@ The worker layer handles:
 - Temporary file cleanup.
 - Subscription expiration checks.
 - Return to FREE plan after paid subscription expiration.
+- Delivery of durable payment-success notifications.
 
-## 47.2. Queue Rules
+## 51.2. Queue Rules
 
 - Every queued task must have a unique identifier.
 - Tasks must be idempotent.
@@ -3252,20 +4064,50 @@ The worker layer handles:
 - Redis locks are used to prevent duplicate processing.
 - PostgreSQL stores the durable task state.
 - Redis may cache short-lived status and coordination data.
+- All actor coroutines in one Dramatiq process run on one persistent asyncio event loop. Worker
+  threads submit coroutines to that loop so the shared SQLAlchemy async pool is never reused across
+  incompatible event loops.
 
-## 47.3. Retryable Errors
+## 51.3. Periodic Maintenance
+
+The dedicated `scheduler` service dispatches maintenance actors through Dramatiq. A Redis lease
+is acquired for each periodic task before dispatch, which allows multiple scheduler instances to
+run without intentionally enqueueing the same interval twice. If broker dispatch fails, the lease
+is released so the next scheduler tick can retry.
+
+The current periodic tasks are:
+
+- Expire due PRO, BUSINESS, and UNLIMIT subscriptions and create the replacement FREE subscription.
+- Refresh TikTok access tokens before their expiry.
+- Remove temporary files and expired operational records according to the retention policy.
+- Redispatch pending payment-success notification outbox events.
+
+Subscription selection uses PostgreSQL `FOR UPDATE SKIP LOCKED`. Expiration notifications use a
+per-subscription Redis lock and a durable `expiration_notified_at` marker.
+
+Robokassa activation creates a `payment_success_notification` outbox event in the same PostgreSQL
+transaction as the paid subscription. A per-event Redis lock prevents concurrent delivery. The
+event becomes `processed` only after Telegram accepts the message. Pending payment outbox events
+are excluded from retention cleanup and remain recoverable after broker, worker, or Telegram
+outages.
+
+## 51.4. Retryable Errors
 
 Automatic retry is allowed for:
 
-- Temporary network failures.
-- Temporary TikTok service errors.
+- Deterministic byte-range chunk uploads rejected with a temporary TikTok 5xx response.
+- Publication status checks that have not yet reached a terminal TikTok status.
 - Temporary Telegram notification failures.
 - Temporary Redis or database connectivity issues when retrying is safe.
-- Worker interruption before a terminal state is saved.
+- TikTok token refresh requests that fail because of network errors, HTTP 429, or HTTP 5xx.
 
-Retry classification must follow [Error Codes and Exception Handling](error-handling.md).
+The complete publication actor is not automatically replayed after an ambiguous failure because
+the official API may already have accepted the publication. Such jobs are marked failed for
+operator review. A full retry requires evidence that TikTok did not accept the earlier request.
 
-## 47.4. Non-Retryable Errors
+Retry classification must follow [Error Codes and Exception Handling](#29-error-codes-and-exception-handling).
+
+## 51.5. Non-Retryable Errors
 
 Do not retry automatically for:
 
@@ -3276,12 +4118,16 @@ Do not retry automatically for:
 - Invalid user video format, unsupported container, or corrupted file.
 - User cancellation.
 - Policy or authorization rejection from an official external API.
+- TikTok refresh-token rejection or another permanent OAuth error. The account is marked as
+  refresh-blocked until the user reconnects it through the official OAuth flow.
+- Telegram `Forbidden`, `Bad Request`, or `Not Found` responses for a payment recipient. The
+  affected outbox event becomes `rejected` so it cannot starve newer notifications.
 
-## 47.5. Status Updates
+## 51.6. Status Updates
 
-Upload jobs use the lifecycle statuses documented in [Video Publication Lifecycle](video-lifecycle.md).
+Upload jobs use the lifecycle statuses documented in [Video Publication Lifecycle](#19-video-publication-lifecycle).
 
-Upload job persistence rules are documented in [Upload Jobs Entity](upload-jobs-entity.md).
+Upload job persistence rules are documented in [Upload Jobs Entity](#12-upload-jobs-entity).
 
 Each transition should include:
 
@@ -3293,18 +4139,18 @@ Each transition should include:
 - Human-readable reason.
 - Correlation ID when available.
 
-## 47.6. Duplicate Prevention
+## 51.7. Duplicate Prevention
 
 To prevent duplicate publication and duplicate quota consumption:
 
 - Worker processing must acquire a per-upload lock.
 - Daily limits are consumed transactionally.
-- Daily usage counters follow [Daily Usage Entity](daily-usage-entity.md).
+- Daily usage counters follow [Daily Usage Entity](#13-daily-usage-entity).
 - Payments are activated only through Robokassa ResultURL after signature validation.
 - Webhook handling must be idempotent.
 - Terminal states must not be overwritten by stale retries.
 
-## 47.7. Administrative Control
+## 51.8. Administrative Control
 
 Administrators should be able to inspect:
 
@@ -3319,29 +4165,29 @@ Administrators should be able to inspect:
 
 Administrators may safely restart individual failed tasks only when the failure is retryable and the task has no active processing lock.
 
-## 47.8. Operational Goal
+## 51.9. Operational Goal
 
 Queue processing must preserve data integrity, avoid duplicate publication attempts, avoid duplicate payment activation, and keep enough diagnostic data for safe recovery.
 
-# 48. Performance and Scaling
+# 52. Performance and Scaling
 
 Группа спецификации: Производительность
 
 
-Performance-related non-functional requirements are summarized in [Non-Functional Requirements](non-functional-requirements.md).
+Performance-related non-functional requirements are summarized in [Non-Functional Requirements](#6-non-functional-requirements).
 
-## 48.1. Goals
+## 52.1. Goals
 
 - Fast Telegram command responses.
 - Long-running work is handled by workers.
 - Redis is used for cache, locks, OAuth state, rate limiting, and queue coordination.
 - PostgreSQL queries use indexes for common filters and ordering.
 
-Operational KPI for performance and reliability are defined in [Metrics and KPI](metrics-and-kpi.md).
+Operational KPI for performance and reliability are defined in [Metrics and KPI](#54-metrics-and-kpi).
 
-Capacity thresholds and scaling actions are documented in [Capacity and Performance Management](capacity-management.md).
+Capacity thresholds and scaling actions are documented in [Capacity and Performance Management](#53-capacity-and-performance-management).
 
-## 48.2. Scaling API
+## 52.2. Scaling API
 
 Set:
 
@@ -3351,7 +4197,7 @@ API_WORKERS=2
 
 Run multiple `web` containers behind Nginx or another load balancer when needed.
 
-## 48.3. Scaling Workers
+## 52.3. Scaling Workers
 
 Set:
 
@@ -3362,9 +4208,9 @@ DRAMATIQ_THREADS=8
 
 Worker operations use Redis locks for upload-job idempotency and daily-limit safety.
 
-Queue retry behavior and safe task restart rules are documented in [Queue and Retry Policy](queue-retry-policy.md).
+Queue retry behavior and safe task restart rules are documented in [Queue and Retry Policy](#51-queue-and-retry-policy).
 
-## 48.4. Database
+## 52.4. Database
 
 Admin lists use pagination:
 
@@ -3376,18 +4222,18 @@ GET /admin/upload-jobs?status=FAILED&limit=50&offset=0
 
 Use PostgreSQL `EXPLAIN ANALYZE` during performance reviews.
 
-## 48.5. Safe Restarts
+## 52.5. Safe Restarts
 
 - Upload state is persisted in PostgreSQL.
 - Queue state is coordinated through Redis and Dramatiq.
 - Daily quota is consumed only after official TikTok API acceptance.
 
-# 49. Capacity and Performance Management
+# 53. Capacity and Performance Management
 
 Группа спецификации: Производительность
 
 
-## 49.1. Controlled Resources
+## 53.1. Controlled Resources
 
 Monitor:
 
@@ -3402,7 +4248,7 @@ Monitor:
 - Upload processing duration.
 - External API error rates.
 
-## 49.2. Threshold Events
+## 53.2. Threshold Events
 
 Investigate when any of these trends appear:
 
@@ -3416,7 +4262,7 @@ Investigate when any of these trends appear:
 - Robokassa webhook failures increase.
 - Background task processing time increases.
 
-## 49.3. Scaling Actions
+## 53.3. Scaling Actions
 
 Use the least risky action that addresses the bottleneck:
 
@@ -3428,7 +4274,7 @@ Use the least risky action that addresses the bottleneck:
 - Tune Redis memory and persistence settings when queue/cache pressure grows.
 - Move heavy processing to additional worker hosts when a single server is saturated.
 
-## 49.4. Review Cadence
+## 53.4. Review Cadence
 
 Daily:
 
@@ -3444,7 +4290,7 @@ Monthly:
 - Plan capacity increases before thresholds become incidents.
 - Update operational documentation when scaling rules change.
 
-## 49.5. Capacity Planning Inputs
+## 53.5. Capacity Planning Inputs
 
 Use:
 
@@ -3457,16 +4303,16 @@ Use:
 - Incident history.
 - Growth in users, uploads, subscriptions, and payments.
 
-## 49.6. Operational Goal
+## 53.6. Operational Goal
 
 Capacity management must keep user-facing flows responsive, avoid uncontrolled queue growth, protect data integrity, and give administrators enough lead time to scale infrastructure safely.
 
-# 50. Metrics and KPI
+# 54. Metrics and KPI
 
 Группа спецификации: Производительность
 
 
-## 50.1. Technical KPI
+## 54.1. Technical KPI
 
 Track these indicators for operational stability:
 
@@ -3480,7 +4326,7 @@ Track these indicators for operational stability:
 | Worker queue size | Shows publication backlog and scaling pressure |
 | Worker retry count | Shows temporary failures and external service instability |
 
-## 50.2. Business Metrics
+## 54.2. Business Metrics
 
 Track these indicators for project growth:
 
@@ -3490,12 +4336,14 @@ Track these indicators for project growth:
 | Active FREE users | Shows free-tier usage |
 | Active PRO users | Shows paid PRO adoption |
 | Active BUSINESS users | Shows paid BUSINESS adoption |
+| Active UNLIMIT users | Shows paid UNLIMIT adoption |
 | FREE to PRO conversion | Measures PRO monetization |
 | FREE to BUSINESS conversion | Measures BUSINESS monetization |
-| Successful payments | Measures Robokassa revenue flow |
+| FREE to UNLIMIT conversion | Measures UNLIMIT monetization |
+| Successful payments | Measures provider-specific payment flow |
 | Revenue by plan | Supports pricing and growth analysis |
 
-## 50.3. Quality Metrics
+## 54.3. Quality Metrics
 
 Track these indicators for release and support quality:
 
@@ -3508,7 +4356,7 @@ Track these indicators for release and support quality:
 | Failed webhook count | Tracks Telegram, TikTok, and Robokassa callback issues |
 | Failed publication count by reason | Helps prioritize reliability work |
 
-## 50.4. Administrative Dashboard
+## 54.4. Administrative Dashboard
 
 The admin dashboard should expose:
 
@@ -3516,12 +4364,12 @@ The admin dashboard should expose:
 - User counts by tariff.
 - New registrations by period.
 - Publication volume and success rate.
-- Robokassa successful payments and revenue by period.
-- Conversion FREE to PRO and FREE to BUSINESS.
+- RUB and Telegram Stars successful payments and revenue by period, reported separately.
+- Conversion FREE to PRO, FREE to BUSINESS, and FREE to UNLIMIT.
 - Queue size, processing latency, and failed jobs.
 - Critical errors and repeated failures.
 
-## 50.5. Operational Use
+## 54.5. Operational Use
 
 Use metrics to:
 
@@ -3532,20 +4380,20 @@ Use metrics to:
 - Review monetization and tariff performance.
 - Prioritize technical debt and reliability work.
 
-Capacity planning and threshold handling are described in [Capacity and Performance Management](capacity-management.md).
+Capacity planning and threshold handling are described in [Capacity and Performance Management](#53-capacity-and-performance-management).
 
 Metrics must never include TikTok OAuth tokens, Robokassa secrets, Telegram bot tokens, or raw user video contents.
 
-Diagnostic event and log correlation requirements are described in [Observability and Diagnostics](observability-diagnostics.md).
+Diagnostic event and log correlation requirements are described in [Observability and Diagnostics](#55-observability-and-diagnostics).
 
-# 51. Observability and Diagnostics
+# 55. Observability and Diagnostics
 
 Группа спецификации: Наблюдаемость
 
 
-Security logging and audit requirements are defined in [Security Logging and Audit](security-logging-audit.md).
+Security logging and audit requirements are defined in [Security Logging and Audit](#31-security-logging-and-audit).
 
-## 51.1. Unified Tracing
+## 55.1. Unified Tracing
 
 - Assign a Request ID to every incoming HTTP request.
 - Use a Correlation ID for related operations across API, bot, worker, database events, and external callbacks.
@@ -3553,7 +4401,7 @@ Security logging and audit requirements are defined in [Security Logging and Aud
 - Store timestamps in UTC with timezone-aware values.
 - Include user, upload job, payment, webhook event, and admin action identifiers when available.
 
-## 51.2. Diagnostic Events
+## 55.2. Diagnostic Events
 
 Record structured events for:
 
@@ -3569,11 +4417,11 @@ Record structured events for:
 - Configuration changes.
 - Background job retries and terminal failures.
 
-Queue retry policy and duplicate-prevention rules are documented in [Queue and Retry Policy](queue-retry-policy.md).
+Queue retry policy and duplicate-prevention rules are documented in [Queue and Retry Policy](#51-queue-and-retry-policy).
 
-Webhook event persistence rules are documented in [Webhook Events Entity](webhook-events-entity.md).
+Webhook event persistence rules are documented in [Webhook Events Entity](#14-webhook-events-entity).
 
-## 51.3. Log Requirements
+## 55.3. Log Requirements
 
 Logs must:
 
@@ -3586,9 +4434,9 @@ Logs must:
 - Avoid storing raw user video contents.
 - Follow configurable retention periods.
 
-Error code and exception handling rules are documented in [Error Codes and Exception Handling](error-handling.md).
+Error code and exception handling rules are documented in [Error Codes and Exception Handling](#29-error-codes-and-exception-handling).
 
-## 51.4. Cross-Service Diagnostics
+## 55.4. Cross-Service Diagnostics
 
 For a publication flow, the same correlation context should connect:
 
@@ -3600,7 +4448,7 @@ For a publication flow, the same correlation context should connect:
 6. User notification.
 7. Admin dashboard status and logs.
 
-See [Sequence Flows](sequence-flows.md) for component interaction order.
+See [Sequence Flows](#4-sequence-flows) for component interaction order.
 
 For a payment flow, the same correlation context should connect:
 
@@ -3612,7 +4460,7 @@ For a payment flow, the same correlation context should connect:
 6. User notification.
 7. Audit and webhook history.
 
-## 51.5. Operational Diagnostics
+## 55.5. Operational Diagnostics
 
 Administrators should be able to search diagnostics by:
 
@@ -3625,22 +4473,22 @@ Administrators should be able to search diagnostics by:
 - Request ID.
 - Correlation ID.
 
-Administrative audit storage rules are documented in [Admin Actions Entity](admin-actions-entity.md).
+Administrative audit storage rules are documented in [Admin Actions Entity](#15-admin-actions-entity).
 
-## 51.6. Goal
+## 55.6. Goal
 
 Diagnostic data must make it possible to identify failure causes quickly, analyze performance, verify external integration behavior, and simplify long-term maintenance without exposing confidential data.
 
-# 52. Development Standards
+# 56. Development Standards
 
 Группа спецификации: Разработка
 
 
-All development must preserve the requirements in [Architecture Summary](architecture-summary.md) and the subsystem boundaries in [Project Component Map](component-map.md).
+All development must preserve the requirements in [Architecture Summary](#2-architecture-summary) and the subsystem boundaries in [Project Component Map](#3-project-component-map).
 
-The full documentation entry point is [Specification Index](specification-index.md).
+The full documentation entry point is [Specification Index](#72-specification-index).
 
-## 52.1. Repository Structure
+## 56.1. Repository Structure
 
 ```text
 Tik-Tok-bot-Rus-2/
@@ -3655,7 +4503,7 @@ Tik-Tok-bot-Rus-2/
 └── README.md
 ```
 
-## 52.2. Coding Standards
+## 56.2. Coding Standards
 
 - Python 3.12.
 - Type hints for public functions, methods, and data structures.
@@ -3663,9 +4511,9 @@ Tik-Tok-bot-Rus-2/
 - Public functions and classes should include docstrings when their behavior is not obvious from the name and type signature.
 - Business logic, API handlers, data access, security, worker code, and infrastructure code stay in separate modules.
 
-Project terminology and naming rules are documented in [Glossary and Naming Conventions](glossary-naming.md).
+Project terminology and naming rules are documented in [Glossary and Naming Conventions](#71-glossary-and-naming-conventions).
 
-## 52.3. Git Workflow
+## 56.3. Git Workflow
 
 1. Create a feature branch from the latest `main`.
 2. Make focused commits.
@@ -3684,19 +4532,19 @@ Do not commit:
 - production backups
 - raw OAuth tokens
 
-Repository workflow details and branch protection recommendations are documented in [GitHub Workflow](github-workflow.md).
+Repository workflow details and branch protection recommendations are documented in [GitHub Workflow](#57-github-workflow).
 
-Feature expansion rules are documented in [Feature Development Plan](feature-development-plan.md).
+Feature expansion rules are documented in [Feature Development Plan](#58-feature-development-plan).
 
-Database validation, constraints, transactions, and data consistency rules are documented in [Data Quality and Integrity](data-quality-integrity.md).
+Database validation, constraints, transactions, and data consistency rules are documented in [Data Quality and Integrity](../data-quality-integrity.md).
 
-Entity relationships are documented in [Logical Data Model](data-model.md).
+Entity relationships are documented in [Logical Data Model](#7-logical-data-model).
 
-Post-launch change acceptance rules are documented in [Change Acceptance Policy](change-acceptance-policy.md).
+Post-launch change acceptance rules are documented in [Change Acceptance Policy](#66-change-acceptance-policy).
 
-Technical debt tracking and review rules are documented in [Technical Debt Management](technical-debt-management.md).
+Technical debt tracking and review rules are documented in [Technical Debt Management](#59-technical-debt-management).
 
-## 52.4. Quality Gates
+## 56.4. Quality Gates
 
 Before merge:
 
@@ -3710,24 +4558,24 @@ docker compose build
 detect-secrets scan --all-files --exclude-files '\.git/.*|\.env\.example'
 ```
 
-## 52.5. Compatibility
+## 56.5. Compatibility
 
 Public REST methods use `/api/v1`. New API versions must be introduced without breaking existing clients.
 
-REST response format and API compatibility rules are documented in [REST API Standards](rest-api-standards.md).
+REST response format and API compatibility rules are documented in [REST API Standards](#24-rest-api-standards).
 
-# 53. GitHub Workflow
+# 57. GitHub Workflow
 
 Группа спецификации: Разработка
 
 
-## 53.1. Repository
+## 57.1. Repository
 
 The source of truth is `kredavto/Tik-Tok-bot-Rus-2`.
 
 GitHub stores source code, documentation, CI history, pull requests, issues, and release tags.
 
-## 53.2. Development Flow
+## 57.2. Development Flow
 
 1. Create a feature branch from `main`.
 2. Keep the branch synchronized with `main`.
@@ -3739,7 +4587,7 @@ GitHub stores source code, documentation, CI history, pull requests, issues, and
 8. Complete code review.
 9. Merge only after checks pass.
 
-## 53.3. Branch Protection Recommendations
+## 57.3. Branch Protection Recommendations
 
 Enable these settings for `main`:
 
@@ -3751,7 +4599,7 @@ Enable these settings for `main`:
 - Block direct pushes.
 - Run secret scanning.
 
-## 53.4. Task Description Standard
+## 57.4. Task Description Standard
 
 Each change should document:
 
@@ -3761,9 +4609,9 @@ Each change should document:
 - Specification reference.
 - Acceptance criteria.
 
-For new product functionality, follow [Feature Development Plan](feature-development-plan.md).
+For new product functionality, follow [Feature Development Plan](#58-feature-development-plan).
 
-## 53.5. Completion Criteria
+## 57.5. Completion Criteria
 
 A task is complete when:
 
@@ -3773,7 +4621,7 @@ A task is complete when:
 - CI is green.
 - Changes are ready for a release.
 
-## 53.6. Release Tags
+## 57.6. Release Tags
 
 Release tags should follow SemVer, for example:
 
@@ -3783,12 +4631,12 @@ v0.1.0
 
 Sign releases when project policy requires it.
 
-# 54. Feature Development Plan
+# 58. Feature Development Plan
 
 Группа спецификации: Разработка
 
 
-## 54.1. Principles
+## 58.1. Principles
 
 - Preserve the modular architecture.
 - Keep public `/api/v1` behavior backward compatible.
@@ -3797,7 +4645,7 @@ Sign releases when project policy requires it.
 - Reuse existing service layers instead of duplicating business logic.
 - Use existing authorization, logging, configuration, audit, and error-handling mechanisms.
 
-## 54.2. Feature Delivery Flow
+## 58.2. Feature Delivery Flow
 
 1. Prepare a technical description.
 2. Define affected modules, API methods, data model, background tasks, and user scenarios.
@@ -3810,7 +4658,7 @@ Sign releases when project policy requires it.
 9. Verify the feature in staging.
 10. Release a new SemVer version.
 
-## 54.3. Compatibility Requirements
+## 58.3. Compatibility Requirements
 
 New features must:
 
@@ -3821,7 +4669,7 @@ New features must:
 - Use existing request ID, correlation ID, JSON logging, and audit logging.
 - Keep configuration in `.env` or database-backed system settings.
 
-## 54.4. Quality Control
+## 58.4. Quality Control
 
 Before merging a feature:
 
@@ -3832,9 +4680,9 @@ Before merging a feature:
 - Performance impact is checked for queues, database queries, and API endpoints.
 - Security review is complete for user data, OAuth tokens, payments, admin actions, and webhooks.
 - Documentation and `CHANGELOG.md` are current.
-- Any introduced or removed technical debt is recorded according to [Technical Debt Management](technical-debt-management.md).
+- Any introduced or removed technical debt is recorded according to [Technical Debt Management](#59-technical-debt-management).
 
-## 54.5. Release Readiness
+## 58.5. Release Readiness
 
 A feature is release-ready only after staging verification confirms:
 
@@ -3845,14 +4693,14 @@ A feature is release-ready only after staging verification confirms:
 - Daily limits and subscription expiration still behave correctly.
 - Monitoring, logs, and audit events include the new behavior.
 
-# 55. Technical Debt Management
+# 59. Technical Debt Management
 
 Группа спецификации: Разработка
 
 
 This document defines how Tik_Tok_Loader records, prioritizes, reviews, and resolves technical debt during project evolution.
 
-## 55.1. Sources of Technical Debt
+## 59.1. Sources of Technical Debt
 
 Technical debt may come from:
 
@@ -3864,7 +4712,7 @@ Technical debt may come from:
 - Performance bottlenecks found during operations.
 - Documentation gaps discovered during release or incident review.
 
-## 55.2. Debt Record Format
+## 59.2. Debt Record Format
 
 Every technical debt item must have:
 
@@ -3881,14 +4729,14 @@ Every technical debt item must have:
 | `target_release` | Planned release or review date |
 | `status` | `Open`, `In Progress`, `Deferred`, `Resolved`, or `Accepted Risk` |
 
-## 55.3. Prioritization
+## 59.3. Prioritization
 
 - Critical security issues are resolved first and must not be deferred without explicit risk acceptance.
 - Stability, data integrity, payment, OAuth, publication, and recovery issues are planned for the nearest practical release.
 - Medium-priority maintainability and test coverage issues are scheduled into the roadmap.
 - Low-priority improvements are grouped and reviewed during regular planning.
 
-## 55.4. Review Rules
+## 59.4. Review Rules
 
 - Review technical debt before every release.
 - Update status, owner, priority, and target release during review.
@@ -3896,7 +4744,7 @@ Every technical debt item must have:
 - Convert repeated incidents or recurring review comments into debt records.
 - Close a debt item only after implementation, tests, and documentation are updated where relevant.
 
-## 55.5. Release Control
+## 59.5. Release Control
 
 A release may proceed with open technical debt only when:
 
@@ -3905,16 +4753,16 @@ A release may proceed with open technical debt only when:
 - Remaining items have owners and target releases.
 - Risk acceptance is documented for deferred high-priority items.
 
-## 55.6. Documentation
+## 59.6. Documentation
 
 Technical debt decisions that affect architecture, testing, deployment, operations, or user behavior must update the corresponding documentation and `CHANGELOG.md` when resolved.
 
-# 56. Dependencies and Third-Party Services
+# 60. Dependencies and Third-Party Services
 
 Группа спецификации: Зависимости
 
 
-## 56.1. Core Dependencies
+## 60.1. Core Dependencies
 
 The project depends on:
 
@@ -3930,21 +4778,22 @@ The project depends on:
 
 Python dependency versions are constrained in `pyproject.toml`. Runtime service versions are controlled by Docker images and production deployment configuration.
 
-Infrastructure runtime update rules are documented in [Infrastructure Dependency Management](infrastructure-dependency-management.md).
+Infrastructure runtime update rules are documented in [Infrastructure Dependency Management](#61-infrastructure-dependency-management).
 
-License and third-party component registry rules are documented in [License and Third-Party Component Management](license-third-party-management.md).
+License and third-party component registry rules are documented in [License and Third-Party Component Management](#62-license-and-third-party-component-management).
 
-## 56.2. External Integrations
+## 60.2. External Integrations
 
 Supported production integrations are:
 
 - Telegram Bot API.
 - Official TikTok Content Posting API.
-- Existing Robokassa merchant account.
+- Telegram Stars through the official Bot API.
+- Existing Robokassa merchant account for a separately approved external channel.
 
 The project must not use unofficial TikTok APIs, browser automation, credential scraping, or methods that bypass TikTok platform restrictions.
 
-## 56.3. Update Policy
+## 60.3. Update Policy
 
 - Check dependency and base image updates regularly.
 - Prioritize security updates for Python libraries, Docker images, PostgreSQL, Redis, Nginx, and FFmpeg.
@@ -3954,7 +4803,7 @@ The project must not use unofficial TikTok APIs, browser automation, credential 
 - Document relevant dependency and integration changes in `CHANGELOG.md`.
 - Keep license and source metadata current for third-party components.
 
-## 56.4. Compatibility Checks
+## 60.4. Compatibility Checks
 
 Before releasing dependency updates, verify:
 
@@ -3967,7 +4816,7 @@ Before releasing dependency updates, verify:
 - Robokassa signature validation and ResultURL idempotency still work.
 - TikTok OAuth and Content Posting API clients still match official API behavior.
 
-## 56.5. Third-Party Service Control
+## 60.5. Third-Party Service Control
 
 For each external service, maintain:
 
@@ -3977,18 +4826,18 @@ For each external service, maintain:
 - Incident contact or status page.
 - Last successful integration test date.
 
-## 56.6. Release Rule
+## 60.6. Release Rule
 
 A release that changes dependencies or third-party integration behavior can proceed only after CI passes, staging verification is complete, documentation is updated, and rollback steps are known.
 
-# 57. Infrastructure Dependency Management
+# 61. Infrastructure Dependency Management
 
 Группа спецификации: Зависимости
 
 
 This document defines how Tik_Tok_Loader controls infrastructure component versions, operating system updates, container updates, and runtime dependency compatibility.
 
-## 57.1. Controlled Components
+## 61.1. Controlled Components
 
 | Component | Control Area |
 | --- | --- |
@@ -4000,7 +4849,7 @@ This document defines how Tik_Tok_Loader controls infrastructure component versi
 | Python and project libraries | Python runtime, application dependencies, and version constraints |
 | Docker base images | Security patches, Python image compatibility, and OS package updates |
 
-## 57.2. Update Policy
+## 61.2. Update Policy
 
 - Check OS, Docker, Docker Compose, Nginx, PostgreSQL, Redis, Python library, and base image updates regularly.
 - Test updates in staging before production rollout.
@@ -4009,7 +4858,7 @@ This document defines how Tik_Tok_Loader controls infrastructure component versi
 - Verify compatibility after every update.
 - Avoid direct critical infrastructure changes in production without a rollback plan.
 
-## 57.3. Security Control
+## 61.3. Security Control
 
 - Install critical security updates in a timely manner.
 - Review Docker base image vulnerabilities before release.
@@ -4018,7 +4867,7 @@ This document defines how Tik_Tok_Loader controls infrastructure component versi
 - Confirm PostgreSQL and Redis remain inaccessible from the public internet.
 - Keep secrets in `.env` or an approved secret store only.
 
-## 57.4. Production Update Procedure
+## 61.4. Production Update Procedure
 
 1. Review the change scope and affected services.
 2. Create a PostgreSQL backup and save current production configuration.
@@ -4032,7 +4881,7 @@ This document defines how Tik_Tok_Loader controls infrastructure component versi
 10. Review logs for new critical errors.
 11. Document the update result.
 
-## 57.5. Compatibility Checks
+## 61.5. Compatibility Checks
 
 After infrastructure updates, verify:
 
@@ -4046,7 +4895,7 @@ After infrastructure updates, verify:
 - TikTok OAuth start and callback URLs still match public HTTPS configuration.
 - Video validation and FFmpeg/FFprobe behavior remain compatible.
 
-## 57.6. Successful Update Criteria
+## 61.6. Successful Update Criteria
 
 An infrastructure update is successful only when:
 
@@ -4056,24 +4905,24 @@ An infrastructure update is successful only when:
 - Backup and rollback paths are known.
 - Update actions and outcomes are documented.
 
-## 57.7. Related Documents
+## 61.7. Related Documents
 
-- [Dependencies and Third-Party Services](dependencies-and-integrations.md)
-- [License and Third-Party Component Management](license-third-party-management.md)
-- [Deployment](deployment.md)
-- [Release Management](release.md)
-- [Security, Backup, and Monitoring](security.md)
-- [SOP Checklists](sop-checklists.md)
-- [Capacity and Performance Management](capacity-management.md)
+- [Dependencies and Third-Party Services](#60-dependencies-and-third-party-services)
+- [License and Third-Party Component Management](#62-license-and-third-party-component-management)
+- [Deployment](#36-deployment)
+- [Release Management](#65-release-management)
+- [Security, Backup, and Monitoring](#30-security-backup-and-monitoring)
+- [SOP Checklists](#42-sop-checklists)
+- [Capacity and Performance Management](#53-capacity-and-performance-management)
 
-# 58. License and Third-Party Component Management
+# 62. License and Third-Party Component Management
 
 Группа спецификации: Зависимости
 
 
 This document defines how Tik_Tok_Loader tracks third-party components, validates licenses, and controls dependency security.
 
-## 58.1. Component Registry
+## 62.1. Component Registry
 
 The dependency registry must cover:
 
@@ -4098,7 +4947,7 @@ Each registry entry should include:
 | Owner | Person or team responsible for review |
 | Notes | Exceptions, constraints, or special usage conditions |
 
-## 58.2. License Checks
+## 62.2. License Checks
 
 - Record licenses for all external libraries and runtime components.
 - Check license compatibility before adding a dependency.
@@ -4106,7 +4955,7 @@ Each registry entry should include:
 - Recheck license metadata when dependencies are upgraded.
 - Avoid dependencies with unclear origin or incompatible licensing.
 
-## 58.3. Security Control
+## 62.3. Security Control
 
 - Regularly check known vulnerabilities for Python packages, Docker base images, OS packages, PostgreSQL, Redis, Nginx, FFmpeg, and CI tools.
 - Update dependencies only after staging verification.
@@ -4114,7 +4963,7 @@ Each registry entry should include:
 - Keep versions constrained in dependency files and deployment configuration.
 - Document dependency and component changes in `CHANGELOG.md` when they affect runtime, security, operations, or compatibility.
 
-## 58.4. Review Before Adding a Dependency
+## 62.4. Review Before Adding a Dependency
 
 Before adding a third-party component:
 
@@ -4125,7 +4974,7 @@ Before adding a third-party component:
 5. Confirm staging compatibility.
 6. Update dependency files, documentation, tests, and `CHANGELOG.md` where relevant.
 
-## 58.5. Release Requirements
+## 62.5. Release Requirements
 
 Before release:
 
@@ -4135,19 +4984,19 @@ Before release:
 - Unused dependencies are reviewed for removal.
 - Staging verification passes after dependency changes.
 
-## 58.6. Related Documents
+## 62.6. Related Documents
 
-- [Dependencies and Third-Party Services](dependencies-and-integrations.md)
-- [Infrastructure Dependency Management](infrastructure-dependency-management.md)
-- [Release Management](release.md)
-- [Technical Debt Management](technical-debt-management.md)
+- [Dependencies and Third-Party Services](#60-dependencies-and-third-party-services)
+- [Infrastructure Dependency Management](#61-infrastructure-dependency-management)
+- [Release Management](#65-release-management)
+- [Technical Debt Management](#59-technical-debt-management)
 
-# 59. Migration and Version Compatibility Plan
+# 63. Migration and Version Compatibility Plan
 
 Группа спецификации: Релизы
 
 
-## 59.1. Migration Rules
+## 63.1. Migration Rules
 
 - Apply all database schema changes only through Alembic.
 - Review and test every migration before production.
@@ -4156,7 +5005,7 @@ Before release:
 - Keep schema migrations and application code compatible during rolling or staged deployment when possible.
 - Never edit an already-applied production migration; create a new migration instead.
 
-## 59.2. Migration Preflight
+## 63.2. Migration Preflight
 
 Before applying migrations:
 
@@ -4168,7 +5017,7 @@ Before applying migrations:
 6. Create a production PostgreSQL backup.
 7. Record current Git tag, `APP_VERSION`, and database revision.
 
-## 59.3. Version Compatibility
+## 63.3. Version Compatibility
 
 - New application versions must preserve existing user data.
 - Public `/api/v1` changes should remain backward compatible.
@@ -4177,7 +5026,7 @@ Before applying migrations:
 - Workers and API must agree on upload status values, payment status values, and queue payload formats.
 - New columns should prefer nullable or defaulted rollout paths when zero-downtime compatibility is required.
 
-## 59.4. Production Update Procedure
+## 63.4. Production Update Procedure
 
 1. Create PostgreSQL and configuration backups.
 2. Deploy the approved application version.
@@ -4186,7 +5035,7 @@ Before applying migrations:
 5. Verify key user scenarios.
 6. Monitor errors, queues, payments, publication success, and external callbacks.
 
-## 59.5. Rollback Procedure
+## 63.5. Rollback Procedure
 
 If the update fails:
 
@@ -4197,7 +5046,7 @@ If the update fails:
 5. Check health, readiness, queue state, payment processing, and publication state.
 6. Document the incident and corrective action.
 
-## 59.6. Post-Update Control
+## 63.6. Post-Update Control
 
 After every update, monitor:
 
@@ -4210,16 +5059,98 @@ After every update, monitor:
 - User support reports.
 - Overall system stability.
 
-## 59.7. Development Requirement
+## 63.7. Development Requirement
 
 Any new database entity or schema change must include an Alembic migration, data quality rules, tests, documentation, and a compatibility assessment before release.
 
-# 60. Release Management
+# 64. Release Candidate Manifest
 
 Группа спецификации: Релизы
 
 
-## 60.1. Environments
+The release candidate manifest is deterministic, secret-free evidence that identifies the exact
+source tree proposed for staging. It complements CI results and provider-backed acceptance records;
+it does not replace either of them.
+
+## 64.1. Current Release
+
+The current stable production version is `0.2.0`. The version is synchronized across
+`pyproject.toml`, `app.__version__`, the application configuration default, and all environment
+templates. `CHANGELOG.md` contains a matching release heading.
+
+The release was promoted from `0.2.0-rc.1` after automated quality gates, production Robokassa
+acceptance, and a real Telegram Stars payment and refund scenario passed. TikTok Sandbox OAuth and
+Creator Info acceptance completed on 2026-07-20. TikTok publication stays disabled by configuration
+until the controlled Content Posting scenario and application-review gates are complete. The
+manifest builder continues to reject any prerelease when the supplied runtime environment contains
+`APP_ENV=production`.
+
+## 64.2. Manifest Contents
+
+The JSON artifact contains:
+
+- schema version, project name, application version, and release channel;
+- target environment when a runtime `.env` is supplied;
+- full Git commit SHA and deterministic commit timestamp;
+- path, byte size, and SHA-256 digest for every tracked source file;
+- aggregate SHA-256 digest for the tracked source tree;
+- the single Alembic head and migration count;
+- the list of required quality gates; and
+- version-source identifiers and their common non-secret version value.
+
+The artifact never copies file contents, environment values other than `APP_ENV` and
+`APP_VERSION`, tokens, passwords, signatures, OAuth payloads, or payment data.
+
+## 64.3. Local Generation
+
+Generate evidence only from a clean tracked worktree:
+
+```bash
+python tools/build_release_candidate.py
+```
+
+The default output is written under ignored `dist/release/`. For a staging deployment:
+
+```bash
+python tools/build_release_candidate.py \
+  --env-file .env \
+  --output .deploy/release-manifest.json
+```
+
+`--allow-dirty` is available only for development diagnostics. A manifest created with that option
+is not release evidence because its Git SHA may not describe working-tree changes.
+
+## 64.4. CI and Deployment
+
+GitHub Actions creates `release-candidate-manifest` only after quality, PostgreSQL integration,
+migration, coverage, container-build, and non-root checks succeed. The artifact is retained for 30
+days and is attached to the exact workflow commit.
+
+The deployment script regenerates `.deploy/release-manifest.json` after checking out the requested
+commit and before building the application image. It also compares the server-side `APP_VERSION`
+with every version source. A mismatch, dirty tracked tree, invalid SemVer, multiple Alembic heads,
+or production prerelease stops deployment before image construction.
+
+## 64.5. Staging Evidence
+
+Record these values in the staging acceptance result:
+
+- manifest filename and artifact URL;
+- application version and full Git SHA;
+- aggregate source-tree SHA-256;
+- Alembic head;
+- CI workflow URL; and
+- sanitized acceptance outcomes from the staging runbook.
+
+The production approver must be able to match the promoted stable commit to the accepted release
+candidate and review every change introduced during promotion.
+
+# 65. Release Management
+
+Группа спецификации: Релизы
+
+
+## 65.1. Environments
 
 | Environment | Purpose |
 | --- | --- |
@@ -4229,7 +5160,7 @@ Any new database entity or schema change must include an Alembic migration, data
 
 Environment templates live in `deploy/env.*.example`. Real `.env.*` files are not committed.
 
-## 60.2. Release Requirements
+## 65.2. Release Requirements
 
 - CI passes.
 - Alembic migrations are tested.
@@ -4242,79 +5173,80 @@ Environment templates live in `deploy/env.*.example`. Real `.env.*` files are no
 - Production backup is created before deployment.
 - Risk impact is reviewed before production deployment.
 
-## 60.3. Release Flow
+## 65.3. Release Flow
 
-1. Create a release branch.
-2. Update version and changelog.
-3. Run CI checks.
-4. Deploy to staging.
-5. Run acceptance tests.
-6. Approve release.
-7. Back up production.
-8. Deploy to production.
-9. Check `/health`, `/ready`, `/metrics`.
-10. Monitor logs and core scenarios after release.
+1. Create a release branch and assign a SemVer prerelease such as `0.2.0-rc.1`.
+2. Synchronize version sources and update the changelog.
+3. Run CI and retain the deterministic release-candidate manifest.
+4. Deploy the candidate to staging.
+5. Run acceptance tests and attach sanitized evidence to the manifest record.
+6. Promote the accepted source to a stable version such as `0.2.0`.
+7. Run CI again and approve the stable release.
+8. Back up production.
+9. Deploy the stable version to production.
+10. Check `/health`, `/ready`, `/metrics` and monitor core scenarios.
 
-Post-launch release planning, routine checks, and quality gates are described in [Post-Launch Maintenance and Versioning](post-launch-maintenance.md).
+Manifest generation, prerelease restrictions, and promotion evidence are defined in
+[Release Candidate Manifest](#64-release-candidate-manifest).
 
-Dependency and third-party service updates must follow [Dependencies and Third-Party Services](dependencies-and-integrations.md).
+Post-launch release planning, routine checks, and quality gates are described in [Post-Launch Maintenance and Versioning](#44-post-launch-maintenance-and-versioning).
 
-Infrastructure runtime updates must follow [Infrastructure Dependency Management](infrastructure-dependency-management.md).
+Dependency and third-party service updates must follow [Dependencies and Third-Party Services](#60-dependencies-and-third-party-services).
 
-New functionality must satisfy [Feature Development Plan](feature-development-plan.md) before release approval.
+Infrastructure runtime updates must follow [Infrastructure Dependency Management](#61-infrastructure-dependency-management).
 
-Database migration and version compatibility rules are documented in [Migration and Version Compatibility Plan](migration-compatibility-plan.md).
+New functionality must satisfy [Feature Development Plan](#58-feature-development-plan) before release approval.
 
-Every release candidate must satisfy [Change Acceptance Policy](change-acceptance-policy.md).
+Database migration and version compatibility rules are documented in [Migration and Version Compatibility Plan](#63-migration-and-version-compatibility-plan).
 
-Acceptance testing must follow [QA Test Data and Acceptance Scenarios](qa-acceptance-scenarios.md).
+Every release candidate must satisfy [Change Acceptance Policy](#66-change-acceptance-policy).
 
-Requirement coverage must follow [Requirements Traceability Matrix](requirements-traceability.md).
+Acceptance testing must follow [QA Test Data and Acceptance Scenarios](#67-qa-test-data-and-acceptance-scenarios).
 
-Documentation completeness must follow [Specification Index](specification-index.md).
+Requirement coverage must follow [Requirements Traceability Matrix](#70-requirements-traceability-matrix).
 
-Environment configuration and secret readiness must follow [Environment Configuration and Secrets Control](environment-configuration-secrets.md).
+Documentation completeness must follow [Specification Index](#72-specification-index).
 
-Technical debt must be reviewed according to [Technical Debt Management](technical-debt-management.md).
+Environment configuration and secret readiness must follow [Environment Configuration and Secrets Control](#33-environment-configuration-and-secrets-control).
 
-License and third-party component checks must follow [License and Third-Party Component Management](license-third-party-management.md).
+Technical debt must be reviewed according to [Technical Debt Management](#59-technical-debt-management).
 
-API versioning, compatibility, and deprecation checks must follow [API Versioning and Client Compatibility](api-versioning-compatibility.md).
+License and third-party component checks must follow [License and Third-Party Component Management](#62-license-and-third-party-component-management).
 
-Implementation stage readiness must follow [Implementation Roadmap](implementation-roadmap.md).
+API versioning, compatibility, and deprecation checks must follow [API Versioning and Client Compatibility](#25-api-versioning-and-client-compatibility).
 
-## 60.4. Production Update
+Implementation stage readiness must follow [Implementation Roadmap](#5-implementation-roadmap).
+
+## 65.4. Production Update
 
 ```bash
-bash deploy/backup_postgres.sh
-git fetch --tags
-git checkout vX.Y.Z
-docker compose build
-docker compose run --rm api alembic upgrade head
-docker compose up -d
-curl https://your-domain.example/health
-curl https://your-domain.example/ready
+ENV_FILE=.env bash deploy/deploy.sh production vX.Y.Z
 ```
 
-## 60.5. Rollback
+The deployment command rejects prerelease versions for `APP_ENV=production`.
 
-1. Stop intake with `intake_enabled=false`.
-2. Check out the previous stable tag.
-3. Rebuild and restart containers.
-4. Restore the database backup if the failed release changed data incompatibly.
-5. Check health and readiness.
+## 65.5. Rollback
+
+1. Stop intake with `intake_enabled=false` when publication behavior is affected.
+2. Confirm the previous release is compatible with the current database schema.
+3. Run `ENV_FILE=.env bash deploy/rollback.sh production <ref> --confirm`.
+4. Restore a verified database backup only after a separate data-impact review.
+5. Check health, readiness, metrics, and key user scenarios.
 6. Re-enable intake.
 
-## 60.6. API Compatibility
+The automation details and database downgrade restriction are documented in
+[CI/CD and Deployment Automation](#37-cicd-and-deployment-automation).
+
+## 65.6. API Compatibility
 
 Public REST methods use `/api/v1`. Backward-compatible fields can be added. Removing or changing fields requires a new major API version.
 
-# 61. Change Acceptance Policy
+# 66. Change Acceptance Policy
 
 Группа спецификации: Релизы
 
 
-## 61.1. Architectural Principles
+## 66.1. Architectural Principles
 
 All future changes must:
 
@@ -4325,7 +5257,7 @@ All future changes must:
 - Include tests and documentation for new behavior.
 - Stay within the official TikTok API model.
 
-## 61.2. Change Acceptance Flow
+## 66.2. Change Acceptance Flow
 
 Before accepting a change:
 
@@ -4339,17 +5271,17 @@ Before accepting a change:
 8. Update `CHANGELOG.md`.
 9. Confirm release readiness.
 
-Requirement links must be updated in [Requirements Traceability Matrix](requirements-traceability.md).
+Requirement links must be updated in [Requirements Traceability Matrix](#70-requirements-traceability-matrix).
 
-API changes must also satisfy [OpenAPI and Contract Documentation](openapi-contracts.md).
+API changes must also satisfy [OpenAPI and Contract Documentation](#28-openapi-and-contract-documentation).
 
-API version compatibility must satisfy [API Versioning and Client Compatibility](api-versioning-compatibility.md).
+API version compatibility must satisfy [API Versioning and Client Compatibility](#25-api-versioning-and-client-compatibility).
 
-Technical debt introduced, changed, or resolved by a change must follow [Technical Debt Management](technical-debt-management.md).
+Technical debt introduced, changed, or resolved by a change must follow [Technical Debt Management](#59-technical-debt-management).
 
-New dependencies or third-party components must follow [License and Third-Party Component Management](license-third-party-management.md).
+New dependencies or third-party components must follow [License and Third-Party Component Management](#62-license-and-third-party-component-management).
 
-## 61.3. Minimum Quality Criteria
+## 66.3. Minimum Quality Criteria
 
 A change can be accepted only when:
 
@@ -4364,7 +5296,7 @@ A change can be accepted only when:
 - Technical debt impact is reviewed.
 - License and third-party component impact is reviewed when dependencies change.
 
-## 61.4. Regression Checks
+## 66.4. Regression Checks
 
 Key scenarios to protect:
 
@@ -4377,22 +5309,22 @@ Key scenarios to protect:
 - Admin dashboard and audit logging.
 - Health, readiness, metrics, and logs.
 
-QA data and detailed acceptance scenarios are documented in [QA Test Data and Acceptance Scenarios](qa-acceptance-scenarios.md).
+QA data and detailed acceptance scenarios are documented in [QA Test Data and Acceptance Scenarios](#67-qa-test-data-and-acceptance-scenarios).
 
-## 61.5. Final Requirement
+## 66.5. Final Requirement
 
 All specification parts form one requirement set for Tik_Tok_Loader. Future changes must respect the architecture, security rules, testing process, deployment process, and operational procedures documented in this repository.
 
-The complete documentation entry point is [Specification Index](specification-index.md).
+The complete documentation entry point is [Specification Index](#72-specification-index).
 
-# 62. QA Test Data and Acceptance Scenarios
+# 67. QA Test Data and Acceptance Scenarios
 
 Группа спецификации: Качество
 
 
-Requirement-to-test mapping is maintained in [Requirements Traceability Matrix](requirements-traceability.md).
+Requirement-to-test mapping is maintained in [Requirements Traceability Matrix](#70-requirements-traceability-matrix).
 
-## 62.1. Test Users
+## 67.1. Test Users
 
 Prepare these accounts in staging:
 
@@ -4401,14 +5333,17 @@ Prepare these accounts in staging:
 | FREE user | Validate free daily limit and default plan assignment |
 | PRO user | Validate paid plan behavior and daily limit |
 | BUSINESS user | Validate higher paid limit |
+| UNLIMIT user | Validate paid plan without a daily cap |
 | Administrator | Validate admin API and audit log |
 | User without TikTok | Validate TikTok connection requirement |
 
 Use test credentials and staging-only data. Do not use production secrets in QA environments.
 
-## 62.2. Acceptance Scenarios
+## 67.2. Acceptance Scenarios
 
-### 62.2.1. New User Registration
+### 67.2.1. QA-REG-001: New User Registration
+
+Automation: implemented in `tests/test_subscriptions.py` and `tests/test_bot_fsm.py`.
 
 Expected result:
 
@@ -4417,7 +5352,10 @@ Expected result:
 - FREE plan is assigned.
 - Audit and diagnostic logs contain expected entries.
 
-### 62.2.2. TikTok OAuth Connection
+### 67.2.2. QA-OAUTH-001: TikTok OAuth Connection
+
+Automation: OAuth state, URL, signature, and encrypted storage paths are covered. Final provider
+authorization remains a staging check.
 
 Expected result:
 
@@ -4426,7 +5364,10 @@ Expected result:
 - Tokens are encrypted before storage.
 - User receives a successful connection notification.
 
-### 62.2.3. Successful Video Publication
+### 67.2.3. QA-UPL-001: Successful Video Publication
+
+Automation: video validation, FSM options, queue locking, TikTok client mocks, and status history
+are covered. Final publication through an approved TikTok application remains a staging check.
 
 Expected result:
 
@@ -4435,9 +5376,12 @@ Expected result:
 - Job is queued and processed.
 - Official TikTok API acceptance is recorded.
 - User daily usage is incremented only after acceptance.
+- A final TikTok failure returns the reserved usage exactly once.
 - User receives final notification.
 
-### 62.2.4. Daily Limit Exceeded
+### 67.2.4. QA-LIMIT-001: Daily Limit Exceeded
+
+Automation: implemented in `tests/test_subscriptions.py`, including concurrent first-use checks.
 
 Expected result:
 
@@ -4446,17 +5390,39 @@ Expected result:
 - User receives a clear limit notification.
 - Logs include user and correlation context.
 
-### 62.2.5. PRO Purchase Through Robokassa
+### 67.2.5. QA-PAY-001: PRO Purchase Through Telegram Stars
+
+Automation: order creation, user/currency/amount validation, charge uniqueness, and concurrent
+duplicate confirmation are covered. A real Telegram Stars round trip remains a staging check.
 
 Expected result:
 
-- Payment order and `InvId` are created.
-- Robokassa ResultURL signature, amount, currency, and `InvId` are verified.
-- Subscription activates only after ResultURL.
-- SuccessURL does not activate subscription.
+- A PRO invoice is created for `199 XTR`; a BUSINESS invoice is created for `499 XTR`.
+- An UNLIMIT invoice is created for `999 XTR`; its RUB reference price is `1999`.
+- User, amount, currency, payment UUID, and charge ID are verified.
+- Subscription activates only after `successful_payment`.
+- Duplicate updates do not create another subscription.
 - User receives payment success notification.
 
-### 62.2.6. Automatic Return to FREE
+### 67.2.6. QA-PAY-002: Robokassa External Sandbox Payment
+
+Automation: known signature vectors for every supported hash algorithm, order integrity,
+provider/currency checks, amount rejection, and concurrent idempotency are covered. The provider
+checkout and ResultURL delivery remain a staging check.
+
+Expected result:
+
+- Robokassa is not shown as an alternative checkout method for digital plans inside the bot.
+- An authenticated administrator creates a unique checkout for an existing user.
+- The test URL contains `IsTest=1` and uses the configured test Password #1 without exposing it.
+- Robokassa reaches the public HTTPS ResultURL and receives `OK{InvId}`.
+- The payment and exactly one subscription become active only after the callback signed with test
+  Password #2.
+- Duplicate callback delivery remains idempotent.
+
+### 67.2.7. QA-SUB-001: Automatic Return to FREE
+
+Automation: implemented in `tests/test_subscriptions.py`.
 
 Expected result:
 
@@ -4465,7 +5431,10 @@ Expected result:
 - User history remains intact.
 - User receives expiration or plan-change notification when applicable.
 
-### 62.2.7. Repeated Webhook
+### 67.2.8. QA-WEBHOOK-001: Repeated Webhook
+
+Automation: payment idempotency and webhook signature rejection are covered. Provider redelivery
+is also checked during staging acceptance.
 
 Expected result:
 
@@ -4474,7 +5443,10 @@ Expected result:
 - Payment or subscription is not activated twice.
 - Webhook event history contains enough diagnostic detail.
 
-### 62.2.8. Temporary Queue Failure Recovery
+### 67.2.9. QA-QUEUE-001: Temporary Queue Failure Recovery
+
+Automation: scheduler lease recovery, worker lock exclusion, and bounded TikTok chunk retries are
+covered.
 
 Expected result:
 
@@ -4483,7 +5455,7 @@ Expected result:
 - Job status remains consistent.
 - Daily usage is not double-counted.
 
-## 62.3. Success Criteria
+## 67.3. Success Criteria
 
 All acceptance scenarios must:
 
@@ -4494,24 +5466,118 @@ All acceptance scenarios must:
 - Send correct user notifications.
 - Leave queues and counters in a consistent state.
 
-## 62.4. Release Rule
+## 67.4. Release Rule
 
 A release candidate is not ready until required QA scenarios pass in staging or an equivalent controlled environment.
 
-# 63. Acceptance Checklist
+# 68. Test Strategy and Quality Gates
 
 Группа спецификации: Качество
 
 
-Final implementation must satisfy [Architecture Summary](architecture-summary.md).
+This document defines the automated test layers, release evidence, and staging checks for
+Tik_Tok_Loader. Detailed business scenarios are maintained in
+[QA Test Data and Acceptance Scenarios](#67-qa-test-data-and-acceptance-scenarios).
 
-Non-functional requirements must be validated according to [Non-Functional Requirements](non-functional-requirements.md).
+## 68.1. Test Layers
 
-Documentation completeness must be checked against [Specification Index](specification-index.md).
+| Layer | Scope | Primary Evidence |
+| --- | --- | --- |
+| Unit | Plans, RBAC, configuration, signatures, encryption, status transitions, localization | `tests/test_plans.py`, `tests/test_rbac.py`, `tests/test_configuration.py`, `tests/test_security_crypto.py` |
+| Bot FSM | Description, hashtags, creator constraints, privacy, commercial content, cancellation | `tests/test_bot_fsm.py` |
+| API and contracts | Health, tracing headers, safe errors, OAuth state validation, webhook rejection, OpenAPI paths | `tests/test_api_integration.py`, `tools/check_openapi.py` |
+| Video and TikTok client | File signatures, duration, cleanup, chunk planning, retries, creator info, webhook HMAC | `tests/test_video_service.py`, `tests/test_tiktok_service.py` |
+| Queue resilience | Distributed job lock and scheduler lease idempotency | `tests/test_worker_resilience.py`, `tests/test_scheduler.py` |
+| PostgreSQL integration | Registration, plans, daily limits, Stars/Robokassa confirmation, subscription expiry, upload event history | `tests/test_subscriptions.py`, `tests/test_telegram_stars.py`, `tests/test_robokassa.py`, `tests/test_upload_lifecycle_integration.py` |
+| Migration | Upgrade, schema drift check, downgrade to base, and clean re-upgrade | GitHub Actions `Migrations and tests` job |
+| Container | Compose model, image build, and non-root runtime | GitHub Actions `Container build` job |
+| Staging acceptance | Real Telegram Stars invoice, Robokassa sandbox callback, approved TikTok application, HTTPS, backup and restore | Signed release checklist and staging run record |
 
-Implementation progress must be checked against [Implementation Roadmap](implementation-roadmap.md).
+## 68.2. Local Quality Commands
 
-## 63.1. Functional Readiness
+Run static checks and infrastructure-free tests:
+
+```bash
+ruff format --check .
+ruff check .
+mypy app
+python tools/check_openapi.py
+python tools/check_secrets.py
+pytest --cov=app --cov-report=term-missing --cov-fail-under=45
+```
+
+The full `pytest` command requires PostgreSQL and may require Redis. GitHub Actions provides
+PostgreSQL 16, Redis, FFmpeg, an isolated encryption key, and a migrated disposable database.
+
+## 68.3. Coverage Policy
+
+CI enforces a project-wide line coverage floor of 45%. The floor is a regression guard, not a
+completion target. New or changed business logic must include focused tests, and critical payment,
+quota, OAuth, webhook, and queue paths require behavioral assertions even when aggregate coverage
+already passes.
+
+Coverage XML is generated in CI for later publication or quality-platform integration.
+
+## 68.4. Concurrency and Idempotency
+
+Automated PostgreSQL tests verify these invariants:
+
+- Concurrent Telegram registration creates one user and one active FREE subscription.
+- Concurrent first-use quota checks create one daily usage row.
+- Duplicate Robokassa confirmation activates a paid subscription exactly once.
+- Duplicate Telegram Stars confirmation activates a paid subscription exactly once.
+- Stars checkout rejects a mismatched user, currency, amount, payment ID, or reused charge ID.
+- A paid ResultURL with malformed or mismatched amount cannot activate a subscription.
+- A Robokassa ResultURL cannot activate a Stars payment or a non-RUB payment record.
+- Stars refund state changes are idempotent and return the refunded active subscription to FREE.
+- Stars refund admin endpoints enforce RBAC and CSRF, suppress duplicate provider calls, preserve an
+  ambiguous result as `refund_pending`, and reconcile provider service events idempotently.
+- Robokassa order creation enforces RBAC and CSRF and records both payment and administrator audit
+  evidence.
+- Upload status history contains every accepted transition and terminal jobs cannot be reopened.
+- Redis leases prevent duplicate scheduler dispatch and upload worker execution.
+
+## 68.5. External-Service Boundary
+
+Unit and integration tests mock TikTok HTTP responses and validate only the official OAuth 2.0 and
+Content Posting API contract implemented by this project. They do not prove that a TikTok
+application has been approved or that a specific account or region is eligible to publish.
+
+Telegram Stars production activation requires a real invoice and `successful_payment` round trip.
+Robokassa requires an approved external channel and a real sandbox checkout with ResultURL evidence
+before production credentials are enabled.
+
+## 68.6. Release Evidence
+
+A release candidate requires:
+
+- Successful GitHub Actions quality, integration, migration, and container jobs.
+- A deterministic manifest whose Git SHA, source-tree hash, version, and Alembic head match the
+  candidate deployed to staging.
+- Current requirement-to-test links in the traceability matrix.
+- Staging execution of scenarios that depend on Telegram, TikTok, Robokassa, HTTPS, or recovery.
+- No unresolved critical security findings.
+- A backup and restore record before production deployment.
+
+Passing automated tests does not by itself authorize production launch.
+
+The manifest format and stable-version promotion rule are documented in
+[Release Candidate Manifest](#64-release-candidate-manifest).
+
+# 69. Acceptance Checklist
+
+Группа спецификации: Качество
+
+
+Final implementation must satisfy [Architecture Summary](#2-architecture-summary).
+
+Non-functional requirements must be validated according to [Non-Functional Requirements](#6-non-functional-requirements).
+
+Documentation completeness must be checked against [Specification Index](#72-specification-index).
+
+Implementation progress must be checked against [Implementation Roadmap](#5-implementation-roadmap).
+
+## 69.1. Functional Readiness
 
 - New Telegram user registration works.
 - FREE plan is assigned automatically.
@@ -4521,25 +5587,34 @@ Implementation progress must be checked against [Implementation Roadmap](impleme
 - Video upload FSM works: video, description, hashtags, confirmation.
 - Video validation and preparation work for MP4, MOV, and WEBM.
 - Upload lifecycle events are recorded.
-- FREE, PRO, and BUSINESS limits match the specification.
-- Robokassa payment link generation works for PRO and BUSINESS.
+- FREE, PRO, BUSINESS, and UNLIMIT limits match the specification.
+- Robokassa external-channel payment link generation works for PRO, BUSINESS, and UNLIMIT.
 - Robokassa ResultURL activates paid subscriptions.
 - SuccessURL does not activate subscriptions.
+- Expired paid subscriptions return to FREE and produce one pending user notification.
 - User can disconnect TikTok.
+- Admin console is available only through HTTPS in production.
+- SUPPORT, ADMIN, and SUPER_ADMIN see only server-authorized operations.
+- User detail never returns encrypted or decrypted TikTok OAuth tokens.
+- User blocking, FREE fallback, plan changes, settings changes, role changes, and safe retries are audited.
+- Only eligible temporary publication failures can be manually retried.
 
-## 63.2. Technical Readiness
+## 69.2. Technical Readiness
 
 - `docker compose up -d` starts all services.
 - PostgreSQL and Redis are not exposed publicly.
-- API, PostgreSQL, Redis, and Nginx healthchecks pass.
+- API, PostgreSQL, Redis, scheduler, and Nginx healthchecks pass.
 - Alembic migrations apply cleanly.
 - Migration compatibility checks are complete.
 - CI passes Ruff format, Ruff lint, MyPy, tests, Alembic, Docker build, and secret scan.
+- CI verifies Bash scripts with ShellCheck and confirms the application image runs as `appuser`.
 - `.env` files are not committed.
 - `.env.example` is complete and current.
 - Confidential data handling and secret rotation policy is documented.
 - Environment configuration and secret readiness are verified.
 - OpenAPI is available at `/docs` and `/openapi.json`.
+- Versioned administrative endpoints are present under `/api/v1/admin`.
+- Admin static responses include CSP, frame denial, no-sniff, and no-store headers.
 - API version compatibility and deprecation impact have been reviewed.
 - Requirements traceability matrix is current.
 - Specification index is current.
@@ -4547,13 +5622,15 @@ Implementation progress must be checked against [Implementation Roadmap](impleme
 - License and third-party component register has been reviewed.
 - Non-functional requirements have been checked.
 
-## 63.3. Operational Readiness
+## 69.3. Operational Readiness
 
 - Production `.env` is prepared.
 - HTTPS is configured.
 - Telegram, TikTok, and Robokassa callbacks are configured.
 - PostgreSQL backup works.
 - Restore drill has been tested on staging.
+- Backup checksum/metadata and `pg_restore --list` verification are present.
+- Automated deployment and application rollback smoke tests pass in staging.
 - Backup and restore policy is documented and current.
 - `/health`, `/ready`, and `/metrics` are monitored.
 - Security logging and audit requirements are verified.
@@ -4564,50 +5641,52 @@ Implementation progress must be checked against [Implementation Roadmap](impleme
 - Operations runbook is current.
 - Release and rollback procedures are documented.
 
-## 63.4. Final Sign-Off
+## 69.4. Final Sign-Off
 
 Project is ready for production only after functional, integration, security, and operational checks pass successfully.
 
-Required QA scenarios are documented in [QA Test Data and Acceptance Scenarios](qa-acceptance-scenarios.md).
+Required QA scenarios are documented in [QA Test Data and Acceptance Scenarios](#67-qa-test-data-and-acceptance-scenarios).
 
-Requirement coverage is tracked in [Requirements Traceability Matrix](requirements-traceability.md).
+Requirement coverage is tracked in [Requirements Traceability Matrix](#70-requirements-traceability-matrix).
 
-The first production run should follow [Production Launch Plan](production-launch.md).
+The first production run should follow [Production Launch Plan](#40-production-launch-plan).
 
-Post-launch support should follow [Post-Launch Maintenance and Versioning](post-launch-maintenance.md).
+Post-launch support should follow [Post-Launch Maintenance and Versioning](#44-post-launch-maintenance-and-versioning).
 
-Future changes should be accepted through [Change Acceptance Policy](change-acceptance-policy.md).
+Future changes should be accepted through [Change Acceptance Policy](#66-change-acceptance-policy).
 
-# 64. Requirements Traceability Matrix
+# 70. Requirements Traceability Matrix
 
 Группа спецификации: Приложения
 
 
-## 64.1. Purpose
+## 70.1. Purpose
 
 Each functional requirement must have a stable identifier and a visible link to implementation, tests, and documentation.
 
-## 64.2. Initial Matrix
+## 70.2. Current Matrix
 
-| ID | Requirement | Component | Test | Documentation | Status |
+| ID | Requirement | Component | Test evidence | Docs | Status |
 | --- | --- | --- | --- | --- | --- |
-| `REQ-001` | User registration | Telegram Bot | `QA-REG-001` | [Users Entity](users-entity.md), [QA Scenarios](qa-acceptance-scenarios.md) | Planned |
-| `REQ-002` | TikTok OAuth | FastAPI / OAuth | `QA-OAUTH-001` | [TikTok Developer Configuration](tiktok-developer-configuration.md), [Public REST API](public-rest-api.md) | Planned |
-| `REQ-003` | PRO/BUSINESS payment | Robokassa | `QA-PAY-001` | [Payments Entity](payments-entity.md), [Robokassa Setup](robokassa.md) | Planned |
-| `REQ-004` | Video publication | Worker / TikTok API | `QA-UPL-001` | [Upload Jobs Entity](upload-jobs-entity.md), [Video Lifecycle](video-lifecycle.md) | Planned |
-| `REQ-005` | Daily limits | `daily_usage` | `QA-LIMIT-001` | [Daily Usage Entity](daily-usage-entity.md) | Planned |
-| `NFR-001` | Performance, reliability, security, maintainability, and scalability controls | Cross-cutting | Release readiness checks | [Non-Functional Requirements](non-functional-requirements.md) | Planned |
-| `NFR-002` | Security logging and audit | Observability / Audit | Release readiness checks | [Security Logging and Audit](security-logging-audit.md) | Planned |
-| `NFR-003` | Infrastructure dependency management | Deployment / Operations | Post-update checks | [Infrastructure Dependency Management](infrastructure-dependency-management.md) | Planned |
-| `NFR-004` | Confidential data management | Security / Configuration | Release readiness checks | [Confidential Data Policy](confidential-data-policy.md) | Planned |
-| `DOC-001` | Specification index and documentation maintenance | Documentation | Release readiness checks | [Specification Index](specification-index.md) | Planned |
-| `CFG-001` | Environment configuration and secrets control | Configuration / Security | Release readiness checks | [Environment Configuration and Secrets Control](environment-configuration-secrets.md) | Planned |
-| `TD-001` | Technical debt management | Development / Maintenance | Release readiness checks | [Technical Debt Management](technical-debt-management.md) | Planned |
-| `DEP-001` | License and third-party component management | Dependencies / Release | Release readiness checks | [License and Third-Party Component Management](license-third-party-management.md) | Planned |
-| `API-001` | API versioning and client compatibility | REST API / OpenAPI | Compatibility checks | [API Versioning and Client Compatibility](api-versioning-compatibility.md) | Planned |
-| `ROAD-001` | Final implementation roadmap | Delivery / Release | Roadmap control points | [Implementation Roadmap](implementation-roadmap.md) | Planned |
+| `REQ-001` | User registration | Bot / DB | `QA-REG-001`; subscriptions and FSM tests | [Users](#8-users-entity), [QA](#67-qa-test-data-and-acceptance-scenarios) | Implemented |
+| `REQ-002` | TikTok OAuth | API / OAuth | `QA-OAUTH-001`; API and TikTok tests; [Sandbox OAuth evidence](../test-evidence/tiktok-sandbox-oauth-2026-07-20.md) | [TikTok Config](#20-tiktok-developer-configuration), [Public API](#26-public-rest-api) | Implemented; Sandbox provider acceptance completed 2026-07-20 |
+| `REQ-003` | Paid plans in Telegram | Telegram Stars | `QA-PAY-001`; automated Stars tests and provider-backed payment/refund acceptance | [Payments](#11-payments-entity), [Telegram Stars](#21-telegram-stars-payments) | Implemented at 199/499 XTR; production provider acceptance completed 2026-07-17 |
+| `REQ-004` | Video publication | Worker / TikTok | `QA-UPL-001`; FSM, video, worker, and lifecycle tests; [controlled Direct Post evidence](../test-evidence/tiktok-sandbox-direct-post-2026-07-21.md) | [Upload Jobs](#12-upload-jobs-entity), [Lifecycle](#19-video-publication-lifecycle) | Implemented; provider acceptance blocked until the Sandbox target account is private |
+| `REQ-005` | Daily limits | Usage service | `QA-LIMIT-001`; quota concurrency tests | [Daily Usage](#13-daily-usage-entity) | Implemented |
+| `NFR-001` | Core NFR controls | Cross-cutting | CI quality, coverage, migration, container, production smoke | [NFR](#6-non-functional-requirements), [Tests](#68-test-strategy-and-quality-gates) | Implemented; TikTok publication acceptance pending |
+| `NFR-002` | Security audit | Audit | Admin, tracing, webhook, secret scan | [Security Audit](#31-security-logging-and-audit) | Implemented |
+| `NFR-003` | Infrastructure dependencies | Operations | Container build, production health, backup and post-update checks | [Infrastructure](#61-infrastructure-dependency-management) | Implemented |
+| `NFR-004` | Confidential data | Security | Encryption and secret-scan tests | [Data Policy](#32-confidential-data-policy) | Implemented |
+| `DOC-001` | Documentation maintenance | Documentation | Unified build and release review | [Spec Index](#72-specification-index) | Implemented |
+| `CFG-001` | Environment and secrets | Configuration | Config and deploy-validator tests | [Environment](#33-environment-configuration-and-secrets-control) | Implemented |
+| `TD-001` | Technical debt | Development | Release readiness review | [Technical Debt](#59-technical-debt-management) | Process defined |
+| `DEP-001` | Licenses and components | Dependencies | Dependency and release review | [Licenses](#62-license-and-third-party-component-management) | Process defined |
+| `API-001` | API compatibility | REST / OpenAPI | OpenAPI checker and API tests | [API Versioning](#25-api-versioning-and-client-compatibility) | Implemented |
+| `ROAD-001` | Implementation roadmap | Delivery | Preflight, smoke, Robokassa, Telegram Stars, and TikTok OAuth acceptance | [Roadmap](#5-implementation-roadmap), [Staging Runbook](#39-staging-acceptance-runbook) | Stage 10 infrastructure and TikTok Sandbox OAuth verified; publication acceptance pending |
+| `OPS-001` | Controlled production launch | Operations | Deploy validator, webhook verification, backup and production smoke | [Production Launch](#40-production-launch-plan), [Staging Runbook](#39-staging-acceptance-runbook) | Infrastructure, payments, and TikTok Sandbox OAuth verified; publication gate remains |
+| `REL-001` | Reproducible release candidate | Release | Manifest determinism, version, migration, CI run #59 and provider evidence | [Release Candidate](#64-release-candidate-manifest), [Release](#65-release-management) | RC deployed for acceptance; stable promotion pending |
 
-## 64.3. Maintenance Rules
+## 70.3. Maintenance Rules
 
 - Every new requirement receives a unique `REQ-###` identifier.
 - Every new acceptance scenario receives a unique `QA-...` identifier.
@@ -4616,16 +5695,16 @@ Each functional requirement must have a stable identifier and a visible link to 
 - The matrix must be reviewed before every release.
 - A requirement is complete only when implementation, automated or manual QA coverage, and documentation are all present.
 
-## 64.4. Completion Criterion
+## 70.4. Completion Criterion
 
 The project is release-ready only when every approved requirement has traceability to implementation, tests, and documentation.
 
-# 65. Glossary and Naming Conventions
+# 71. Glossary and Naming Conventions
 
 Группа спецификации: Приложения
 
 
-## 65.1. Glossary
+## 71.1. Glossary
 
 | Term | Definition |
 | --- | --- |
@@ -4636,12 +5715,13 @@ The project is release-ready only when every approved requirement has traceabili
 | Worker | Background process that handles queued tasks |
 | Request ID | Unique identifier for one HTTP request |
 | Correlation ID | Identifier for a chain of related operations |
-| Plan | Tariff definition: FREE, PRO, or BUSINESS |
-| Payment | Robokassa payment record |
+| Plan | Tariff definition: FREE, PRO, BUSINESS, or UNLIMIT |
+| Payment | Provider-neutral payment attempt and confirmation record |
+| Telegram Stars | Telegram digital payment currency, code `XTR` |
 | Admin Action | Immutable administrative audit event |
 | System Setting | Mutable non-secret runtime configuration value |
 
-## 65.2. Naming Conventions
+## 71.2. Naming Conventions
 
 - Database tables use `snake_case` and plural names.
 - Python modules use `snake_case`.
@@ -4649,9 +5729,9 @@ The project is release-ready only when every approved requirement has traceabili
 - Variables and functions use `snake_case`.
 - REST endpoints use the existing project style and kebab-case only when it improves readability.
 - Environment variables use uppercase `SNAKE_CASE`.
-- Plan names are written as `FREE`, `PRO`, and `BUSINESS` in product and technical documentation.
+- Plan names are written as `FREE`, `PRO`, `BUSINESS`, and `UNLIMIT` in product and technical documentation.
 
-## 65.3. Entity Names
+## 71.3. Entity Names
 
 Use these canonical names:
 
@@ -4669,20 +5749,20 @@ Use these canonical names:
 | Admin Action | `admin_actions` |
 | System Setting | `system_settings` |
 
-## 65.4. Consistency Rule
+## 71.4. Consistency Rule
 
 Code, documentation, database schema, tests, API responses, and user-facing text should use the same terminology unless an external provider requires a different term.
 
 When a current implementation uses a different internal field name, document the mapping in the relevant entity specification and change it only through Alembic migration and compatibility review.
 
-# 66. Specification Index
+# 72. Specification Index
 
 Группа спецификации: Приложения
 
 
 This document is the final index for the Tik_Tok_Loader technical specification. All specification parts are treated as one requirement set for development, testing, deployment, operations, and maintenance.
 
-## 66.1. Purpose
+## 72.1. Purpose
 
 The current documentation set is the authoritative project specification. It is used as:
 
@@ -4693,32 +5773,32 @@ The current documentation set is the authoritative project specification. It is 
 - Deployment and operations guide.
 - Maintenance and change-control reference.
 
-## 66.2. Core Specification Groups
+## 72.2. Core Specification Groups
 
 | Group | Documents |
 | --- | --- |
-| Architecture | [Architecture Summary](architecture-summary.md), [Project Component Map](component-map.md), [Sequence Flows](sequence-flows.md), [Glossary and Naming Conventions](glossary-naming.md) |
-| Functional behavior | [User Guide](user-guide.md), [Video Lifecycle](video-lifecycle.md), [Robokassa Setup](robokassa.md), [TikTok Developer Configuration](tiktok-developer-configuration.md) |
-| Data model | [Logical Data Model](data-model.md), entity specifications for users, TikTok accounts, subscriptions, payments, upload jobs, usage, webhooks, admin actions, and settings |
-| API contracts | [REST API Standards](rest-api-standards.md), [API Versioning and Client Compatibility](api-versioning-compatibility.md), [Public REST API](public-rest-api.md), [Administrative REST API](admin-rest-api.md), [OpenAPI and Contract Documentation](openapi-contracts.md), [Error Codes and Exception Handling](error-handling.md) |
-| Security and compliance | [Compliance Notes](compliance.md), [Security, Backup, and Monitoring](security.md), [Security Logging and Audit](security-logging-audit.md), [Confidential Data Policy](confidential-data-policy.md), [Environment Configuration and Secrets Control](environment-configuration-secrets.md), [RBAC-related admin documentation](admin-rest-api.md) |
-| Operations | [Deployment](deployment.md), [Production Launch Plan](production-launch.md), [Operations Runbook](operations-runbook.md), [SOP Checklists](sop-checklists.md), [Incident Response and Disaster Recovery](incident-response.md), [Incident Management](incident-management.md) |
-| Reliability and scale | [Non-Functional Requirements](non-functional-requirements.md), [Performance and Scaling](performance.md), [Capacity and Performance Management](capacity-management.md), [Queue and Retry Policy](queue-retry-policy.md), [Service Continuity Plan](service-continuity-plan.md) |
-| Data protection and retention | [Data Retention](data-retention.md), [File Storage Policy](file-storage-policy.md), [Backup and Restore Policy](backup-restore-policy.md) |
-| Release and change control | [Release Management](release.md), [Post-Launch Maintenance and Versioning](post-launch-maintenance.md), [Change Acceptance Policy](change-acceptance-policy.md), [Migration and Version Compatibility Plan](migration-compatibility-plan.md), [Infrastructure Dependency Management](infrastructure-dependency-management.md), [License and Third-Party Component Management](license-third-party-management.md), [Technical Debt Management](technical-debt-management.md) |
-| Quality control | [Implementation Roadmap](implementation-roadmap.md), [QA Test Data and Acceptance Scenarios](qa-acceptance-scenarios.md), [Acceptance Checklist](acceptance-checklist.md), [Requirements Traceability Matrix](requirements-traceability.md), [Development Standards](development.md) |
+| Architecture | [Architecture Summary](#2-architecture-summary), [Project Component Map](#3-project-component-map), [Sequence Flows](#4-sequence-flows), [Glossary and Naming Conventions](#71-glossary-and-naming-conventions) |
+| Functional behavior | [User Guide](#18-user-guide), [Video Lifecycle](#19-video-publication-lifecycle), [Telegram Stars](#21-telegram-stars-payments), [Robokassa Setup](#22-robokassa-setup), [TikTok Developer Configuration](#20-tiktok-developer-configuration) |
+| Data model | [Logical Data Model](#7-logical-data-model), entity specifications for users, TikTok accounts, subscriptions, payments, upload jobs, usage, webhooks, admin actions, and settings |
+| API contracts | [REST API Standards](#24-rest-api-standards), [API Versioning and Client Compatibility](#25-api-versioning-and-client-compatibility), [Public REST API](#26-public-rest-api), [Administrative REST API](#27-administrative-rest-api), [OpenAPI and Contract Documentation](#28-openapi-and-contract-documentation), [Error Codes and Exception Handling](#29-error-codes-and-exception-handling) |
+| Security and compliance | [Compliance Notes](#1-compliance-notes), [Security, Backup, and Monitoring](#30-security-backup-and-monitoring), [Security Logging and Audit](#31-security-logging-and-audit), [Confidential Data Policy](#32-confidential-data-policy), [Environment Configuration and Secrets Control](#33-environment-configuration-and-secrets-control), [RBAC-related admin documentation](#27-administrative-rest-api) |
+| Operations | [Deployment](#36-deployment), [Staging Acceptance Runbook](#39-staging-acceptance-runbook), [Production Launch Plan](#40-production-launch-plan), [Operations Runbook](#41-operations-runbook), [SOP Checklists](#42-sop-checklists), [Incident Response and Disaster Recovery](#45-incident-response-and-disaster-recovery), [Incident Management](#46-incident-management) |
+| Reliability and scale | [Non-Functional Requirements](#6-non-functional-requirements), [Performance and Scaling](#52-performance-and-scaling), [Capacity and Performance Management](#53-capacity-and-performance-management), [Queue and Retry Policy](#51-queue-and-retry-policy), [Service Continuity Plan](#48-service-continuity-plan) |
+| Data protection and retention | [Data Retention](#49-data-retention), [File Storage Policy](#50-file-storage-policy), [Backup and Restore Policy](#47-backup-and-restore-policy) |
+| Release and change control | [Release Management](#65-release-management), [Release Candidate Manifest](#64-release-candidate-manifest), [Post-Launch Maintenance and Versioning](#44-post-launch-maintenance-and-versioning), [Change Acceptance Policy](#66-change-acceptance-policy), [Migration and Version Compatibility Plan](#63-migration-and-version-compatibility-plan), [Infrastructure Dependency Management](#61-infrastructure-dependency-management), [License and Third-Party Component Management](#62-license-and-third-party-component-management), [Technical Debt Management](#59-technical-debt-management) |
+| Quality control | [Implementation Roadmap](#5-implementation-roadmap), [QA Test Data and Acceptance Scenarios](#67-qa-test-data-and-acceptance-scenarios), [Acceptance Checklist](#69-acceptance-checklist), [Requirements Traceability Matrix](#70-requirements-traceability-matrix), [Development Standards](#56-development-standards) |
 
-## 66.3. Documentation Maintenance Rules
+## 72.3. Documentation Maintenance Rules
 
 - Every functionality change must update the relevant documentation section in the same change set.
 - Architecture changes must be documented before release approval.
 - New entities, API endpoints, background jobs, configuration keys, scenarios, and external integration behavior must be documented together with implementation.
 - Documentation version must match the application version and release notes.
 - `CHANGELOG.md` must describe user-facing, operational, security, dependency, and documentation changes relevant to the release.
-- Requirement links must be kept current in [Requirements Traceability Matrix](requirements-traceability.md).
-- Technical debt must be reviewed before release according to [Technical Debt Management](technical-debt-management.md).
+- Requirement links must be kept current in [Requirements Traceability Matrix](#70-requirements-traceability-matrix).
+- Technical debt must be reviewed before release according to [Technical Debt Management](#59-technical-debt-management).
 
-## 66.4. Completeness Control
+## 72.4. Completeness Control
 
 Before release, verify:
 
@@ -4734,20 +5814,20 @@ Before release, verify:
 - License and third-party component status is reviewed and documented.
 - Implementation roadmap status is reviewed.
 
-## 66.5. Release Rule
+## 72.5. Release Rule
 
 The documentation set must be reviewed before every production release. A release is not ready if code, tests, configuration, deployment procedures, OpenAPI contracts, or operational runbooks contradict the current specification.
 
-## 66.6. Final Statement
+## 72.6. Final Statement
 
 The specification parts form the project documentation foundation for Tik_Tok_Loader. The set must be used as the technical assignment, architecture specification, and maintenance guide for future development.
 
-# 67. Risk Management
+# 73. Risk Management
 
 Группа спецификации: Приложения
 
 
-## 67.1. Operational Constraints
+## 73.1. Operational Constraints
 
 - Use only official TikTok interfaces.
 - Do not perform actions outside granted OAuth permissions.
@@ -4755,7 +5835,7 @@ The specification parts form the project documentation foundation for Tik_Tok_Lo
 - External integrations must handle temporary unavailability.
 - Do not retry TikTok authorization errors or platform restriction errors automatically.
 
-## 67.2. Risk Register
+## 73.2. Risk Register
 
 | Risk | Controls |
 | --- | --- |
@@ -4768,7 +5848,7 @@ The specification parts form the project documentation foundation for Tik_Tok_Lo
 | Secret leakage | Keep secrets in `.env` or secret storage only; CI secret scan; never export secret-like settings |
 | Video processing failure | Validate files before publishing; do not consume daily quota until official TikTok API accepts publication |
 
-## 67.3. Change Control
+## 73.3. Change Control
 
 Before production changes:
 
@@ -4780,7 +5860,6 @@ Before production changes:
 6. Deploy step-by-step.
 7. Monitor `/health`, `/ready`, `/metrics`, queues, payments, and TikTok API errors.
 
-## 67.4. Resilience Criteria
+## 73.4. Resilience Criteria
 
 The system must preserve user history, payment records, subscriptions, upload metadata, and audit trails during temporary external failures and controlled restarts.
-

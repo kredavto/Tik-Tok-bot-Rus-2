@@ -21,33 +21,44 @@ Environment and secret readiness must follow [Environment Configuration and Secr
 ## First Startup
 
 ```bash
-docker compose up -d
+ENV_FILE=.env bash deploy/preflight.sh production
+ENV_FILE=.env bash deploy/deploy.sh production vX.Y.Z
 docker compose ps
-curl https://your-domain.example/health
-curl https://your-domain.example/ready
-curl https://your-domain.example/metrics
 ```
 
+Follow [CI/CD and Deployment Automation](ci-cd-deployment.md) for first-certificate bootstrap,
+verified backup creation, and deployment behavior.
+
+Production is allowed only after the complete [Staging Acceptance Runbook](staging-acceptance-runbook.md)
+has passed for the same release commit. A Telegram token previously disclosed in chat, source,
+logs, or Git must be revoked in BotFather; only its replacement may be placed in the production
+`.env`.
+
 ## Smoke Test
+
+The deployment script automatically verifies versioned health/readiness/metrics endpoints,
+OpenAPI callback contracts, admin security headers, and the Telegram webhook registered at the
+public HTTPS URL. Then perform these provider-backed scenarios:
 
 1. Register a new Telegram user with `/start`.
 2. Accept the user agreement.
 3. Confirm FREE plan is assigned.
 4. Start TikTok OAuth connection.
 5. Confirm TikTok OAuth callback succeeds.
-6. Generate a PRO payment link.
-7. Complete a Robokassa test payment.
-8. Confirm ResultURL activates PRO.
+6. Create a PRO Telegram Stars invoice and complete the in-bot acceptance scenario.
+7. Through the separately approved external channel, generate a Robokassa PRO payment link.
+8. Complete a Robokassa test payment and confirm ResultURL activates PRO exactly once.
 9. Upload one test video.
 10. Confirm validation, preparation, queueing, worker processing, and TikTok API submission.
 11. Confirm admin metrics and logs are visible.
+12. Restore the release backup into a disposable database and compare critical record counts.
 
 ## Success Criteria
 
 - All containers are running.
 - Healthchecks are green.
 - Telegram, TikTok, and Robokassa callbacks work.
-- FREE, PRO, and BUSINESS limits match the specification.
+- FREE, PRO, BUSINESS, and UNLIMIT limits match the specification.
 - No critical errors appear in logs.
 - Metrics are available to administrators.
 - Backups are present and restorable.

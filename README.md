@@ -6,23 +6,29 @@ Important: this project does not implement VPN, proxy routing, device spoofing, 
 
 ## Tariffs
 
-| Plan | Price | Daily video limit |
-| --- | ---: | ---: |
-| Free | 0 RUB | 2 |
-| PRO | 499 RUB | 5 |
-| Business | 999 RUB | 10 |
+| Plan | Price, RUB | Price, Telegram Stars | Daily video limit |
+| --- | ---: | ---: | ---: |
+| FREE | 0 | - | 2 |
+| PRO | 499 | 199 XTR | 5 |
+| BUSINESS | 999 | 499 XTR | 10 |
+| UNLIMIT | 1999 | 999 XTR | Unlimited |
 
 ## What Is Included
 
 - Telegram bot built with aiogram.
-- FastAPI backend for Robokassa webhooks and TikTok OAuth callbacks.
+- FastAPI backend for provider webhooks and TikTok OAuth callbacks.
 - User plans and daily upload limits.
-- Robokassa payment link generation and result signature validation.
+- Telegram Stars invoices with transactional and idempotent subscription activation.
+- Robokassa callback support reserved for separately approved external channels.
 - PostgreSQL 16 database.
 - Redis queues and cache.
+- Dedicated scheduler for subscription expiry, OAuth refresh, and retention cleanup.
+- One-shot Alembic migration gate before application services start.
+- Responsive administrative console with RBAC, analytics, audit, and safe queue controls.
 - Video intake from Telegram and local storage.
 - Official TikTok Content Posting API client scaffold.
 - Docker Compose setup for deployment on a VPS.
+- Reproducible CI, verified backup/restore, release, rollback, and HTTPS automation.
 - Systemd unit template and deployment checklist.
 
 ## Quick Start
@@ -37,6 +43,11 @@ Open Telegram, start your bot, and use:
 - `/start` to see the menu.
 - `/tariffs` to view available plans.
 - `/status` to check the current plan and daily limit.
+- `/connect` to connect a TikTok account through official OAuth 2.0.
+- `/upload` to start the video publication workflow.
+- `/terms` to review the user agreement.
+- `/paysupport` for payment support.
+- `/help` to open the bot guide.
 
 ## Required Environment
 
@@ -44,12 +55,18 @@ See [.env.example](.env.example).
 
 For production, configure:
 
-- `BOT_TOKEN`
-- `ROBOKASSA_LOGIN`
-- `ROBOKASSA_PASSWORD1`
-- `ROBOKASSA_PASSWORD2`
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_WEBHOOK_SECRET`
+- `ROBOKASSA_MERCHANT_LOGIN`
+- `ROBOKASSA_PASSWORD_1`
+- `ROBOKASSA_PASSWORD_2`
 - `PUBLIC_BASE_URL`
 - TikTok developer credentials after app approval
+
+Paid-plan prices are `199 XTR` for PRO, `499 XTR` for BUSINESS, and `999 XTR` for UNLIMIT. RUB
+reference prices are shown alongside Stars prices. In-bot digital checkout uses Stars; Robokassa
+remains available to an approved external sales channel. Prices are stored in PostgreSQL and remain
+manageable through the administrator panel.
 
 ## TikTok Publishing
 
@@ -61,7 +78,27 @@ TikTok publishing requires:
 4. User OAuth authorization.
 5. App audit before public visibility restrictions are lifted.
 
-Until those requirements are met, the bot stores accepted videos as queued submissions and shows the user that publishing is pending official TikTok integration.
+Before confirmation, the bot queries current creator information, requires a manual privacy
+choice, lets the user configure the interaction options TikTok currently allows, and asks for
+commercial-content disclosure. For an unaudited client, the target account must be private and the
+bot restricts test publications to TikTok's required `SELF_ONLY` visibility.
+
+Publication remains disabled until the required developer configuration and `video.publish` scope
+are available. A queued task stops with a clear user-facing error and does not attempt an
+unofficial fallback or bypass.
+
+## Scheduled Maintenance
+
+The `scheduler` container uses Redis leases to enqueue periodic tasks exactly once per configured
+window. It expires PRO/BUSINESS/UNLIMIT subscriptions and returns users to FREE, refreshes TikTok OAuth
+tokens before expiration, and runs retention cleanup. Docker monitors its Redis heartbeat.
+
+## Administrative Console
+
+FastAPI serves the operational console at `/admin-ui/` and its versioned API at
+`/api/v1/admin`. Access requires a configured administrator Telegram ID, API token, and CSRF
+token. Credentials are held only in browser memory, and TikTok OAuth tokens are never returned to
+the UI.
 
 ## Documentation
 
@@ -74,8 +111,10 @@ Until those requirements are met, the bot stores accepted videos as queued submi
 - [Architecture Summary](docs/architecture-summary.md)
 - [Project Component Map](docs/component-map.md)
 - [Deployment](docs/deployment.md)
+- [CI/CD and Deployment Automation](docs/ci-cd-deployment.md)
 - [Compliance Notes](docs/compliance.md)
 - [Robokassa Setup](docs/robokassa.md)
+- [Telegram Stars](docs/telegram-stars.md)
 - [Security, Backup, and Monitoring](docs/security.md)
 - [Security Logging and Audit](docs/security-logging-audit.md)
 - [Confidential Data Policy](docs/confidential-data-policy.md)
@@ -94,6 +133,7 @@ Until those requirements are met, the bot stores accepted videos as queued submi
 - [Data Retention](docs/data-retention.md)
 - [Video Lifecycle](docs/video-lifecycle.md)
 - [Release Management](docs/release.md)
+- [Release Candidate Manifest](docs/release-candidate.md)
 - [Containerization](docs/containerization.md)
 - [Operations Runbook](docs/operations-runbook.md)
 - [Configuration Management](docs/configuration-management.md)
@@ -102,6 +142,7 @@ Until those requirements are met, the bot stores accepted videos as queued submi
 - [GitHub Workflow](docs/github-workflow.md)
 - [SOP Checklists](docs/sop-checklists.md)
 - [Production Launch](docs/production-launch.md)
+- [Staging Acceptance Runbook](docs/staging-acceptance-runbook.md)
 - [Post-Launch Maintenance and Versioning](docs/post-launch-maintenance.md)
 - [Dependencies and Third-Party Services](docs/dependencies-and-integrations.md)
 - [License and Third-Party Component Management](docs/license-third-party-management.md)
@@ -137,4 +178,5 @@ Until those requirements are met, the bot stores accepted videos as queued submi
 - [Sequence Flows](docs/sequence-flows.md)
 - [Glossary and Naming Conventions](docs/glossary-naming.md)
 - [QA Test Data and Acceptance Scenarios](docs/qa-acceptance-scenarios.md)
+- [Test Strategy and Quality Gates](docs/test-strategy.md)
 - [Requirements Traceability Matrix](docs/requirements-traceability.md)

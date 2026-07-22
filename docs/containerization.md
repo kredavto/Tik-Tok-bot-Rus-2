@@ -5,6 +5,8 @@
 - `bot`: Telegram bot on aiogram.
 - `api`: FastAPI backend.
 - `worker`: Dramatiq background workers.
+- `scheduler`: recurring task dispatch with Redis leases and heartbeat.
+- `migrate`: one-shot Alembic migration gate that must complete before application services start.
 - `postgres`: PostgreSQL 16.
 - `redis`: Redis cache, locks, and queue backend.
 - `nginx`: reverse proxy for public HTTP/HTTPS traffic.
@@ -35,6 +37,10 @@ Compose includes healthchecks for:
 - Redis via `redis-cli ping`.
 - API via `/health`.
 - Nginx via `/health` proxy.
+- Scheduler via its Redis heartbeat.
+
+API, bot, worker, and scheduler wait for the one-shot `migrate` service. This prevents concurrent
+schema upgrades when API or worker processes are scaled horizontally.
 
 Service continuity requirements are documented in [Service Continuity Plan](service-continuity-plan.md).
 
@@ -42,5 +48,8 @@ Service continuity requirements are documented in [Service Continuity Plan](serv
 
 - Keep secrets only in `.env`.
 - Do not expose PostgreSQL or Redis ports.
-- Put TLS certificates under `deploy/nginx/certs` or terminate HTTPS at a managed load balancer.
+- Use `NGINX_TEMPLATE=https.conf.template` and put copied TLS certificate/key files under
+  `TLS_CERT_DIR`, or terminate HTTPS at a managed load balancer with an approved Compose override.
+- Application containers run as `appuser`, drop Linux capabilities, enable `no-new-privileges`,
+  and use an isolated temporary filesystem.
 - Update base images regularly.

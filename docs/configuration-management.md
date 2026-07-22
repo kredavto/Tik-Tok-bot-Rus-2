@@ -4,7 +4,8 @@
 
 - Secrets are stored only in `.env` or a managed secret store.
 - Runtime non-secret settings are stored in PostgreSQL `system_settings`.
-- Tariffs are stored in PostgreSQL `plans`.
+- Tariffs, RUB reference prices, and independent Telegram Stars prices are stored in PostgreSQL
+  `plans`.
 
 System setting storage rules are documented in [System Settings Entity](system-settings-entity.md).
 
@@ -14,8 +15,7 @@ Environment-specific `.env` and secret management rules are documented in [Envir
 
 ```bash
 curl https://your-domain.example/admin/configuration/export \
-  -H "Authorization: Bearer $ADMIN_API_TOKEN" \
-  -H "X-Admin-Telegram-Id: $ADMIN_TELEGRAM_ID"
+  -H "Authorization: Bearer $ADMIN_API_TOKEN"
 ```
 
 The export contains no secret-like keys such as passwords, tokens, keys, or secrets.
@@ -25,7 +25,6 @@ The export contains no secret-like keys such as passwords, tokens, keys, or secr
 ```bash
 curl -X POST https://your-domain.example/admin/configuration/import \
   -H "Authorization: Bearer $ADMIN_API_TOKEN" \
-  -H "X-Admin-Telegram-Id: $ADMIN_TELEGRAM_ID" \
   -H "X-CSRF-Token: $ADMIN_CSRF_TOKEN" \
   -H "Content-Type: application/json" \
   -d @runtime-config.json

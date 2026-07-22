@@ -43,6 +43,8 @@ Development, staging, and production must have separate values for:
 - PostgreSQL and Redis credentials.
 - Token encryption keys.
 - Administrative API and CSRF secrets.
+- The fixed administrative API principal ID; it must be allowlisted and must not be accepted from a
+  client-controlled identity header.
 - Public base URL.
 
 ## Release Compliance Check
@@ -55,6 +57,15 @@ Before every release, verify:
 - Required settings pass startup validation.
 - Callback URLs match the target environment.
 - Any configuration changes are documented.
+
+Run the target-specific gate before staging or production deployment:
+
+```bash
+python3 tools/validate_deploy_env.py --env-file .env --environment production
+```
+
+The validator reports variable names and validation rules only; it never prints configured secret
+values.
 
 ## Incident Rule
 

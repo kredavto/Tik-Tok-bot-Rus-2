@@ -1,24 +1,30 @@
-from hashlib import md5
+import hashlib
+import hmac
+from decimal import Decimal
 from urllib.parse import urlencode
 
 from app.core.config import settings
 
 
-def _signature(*parts: object) -> str:
+def _signature(*parts: object, algorithm: str | None = None) -> str:
     source = ":".join(str(part) for part in parts)
-    return md5(source.encode("utf-8")).hexdigest()
+    return hashlib.new(
+        algorithm or settings.robokassa_hash_algorithm,
+        source.encode("utf-8"),
+    ).hexdigest()
 
 
 def build_payment_url(inv_id: int, amount_rub: int, description: str) -> str:
+    out_sum = f"{Decimal(amount_rub):.2f}"
     signature = _signature(
         settings.robokassa_login,
-        amount_rub,
+        out_sum,
         inv_id,
         settings.robokassa_password1,
     )
     params = {
         "MerchantLogin": settings.robokassa_login,
-        "OutSum": amount_rub,
+        "OutSum": out_sum,
         "InvId": inv_id,
         "Description": description,
         "SignatureValue": signature,
@@ -32,4 +38,4 @@ def build_payment_url(inv_id: int, amount_rub: int, description: str) -> str:
 
 def validate_result_signature(out_sum: str, inv_id: str, signature_value: str) -> bool:
     expected = _signature(out_sum, inv_id, settings.robokassa_password2)
-    return expected.lower() == signature_value.lower()
+    return hmac.compare_digest(expected.lower(), signature_value.lower())

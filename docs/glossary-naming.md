@@ -11,8 +11,9 @@
 | Worker | Background process that handles queued tasks |
 | Request ID | Unique identifier for one HTTP request |
 | Correlation ID | Identifier for a chain of related operations |
-| Plan | Tariff definition: FREE, PRO, or BUSINESS |
-| Payment | Robokassa payment record |
+| Plan | Tariff definition: FREE, PRO, BUSINESS, or UNLIMIT |
+| Payment | Provider-neutral payment attempt and confirmation record |
+| Telegram Stars | Telegram digital payment currency, code `XTR` |
 | Admin Action | Immutable administrative audit event |
 | System Setting | Mutable non-secret runtime configuration value |
 
@@ -24,7 +25,7 @@
 - Variables and functions use `snake_case`.
 - REST endpoints use the existing project style and kebab-case only when it improves readability.
 - Environment variables use uppercase `SNAKE_CASE`.
-- Plan names are written as `FREE`, `PRO`, and `BUSINESS` in product and technical documentation.
+- Plan names are written as `FREE`, `PRO`, `BUSINESS`, and `UNLIMIT` in product and technical documentation.
 
 ## Entity Names
 

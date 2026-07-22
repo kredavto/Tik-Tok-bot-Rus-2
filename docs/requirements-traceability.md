@@ -4,25 +4,27 @@
 
 Each functional requirement must have a stable identifier and a visible link to implementation, tests, and documentation.
 
-## Initial Matrix
+## Current Matrix
 
-| ID | Requirement | Component | Test | Documentation | Status |
+| ID | Requirement | Component | Test evidence | Docs | Status |
 | --- | --- | --- | --- | --- | --- |
-| `REQ-001` | User registration | Telegram Bot | `QA-REG-001` | [Users Entity](users-entity.md), [QA Scenarios](qa-acceptance-scenarios.md) | Planned |
-| `REQ-002` | TikTok OAuth | FastAPI / OAuth | `QA-OAUTH-001` | [TikTok Developer Configuration](tiktok-developer-configuration.md), [Public REST API](public-rest-api.md) | Planned |
-| `REQ-003` | PRO/BUSINESS payment | Robokassa | `QA-PAY-001` | [Payments Entity](payments-entity.md), [Robokassa Setup](robokassa.md) | Planned |
-| `REQ-004` | Video publication | Worker / TikTok API | `QA-UPL-001` | [Upload Jobs Entity](upload-jobs-entity.md), [Video Lifecycle](video-lifecycle.md) | Planned |
-| `REQ-005` | Daily limits | `daily_usage` | `QA-LIMIT-001` | [Daily Usage Entity](daily-usage-entity.md) | Planned |
-| `NFR-001` | Performance, reliability, security, maintainability, and scalability controls | Cross-cutting | Release readiness checks | [Non-Functional Requirements](non-functional-requirements.md) | Planned |
-| `NFR-002` | Security logging and audit | Observability / Audit | Release readiness checks | [Security Logging and Audit](security-logging-audit.md) | Planned |
-| `NFR-003` | Infrastructure dependency management | Deployment / Operations | Post-update checks | [Infrastructure Dependency Management](infrastructure-dependency-management.md) | Planned |
-| `NFR-004` | Confidential data management | Security / Configuration | Release readiness checks | [Confidential Data Policy](confidential-data-policy.md) | Planned |
-| `DOC-001` | Specification index and documentation maintenance | Documentation | Release readiness checks | [Specification Index](specification-index.md) | Planned |
-| `CFG-001` | Environment configuration and secrets control | Configuration / Security | Release readiness checks | [Environment Configuration and Secrets Control](environment-configuration-secrets.md) | Planned |
-| `TD-001` | Technical debt management | Development / Maintenance | Release readiness checks | [Technical Debt Management](technical-debt-management.md) | Planned |
-| `DEP-001` | License and third-party component management | Dependencies / Release | Release readiness checks | [License and Third-Party Component Management](license-third-party-management.md) | Planned |
-| `API-001` | API versioning and client compatibility | REST API / OpenAPI | Compatibility checks | [API Versioning and Client Compatibility](api-versioning-compatibility.md) | Planned |
-| `ROAD-001` | Final implementation roadmap | Delivery / Release | Roadmap control points | [Implementation Roadmap](implementation-roadmap.md) | Planned |
+| `REQ-001` | User registration | Bot / DB | `QA-REG-001`; subscriptions and FSM tests | [Users](users-entity.md), [QA](qa-acceptance-scenarios.md) | Implemented |
+| `REQ-002` | TikTok OAuth | API / OAuth | `QA-OAUTH-001`; API and TikTok tests; [Sandbox OAuth evidence](test-evidence/tiktok-sandbox-oauth-2026-07-20.md) | [TikTok Config](tiktok-developer-configuration.md), [Public API](public-rest-api.md) | Implemented; Sandbox provider acceptance completed 2026-07-20 |
+| `REQ-003` | Paid plans in Telegram | Telegram Stars | `QA-PAY-001`; automated Stars tests and provider-backed payment/refund acceptance | [Payments](payments-entity.md), [Telegram Stars](telegram-stars.md) | Implemented at 199/499 XTR; production provider acceptance completed 2026-07-17 |
+| `REQ-004` | Video publication | Worker / TikTok | `QA-UPL-001`; FSM, video, worker, and lifecycle tests; [controlled Direct Post evidence](test-evidence/tiktok-sandbox-direct-post-2026-07-21.md) | [Upload Jobs](upload-jobs-entity.md), [Lifecycle](video-lifecycle.md) | Implemented; provider acceptance blocked until the Sandbox target account is private |
+| `REQ-005` | Daily limits | Usage service | `QA-LIMIT-001`; quota concurrency tests | [Daily Usage](daily-usage-entity.md) | Implemented |
+| `NFR-001` | Core NFR controls | Cross-cutting | CI quality, coverage, migration, container, production smoke | [NFR](non-functional-requirements.md), [Tests](test-strategy.md) | Implemented; TikTok publication acceptance pending |
+| `NFR-002` | Security audit | Audit | Admin, tracing, webhook, secret scan | [Security Audit](security-logging-audit.md) | Implemented |
+| `NFR-003` | Infrastructure dependencies | Operations | Container build, production health, backup and post-update checks | [Infrastructure](infrastructure-dependency-management.md) | Implemented |
+| `NFR-004` | Confidential data | Security | Encryption and secret-scan tests | [Data Policy](confidential-data-policy.md) | Implemented |
+| `DOC-001` | Documentation maintenance | Documentation | Unified build and release review | [Spec Index](specification-index.md) | Implemented |
+| `CFG-001` | Environment and secrets | Configuration | Config and deploy-validator tests | [Environment](environment-configuration-secrets.md) | Implemented |
+| `TD-001` | Technical debt | Development | Release readiness review | [Technical Debt](technical-debt-management.md) | Process defined |
+| `DEP-001` | Licenses and components | Dependencies | Dependency and release review | [Licenses](license-third-party-management.md) | Process defined |
+| `API-001` | API compatibility | REST / OpenAPI | OpenAPI checker and API tests | [API Versioning](api-versioning-compatibility.md) | Implemented |
+| `ROAD-001` | Implementation roadmap | Delivery | Preflight, smoke, Robokassa, Telegram Stars, and TikTok OAuth acceptance | [Roadmap](implementation-roadmap.md), [Staging Runbook](staging-acceptance-runbook.md) | Stage 10 infrastructure and TikTok Sandbox OAuth verified; publication acceptance pending |
+| `OPS-001` | Controlled production launch | Operations | Deploy validator, webhook verification, backup and production smoke | [Production Launch](production-launch.md), [Staging Runbook](staging-acceptance-runbook.md) | Infrastructure, payments, and TikTok Sandbox OAuth verified; publication gate remains |
+| `REL-001` | Reproducible release candidate | Release | Manifest determinism, version, migration, CI run #59 and provider evidence | [Release Candidate](release-candidate.md), [Release](release.md) | RC deployed for acceptance; stable promotion pending |
 
 ## Maintenance Rules
 

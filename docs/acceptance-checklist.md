@@ -18,25 +18,34 @@ Implementation progress must be checked against [Implementation Roadmap](impleme
 - Video upload FSM works: video, description, hashtags, confirmation.
 - Video validation and preparation work for MP4, MOV, and WEBM.
 - Upload lifecycle events are recorded.
-- FREE, PRO, and BUSINESS limits match the specification.
-- Robokassa payment link generation works for PRO and BUSINESS.
+- FREE, PRO, BUSINESS, and UNLIMIT limits match the specification.
+- Robokassa external-channel payment link generation works for PRO, BUSINESS, and UNLIMIT.
 - Robokassa ResultURL activates paid subscriptions.
 - SuccessURL does not activate subscriptions.
+- Expired paid subscriptions return to FREE and produce one pending user notification.
 - User can disconnect TikTok.
+- Admin console is available only through HTTPS in production.
+- SUPPORT, ADMIN, and SUPER_ADMIN see only server-authorized operations.
+- User detail never returns encrypted or decrypted TikTok OAuth tokens.
+- User blocking, FREE fallback, plan changes, settings changes, role changes, and safe retries are audited.
+- Only eligible temporary publication failures can be manually retried.
 
 ## Technical Readiness
 
 - `docker compose up -d` starts all services.
 - PostgreSQL and Redis are not exposed publicly.
-- API, PostgreSQL, Redis, and Nginx healthchecks pass.
+- API, PostgreSQL, Redis, scheduler, and Nginx healthchecks pass.
 - Alembic migrations apply cleanly.
 - Migration compatibility checks are complete.
 - CI passes Ruff format, Ruff lint, MyPy, tests, Alembic, Docker build, and secret scan.
+- CI verifies Bash scripts with ShellCheck and confirms the application image runs as `appuser`.
 - `.env` files are not committed.
 - `.env.example` is complete and current.
 - Confidential data handling and secret rotation policy is documented.
 - Environment configuration and secret readiness are verified.
 - OpenAPI is available at `/docs` and `/openapi.json`.
+- Versioned administrative endpoints are present under `/api/v1/admin`.
+- Admin static responses include CSP, frame denial, no-sniff, and no-store headers.
 - API version compatibility and deprecation impact have been reviewed.
 - Requirements traceability matrix is current.
 - Specification index is current.
@@ -51,6 +60,8 @@ Implementation progress must be checked against [Implementation Roadmap](impleme
 - Telegram, TikTok, and Robokassa callbacks are configured.
 - PostgreSQL backup works.
 - Restore drill has been tested on staging.
+- Backup checksum/metadata and `pg_restore --list` verification are present.
+- Automated deployment and application rollback smoke tests pass in staging.
 - Backup and restore policy is documented and current.
 - `/health`, `/ready`, and `/metrics` are monitored.
 - Security logging and audit requirements are verified.

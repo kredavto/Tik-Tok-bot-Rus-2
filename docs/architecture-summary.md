@@ -27,7 +27,9 @@ Non-functional requirements are defined in [Non-Functional Requirements](non-fun
 | PostgreSQL | Users, plans, subscriptions, payments, upload jobs, audit data, settings |
 | Redis | Cache, locks, queue coordination, OAuth state, rate limiting |
 | Worker | Video validation, preparation, publication workflow, cleanup, background jobs |
-| Robokassa | Paid PRO and BUSINESS subscription payments |
+| Scheduler | Redis-leased dispatch and heartbeat for recurring maintenance jobs |
+| Telegram Stars | In-bot payment for PRO, BUSINESS, and UNLIMIT digital subscriptions |
+| Robokassa | Dormant external-channel payment integration, subject to policy approval |
 | TikTok OAuth 2.0 | User authorization for official TikTok API access |
 | TikTok Content Posting API | Official publication workflow |
 | Admin API | Users, subscriptions, payments, plans, jobs, analytics, settings |
@@ -37,12 +39,13 @@ Main component interaction flows are documented in [Sequence Flows](sequence-flo
 
 ## Functional Commitments
 
-- FREE, PRO, and BUSINESS tariffs are supported.
+- FREE, PRO, BUSINESS, and UNLIMIT tariffs are supported.
 - FREE is assigned automatically to new users.
 - Paid subscriptions expire automatically and return users to FREE.
 - Daily upload limits are enforced transactionally.
 - Video files are validated safely before publication processing.
-- Payments are processed idempotently through Robokassa ResultURL.
+- Telegram Stars payments are confirmed idempotently from `successful_payment`.
+- Robokassa ResultURL remains idempotent in an approved external channel.
 - Background jobs are idempotent and safe to retry only for temporary failures.
 - OAuth tokens are stored encrypted.
 - User, payment, publication, webhook, and admin actions are logged.

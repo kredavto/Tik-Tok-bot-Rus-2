@@ -25,6 +25,9 @@ Robokassa ResultURL may return plain text `OK{InvId}` when required by Robokassa
 
 Additional service endpoints, such as Telegram webhook and metrics, are documented in [API Documentation](api.md).
 
+The OAuth start endpoint accepts only a short-lived random `state` previously created by the
+Telegram bot. Public callers cannot select a Telegram user identifier or create an account link.
+
 ## Compatibility Requirements
 
 - Do not remove existing response fields without a new API version.

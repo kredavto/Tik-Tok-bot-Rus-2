@@ -8,9 +8,9 @@ Canonical entity names are defined in [Glossary and Naming Conventions](glossary
 | --- | --- |
 | `users` | Telegram users and account-level settings |
 | `tiktok_accounts` | Connected TikTok accounts and encrypted OAuth tokens |
-| `plans` | FREE, PRO, and BUSINESS tariffs |
+| `plans` | FREE, PRO, BUSINESS, and UNLIMIT tariffs |
 | `subscriptions` | Active and historical subscriptions |
-| `payments` | Robokassa payment history |
+| `payments` | Provider-neutral payment history for Stars and approved external channels |
 | `upload_jobs` | Publication tasks and status |
 | `upload_job_events` | Upload lifecycle audit trail |
 | `daily_usage` | Daily upload limit counters |

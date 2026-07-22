@@ -25,16 +25,19 @@ Environment templates live in `deploy/env.*.example`. Real `.env.*` files are no
 
 ## Release Flow
 
-1. Create a release branch.
-2. Update version and changelog.
-3. Run CI checks.
-4. Deploy to staging.
-5. Run acceptance tests.
-6. Approve release.
-7. Back up production.
-8. Deploy to production.
-9. Check `/health`, `/ready`, `/metrics`.
-10. Monitor logs and core scenarios after release.
+1. Create a release branch and assign a SemVer prerelease such as `0.2.0-rc.1`.
+2. Synchronize version sources and update the changelog.
+3. Run CI and retain the deterministic release-candidate manifest.
+4. Deploy the candidate to staging.
+5. Run acceptance tests and attach sanitized evidence to the manifest record.
+6. Promote the accepted source to a stable version such as `0.2.0`.
+7. Run CI again and approve the stable release.
+8. Back up production.
+9. Deploy the stable version to production.
+10. Check `/health`, `/ready`, `/metrics` and monitor core scenarios.
+
+Manifest generation, prerelease restrictions, and promotion evidence are defined in
+[Release Candidate Manifest](release-candidate.md).
 
 Post-launch release planning, routine checks, and quality gates are described in [Post-Launch Maintenance and Versioning](post-launch-maintenance.md).
 
@@ -67,24 +70,22 @@ Implementation stage readiness must follow [Implementation Roadmap](implementati
 ## Production Update
 
 ```bash
-bash deploy/backup_postgres.sh
-git fetch --tags
-git checkout vX.Y.Z
-docker compose build
-docker compose run --rm api alembic upgrade head
-docker compose up -d
-curl https://your-domain.example/health
-curl https://your-domain.example/ready
+ENV_FILE=.env bash deploy/deploy.sh production vX.Y.Z
 ```
+
+The deployment command rejects prerelease versions for `APP_ENV=production`.
 
 ## Rollback
 
-1. Stop intake with `intake_enabled=false`.
-2. Check out the previous stable tag.
-3. Rebuild and restart containers.
-4. Restore the database backup if the failed release changed data incompatibly.
-5. Check health and readiness.
+1. Stop intake with `intake_enabled=false` when publication behavior is affected.
+2. Confirm the previous release is compatible with the current database schema.
+3. Run `ENV_FILE=.env bash deploy/rollback.sh production <ref> --confirm`.
+4. Restore a verified database backup only after a separate data-impact review.
+5. Check health, readiness, metrics, and key user scenarios.
 6. Re-enable intake.
+
+The automation details and database downgrade restriction are documented in
+[CI/CD and Deployment Automation](ci-cd-deployment.md).
 
 ## API Compatibility
 

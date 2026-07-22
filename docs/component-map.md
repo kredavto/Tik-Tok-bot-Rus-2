@@ -11,8 +11,10 @@ This document is the high-level navigation map for Tik_Tok_Loader components. It
 | PostgreSQL | Primary data store for users, TikTok accounts, subscriptions, payments, upload jobs, usage counters, webhook events, audit logs, and settings. |
 | Redis | Queue coordination, cache, rate limiting, OAuth state storage, and distributed locks. |
 | Worker | Background processing for video validation, preparation, publication, status checks, cleanup, subscription expiry, and retries. |
+| Scheduler | Redis-leased dispatch of subscription expiry, OAuth refresh, and retention tasks. |
 | TikTok API | Official OAuth 2.0 authorization and Content Posting API video publication. |
-| Robokassa | Payment acceptance for PRO and BUSINESS subscriptions through the existing merchant account. |
+| Telegram Stars | In-bot payment acceptance for PRO, BUSINESS, and UNLIMIT digital subscriptions. |
+| Robokassa | Existing callback integration reserved for a separately approved sales channel. |
 | Admin Panel | Administrative management, analytics, audit review, settings, users, payments, and upload queues. |
 
 ## Interaction Flows
@@ -23,8 +25,10 @@ flowchart LR
     Bot --> API["FastAPI"]
     API --> DB["PostgreSQL"]
     API --> Redis["Redis"]
+    Scheduler["Scheduler"] --> Redis
     Redis --> Worker["Worker"]
     Worker --> TikTok["TikTok Content Posting API"]
+    Stars["Telegram Stars"] --> Bot
     Robokassa["Robokassa"] --> ResultURL["ResultURL"]
     ResultURL --> API
     API --> Bot
@@ -36,7 +40,8 @@ Canonical service flows are:
 - User -> Telegram Bot -> FastAPI.
 - FastAPI -> PostgreSQL / Redis.
 - Worker -> official TikTok Content Posting API.
-- Robokassa -> ResultURL -> FastAPI.
+- Telegram Stars -> Bot API update -> PostgreSQL subscription transaction.
+- Approved external channel: Robokassa -> ResultURL -> FastAPI.
 - FastAPI -> Telegram Bot -> User.
 
 Detailed publication and payment sequences are documented in [Sequence Flows](sequence-flows.md).

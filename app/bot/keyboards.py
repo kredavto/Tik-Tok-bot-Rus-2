@@ -5,8 +5,6 @@ from aiogram.types import (
     ReplyKeyboardMarkup,
 )
 
-from app.core.plans import PLANS, PlanCode
-
 BTN_UPLOAD = "📤 Загрузить видео"
 BTN_CONNECT_TIKTOK = "👤 Подключить TikTok"
 BTN_TARIFFS = "💳 Тарифы"
@@ -15,6 +13,13 @@ BTN_HISTORY = "📚 История загрузок"
 BTN_SETTINGS = "⚙️ Настройки"
 BTN_HELP = "❓ Помощь"
 BTN_CANCEL = "Отмена"
+
+PRIVACY_LABELS = {
+    "PUBLIC_TO_EVERYONE": "Все",
+    "MUTUAL_FOLLOW_FRIENDS": "Друзья",
+    "FOLLOWER_OF_CREATOR": "Подписчики",
+    "SELF_ONLY": "Только я",
+}
 
 
 def main_menu() -> ReplyKeyboardMarkup:
@@ -36,19 +41,29 @@ def agreement_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-def tariffs_menu() -> InlineKeyboardMarkup:
+def tariffs_menu(plans: list[tuple[str, str, int, int | None]]) -> InlineKeyboardMarkup:
     rows = []
-    for plan in PLANS.values():
-        if plan.code == PlanCode.FREE:
+    for plan_code, title, _price_rub, price_stars in plans:
+        if plan_code == "free":
             continue
-        rows.append(
-            [
-                InlineKeyboardButton(
-                    text=f"{plan.title} - {plan.price_rub} руб.",
-                    callback_data=f"buy:{plan.code.value}",
-                )
-            ]
-        )
+        if price_stars:
+            rows.append(
+                [
+                    InlineKeyboardButton(
+                        text=f"Купить {title}: {price_stars} Stars",
+                        callback_data=f"buy:stars:{plan_code}",
+                    )
+                ]
+            )
+        else:
+            rows.append(
+                [
+                    InlineKeyboardButton(
+                        text=f"{title} - оплата временно недоступна",
+                        callback_data="payment:unavailable",
+                    )
+                ]
+            )
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -56,11 +71,106 @@ def upload_confirmation_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="Отправить", callback_data="upload:confirm"),
+                InlineKeyboardButton(
+                    text="Опубликовать и согласиться",
+                    callback_data="upload:confirm",
+                ),
                 InlineKeyboardButton(text="Отмена", callback_data="upload:cancel"),
             ]
         ]
     )
+
+
+def privacy_keyboard(options: list[str]) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=PRIVACY_LABELS.get(option, option),
+                    callback_data=f"privacy:{option}",
+                )
+            ]
+            for option in options
+        ]
+    )
+
+
+def interactions_keyboard(
+    *,
+    allow_comment: bool,
+    allow_duet: bool,
+    allow_stitch: bool,
+    comment_available: bool,
+    duet_available: bool,
+    stitch_available: bool,
+) -> InlineKeyboardMarkup:
+    def row(label: str, key: str, selected: bool, available: bool) -> list[InlineKeyboardButton]:
+        if not available:
+            return [
+                InlineKeyboardButton(
+                    text=f"Недоступно: {label}", callback_data="interaction:unavailable"
+                )
+            ]
+        marker = "Включено" if selected else "Выключено"
+        return [InlineKeyboardButton(text=f"{label}: {marker}", callback_data=f"interaction:{key}")]
+
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            row("Комментарии", "comment", allow_comment, comment_available),
+            row("Дуэты", "duet", allow_duet, duet_available),
+            row("Сшивание", "stitch", allow_stitch, stitch_available),
+            [InlineKeyboardButton(text="Продолжить", callback_data="interaction:continue")],
+        ]
+    )
+
+
+def commercial_content_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Нет, не продвигает", callback_data="commercial:off")],
+            [InlineKeyboardButton(text="Да, настроить раскрытие", callback_data="commercial:on")],
+        ]
+    )
+
+
+def commercial_content_details_keyboard(
+    *,
+    brand_organic_toggle: bool,
+    brand_content_toggle: bool,
+    allow_branded_content: bool,
+) -> InlineKeyboardMarkup:
+    organic_marker = "Выбрано" if brand_organic_toggle else "Не выбрано"
+    rows = [
+        [
+            InlineKeyboardButton(
+                text=f"Свой бренд: {organic_marker}",
+                callback_data="commercial_detail:organic",
+            )
+        ]
+    ]
+    if allow_branded_content:
+        branded_marker = "Выбрано" if brand_content_toggle else "Не выбрано"
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text=f"Платное партнерство: {branded_marker}",
+                    callback_data="commercial_detail:branded",
+                )
+            ]
+        )
+    else:
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text="Платное партнерство: недоступно для «Только я»",
+                    callback_data="commercial_detail:unavailable",
+                )
+            ]
+        )
+    rows.append(
+        [InlineKeyboardButton(text="Продолжить", callback_data="commercial_detail:continue")]
+    )
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def settings_keyboard() -> InlineKeyboardMarkup:

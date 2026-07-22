@@ -2,7 +2,8 @@
 
 ## Purpose
 
-`subscriptions` stores active and historical user subscriptions for FREE, PRO, and BUSINESS plans.
+`subscriptions` stores active and historical user subscriptions for FREE, PRO, BUSINESS, and
+UNLIMIT plans.
 
 ## Recommended Fields
 
@@ -14,6 +15,7 @@
 | `status` | VARCHAR | `active`, `expired`, or `cancelled` |
 | `starts_at` | TIMESTAMP WITH TIME ZONE | Subscription start time |
 | `expires_at` | TIMESTAMP WITH TIME ZONE | End time, `NULL` for FREE |
+| `expiration_notified_at` | TIMESTAMP WITH TIME ZONE | Successful Telegram expiration notification time |
 | `daily_limit` | INTEGER | Daily publication limit captured for the subscription |
 | `created_at` | TIMESTAMP WITH TIME ZONE | Record creation time |
 | `updated_at` | TIMESTAMP WITH TIME ZONE | Last update time |
@@ -32,11 +34,15 @@ The current implementation may use `ends_at` for the same domain meaning as `exp
 
 - New users automatically receive the FREE plan.
 - FREE subscriptions have no expiration time.
-- PRO and BUSINESS subscriptions expire after the configured paid period.
-- After PRO or BUSINESS expires, the user returns to FREE automatically.
+- PRO, BUSINESS, and UNLIMIT subscriptions expire after the configured paid period.
+- After a paid subscription expires, the user returns to FREE automatically.
+- UNLIMIT uses `daily_limit=0`, which means no daily publication cap.
 - Only one subscription should be active for a user at the same time.
 - Switching to a paid plan must not delete historical subscription records.
 - Subscription status changes must be transactional.
+- The scheduler locks due rows, marks paid subscriptions expired, creates FREE, and commits before
+  dispatching Telegram notifications.
+- Failed notifications remain pending and are retried without creating another FREE subscription.
 
 ## Audit Requirements
 

@@ -7,7 +7,8 @@
 - Review `/metrics` for queue size and error counters.
 - Confirm the latest PostgreSQL backup exists.
 - Confirm backup verification follows [Backup and Restore Policy](backup-restore-policy.md).
-- Review critical JSON logs for `api`, `bot`, `worker`, `postgres`, `redis`, and `nginx`.
+- Review critical JSON logs for `api`, `bot`, `worker`, `scheduler`, `postgres`, `redis`, and `nginx`.
+- Confirm the `scheduler` container is healthy and its subscription sweep is running.
 - Use Request ID and Correlation ID when investigating related API, worker, payment, and publication events.
 - Check Robokassa ResultURL events in `webhook_events`.
 
@@ -45,10 +46,9 @@ Before update:
 
 During update:
 
-1. Pull the release tag.
-2. Rebuild containers.
-3. Apply Alembic migrations.
-4. Restart services.
+1. Run `ENV_FILE=.env bash deploy/deploy.sh <environment> <release-tag>`.
+2. Preserve `.deploy/previous_revision` with the release record.
+3. Do not run an automatic Alembic downgrade during application rollback.
 
 After update:
 
@@ -70,3 +70,6 @@ Use [Incident Management](incident-management.md) to classify P1-P4 incidents, r
 Standard preflight, post-update, and diagnostic checklists are in [SOP Checklists](sop-checklists.md).
 
 Tracing, event correlation, and log search requirements are described in [Observability and Diagnostics](observability-diagnostics.md).
+
+Executable release, backup, restore, rollback, and smoke-test procedures are described in
+[CI/CD and Deployment Automation](ci-cd-deployment.md).

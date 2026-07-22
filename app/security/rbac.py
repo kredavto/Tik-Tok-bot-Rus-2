@@ -21,6 +21,7 @@ class Permission(StrEnum):
     VIEW_USERS = "VIEW_USERS"
     MANAGE_USERS = "MANAGE_USERS"
     VIEW_PAYMENTS = "VIEW_PAYMENTS"
+    MANAGE_PAYMENTS = "MANAGE_PAYMENTS"
     VIEW_UPLOAD_JOBS = "VIEW_UPLOAD_JOBS"
     VIEW_ERROR_LOGS = "VIEW_ERROR_LOGS"
     MANAGE_PLANS = "MANAGE_PLANS"
@@ -47,6 +48,7 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.VIEW_USERS,
         Permission.MANAGE_USERS,
         Permission.VIEW_PAYMENTS,
+        Permission.MANAGE_PAYMENTS,
         Permission.VIEW_UPLOAD_JOBS,
         Permission.VIEW_ERROR_LOGS,
         Permission.MANAGE_PLANS,

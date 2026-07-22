@@ -27,8 +27,39 @@ cd Tik-Tok-bot-Rus-2
 cp .env.example .env
 nano .env
 docker compose up -d --build
-docker compose logs -f api bot worker
+docker compose logs -f api bot worker scheduler
 ```
+
+When the host already uses ports 80/443 and Cloudflare Tunnel provides HTTPS, keep the application
+on an isolated loopback port and omit the bundled Nginx service. Set:
+
+```dotenv
+DEPLOY_INGRESS=cloudflared
+API_HOST_PORT=8081
+```
+
+The override publishes only the API on `127.0.0.1:${API_HOST_PORT:-8081}` and places `nginx` behind
+an explicit profile. Configure the tunnel hostname to `http://localhost:8081`. PostgreSQL and Redis
+remain unexposed. Use a different `API_HOST_PORT` for every stack on the same server. The checked
+`preflight`, `deploy`, and `rollback` scripts read `DEPLOY_INGRESS` and apply the override
+automatically.
+
+For staging and production, use the checked automation instead of running these commands
+individually:
+
+```bash
+ENV_FILE=.env bash deploy/preflight.sh production
+ENV_FILE=.env bash deploy/deploy.sh production vX.Y.Z
+```
+
+The checked-out application version must equal `APP_VERSION` in `.env`. A release candidate such as
+`0.2.0-rc.1` is accepted for staging and rejected for production until promoted to a stable SemVer.
+Each deployment records a deterministic source manifest under `.deploy/release-manifest.json`.
+The one-shot `runtime-init` service gives the unprivileged application user access to the bind-mounted
+`data/` and `backups/` directories before API, bot, and worker processes start.
+
+The complete certificate bootstrap, deployment, backup, restore, rollback, and CI procedure is in
+[CI/CD and Deployment Automation](ci-cd-deployment.md).
 
 Run migrations explicitly before first start or during deploy:
 
@@ -44,7 +75,23 @@ Health checks:
 curl https://your-domain.example/health
 curl https://your-domain.example/ready
 curl https://your-domain.example/metrics
+docker compose ps scheduler
 ```
+
+After HTTPS is active, open the administrative console at:
+
+```text
+https://your-domain.example/admin-ui/
+```
+
+Access requires `ADMIN_API_TOKEN`, `ADMIN_CSRF_TOKEN`, and a server-bound
+`ADMIN_API_TELEGRAM_ID` listed in `TELEGRAM_ADMIN_IDS`. Provision that database user with an
+administrative role before first access. Generate independent high-entropy values for production.
+The browser console does not persist credentials after the page is reloaded or closed.
+
+The API image contains `alembic.ini` and the complete `alembic/` migration tree. The scheduler
+healthcheck reads its Redis heartbeat; an unhealthy scheduler means subscription expiry, token
+refresh, and retention cleanup are not being dispatched.
 
 ## Systemd Alternative
 
@@ -55,15 +102,30 @@ Use Docker Compose for the first deployment. If systemd is required, copy
 
 Configure these in the Robokassa dashboard after the HTTP webhook service is added:
 
-- Result URL: `https://your-domain.example/payments/robokassa/result`
-- Success URL: `https://your-domain.example/payments/robokassa/success`
-- Fail URL: `https://your-domain.example/payments/robokassa/fail`
+- Result URL: `https://your-domain.example/api/v1/payments/robokassa/result`
+- Success URL: `https://your-domain.example/api/v1/payments/robokassa/success`
+- Fail URL: `https://your-domain.example/api/v1/payments/robokassa/fail`
 
 The FastAPI service exposes Robokassa result, success, and fail endpoints.
 
 ## Telegram Webhook
 
-The current bot service uses long polling. If webhook mode is introduced later, expose it through FastAPI/Nginx and document the endpoint before enabling it in production.
+Development can use `TELEGRAM_DELIVERY_MODE=polling`. Production uses
+`TELEGRAM_DELIVERY_MODE=webhook`; the deployment command registers and verifies
+`https://<domain>/api/v1/webhooks/telegram`, FastAPI verifies
+`X-Telegram-Bot-Api-Secret-Token` and dispatches the update through aiogram. FSM data is stored in
+Redis so multiple API instances share state. The bot service monitors the registered URL for
+configuration drift without changing it automatically.
+
+Manage the webhook explicitly inside the container when diagnosing a deployment:
+
+```bash
+docker compose run --rm --no-deps bot python -m app.bot.webhook verify
+docker compose run --rm --no-deps bot python -m app.bot.webhook configure
+```
+
+Never configure a bot token that has appeared in chat, logs, source files, or Git. Revoke it in
+BotFather and place the replacement only in the server-side `.env`.
 
 ## Environments
 
@@ -74,3 +136,9 @@ Use separate files outside Git for each environment:
 - `.env.production`
 
 Copy the selected file to `.env` on the server. Never commit real `.env` files.
+
+With `DEPLOY_INGRESS=nginx`, staging and production use
+`NGINX_TEMPLATE=https.conf.template`, set `DOMAIN` to the `PUBLIC_BASE_URL` host, and provide
+`fullchain.pem` and `privkey.pem` under `TLS_CERT_DIR`. With `DEPLOY_INGRESS=cloudflared`, the
+dedicated tunnel terminates public TLS and the checked deploy scripts skip local certificate-file
+validation while keeping the API bound to loopback.

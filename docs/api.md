@@ -30,10 +30,12 @@ Public endpoint requirements are documented in [Public REST API](public-rest-api
 ## TikTok OAuth Start
 
 ```http
-GET /api/v1/oauth/tiktok/start?telegram_id=123456&username=creator
+GET /api/v1/oauth/tiktok/start?state=<one-time-state-created-by-bot>
 ```
 
-Returns a redirect to official TikTok OAuth.
+The Telegram bot creates the short-lived state and sends this URL to the user. The endpoint
+rejects missing, unknown, and expired states, then redirects to official TikTok OAuth. It never
+accepts a Telegram user identifier from the public request.
 
 ## Robokassa Result
 
@@ -77,8 +79,10 @@ Admin endpoints require:
 
 ```text
 Authorization: Bearer <ADMIN_API_TOKEN>
-X-Admin-Telegram-Id: <telegram_id>
 ```
+
+The bearer token is bound server-side to `ADMIN_API_TELEGRAM_ID`. Client-controlled identity
+headers are ignored and must not be used for authorization.
 
 Mutating admin requests also require:
 
@@ -86,13 +90,25 @@ Mutating admin requests also require:
 X-CSRF-Token: <ADMIN_CSRF_TOKEN>
 ```
 
+Payment administration adds:
+
+- `POST /api/v1/admin/payments/robokassa/orders` to create an audited external-channel checkout.
+- `POST /api/v1/admin/payments/{payment_id}/refund-stars` to refund a paid Stars transaction through
+  Telegram. It returns `refund_pending` without a second provider call while an earlier ambiguous
+  result awaits reconciliation, and persists `refunded` only after provider confirmation.
+- `POST /api/v1/admin/payments/{payment_id}/reconcile-stars-refund` with outcome `refunded` or
+  `not_refunded` after a provider-side check. This guarded operation finalizes or releases a pending
+  refund and records the decision in `admin_actions`.
+
 Telegram webhook requests can use:
 
 ```text
 X-Telegram-Bot-Api-Secret-Token: <TELEGRAM_WEBHOOK_SECRET>
 ```
 
-TikTok webhook requests must include `X-TikTok-Signature` when `TIKTOK_WEBHOOK_SECRET` is configured.
+TikTok webhook requests must include `TikTok-Signature` in the official `t=<timestamp>,s=<hmac>`
+format. The API validates HMAC-SHA256 over `<timestamp>.<raw_body>` with
+`TIKTOK_CLIENT_SECRET` and rejects timestamps outside the five-minute replay window.
 
 TikTok OAuth, webhook, and developer portal checks are documented in [TikTok Developer Configuration](tiktok-developer-configuration.md).
 
@@ -101,17 +117,18 @@ TikTok OAuth, webhook, and developer portal checks are documented in [TikTok Dev
 Start TikTok OAuth:
 
 ```bash
-curl "https://your-domain.example/api/v1/oauth/tiktok/start?telegram_id=123456"
+curl "https://your-domain.example/api/v1/oauth/tiktok/start?state=$OAUTH_STATE"
 ```
 
 List upload jobs:
 
 ```bash
-curl "https://your-domain.example/admin/upload-jobs?limit=50&offset=0" \
-  -H "Authorization: Bearer $ADMIN_API_TOKEN" \
-  -H "X-Admin-Telegram-Id: $ADMIN_TELEGRAM_ID"
+curl "https://your-domain.example/api/v1/admin/upload-jobs?limit=50&offset=0" \
+  -H "Authorization: Bearer $ADMIN_API_TOKEN"
 ```
 
 ## Admin API
+
+The browser console is available at `/admin-ui/`. Its API is served under `/api/v1/admin`.
 
 See [Administrator Guide](admin.md) and [Administrative REST API](admin-rest-api.md).

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>Tik_Tok_Loader Admin</title>
+    <link rel="stylesheet" href="/admin-ui/styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">TL</span>
+        <div>
+          <strong>Tik_Tok_Loader</strong>
+          <span>Admin Console</span>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <span class="connection" id="connection"><i></i>Не подключено</span>
+        <button class="icon-button" id="refresh-button" type="button" title="Обновить" aria-label="Обновить">&#8635;</button>
+        <button class="text-button quiet" id="logout-button" type="button">Выйти</button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar" aria-label="Навигация">
+        <nav id="navigation">
+          <button class="nav-item active" data-view="dashboard" type="button">Обзор</button>
+          <button class="nav-item" data-view="users" type="button">Пользователи</button>
+          <button class="nav-item" data-view="plans" type="button">Тарифы</button>
+          <button class="nav-item" data-view="payments" type="button">Платежи</button>
+          <button class="nav-item" data-view="jobs" type="button">Публикации</button>
+          <button class="nav-item" data-view="settings" type="button">Настройки</button>
+          <button class="nav-item" data-view="audit" type="button">Аудит</button>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow" id="page-eyebrow">Операционный центр</p>
+            <h1 id="page-title">Обзор</h1>
+          </div>
+          <div id="page-actions"></div>
+        </div>
+        <section id="content" aria-live="polite"></section>
+      </main>
+    </div>
+
+    <dialog id="login-dialog" class="dialog" aria-labelledby="login-title">
+      <form id="login-form" class="login-form">
+        <div class="dialog-heading">
+          <span class="brand-mark">TL</span>
+          <div>
+            <h2 id="login-title">Вход администратора</h2>
+            <p>Защищенная консоль</p>
+          </div>
+        </div>
+        <label>
+          API token
+          <input id="api-token" name="api_token" type="password" autocomplete="current-password" required>
+        </label>
+        <label>
+          CSRF token
+          <input id="csrf-token" name="csrf_token" type="password" autocomplete="off" required>
+        </label>
+        <p class="form-error" id="login-error" role="alert"></p>
+        <button class="primary-button" type="submit">Войти</button>
+      </form>
+    </dialog>
+
+    <dialog id="detail-dialog" class="dialog detail-dialog">
+      <div class="detail-header">
+        <div>
+          <p class="eyebrow">Карточка пользователя</p>
+          <h2 id="detail-title">Пользователь</h2>
+        </div>
+        <button class="icon-button" id="detail-close" type="button" title="Закрыть" aria-label="Закрыть">&times;</button>
+      </div>
+      <div id="detail-content"></div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status"></div>
+    <script src="/admin-ui/app.js" defer></script>
+  </body>
+</html>

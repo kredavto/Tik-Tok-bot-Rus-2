@@ -5,7 +5,7 @@
 | Prefix | Area |
 | --- | --- |
 | `AUTH` | Authorization and authentication |
-| `PAY` | Robokassa payments |
+| `PAY` | Telegram Stars and Robokassa payments |
 | `TT` | TikTok API |
 | `VAL` | Validation |
 | `SYS` | System errors |

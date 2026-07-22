@@ -34,6 +34,7 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
+from reportlab.platypus.tableofcontents import TableOfContents
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -43,7 +44,7 @@ OUTPUT_DIR = DOCS / "final"
 PROJECT_TITLE = "Tik_Tok_Loader"
 DOC_TITLE_RU = "Единая техническая спецификация"
 DOC_TITLE_EN = "Unified Technical Specification"
-VERSION = "0.1.0"
+VERSION = "0.9.7"
 REPO = "kredavto/Tik-Tok-bot-Rus-2"
 
 
@@ -71,9 +72,11 @@ SOURCE_DOCS: list[SourceDoc] = [
     SourceDoc("webhook-events-entity.md", "Данные"),
     SourceDoc("admin-actions-entity.md", "Данные"),
     SourceDoc("system-settings-entity.md", "Данные"),
+    SourceDoc("admin.md", "Администрирование"),
     SourceDoc("user-guide.md", "Пользовательские сценарии"),
     SourceDoc("video-lifecycle.md", "Пользовательские сценарии"),
     SourceDoc("tiktok-developer-configuration.md", "Интеграции"),
+    SourceDoc("telegram-stars.md", "Интеграции"),
     SourceDoc("robokassa.md", "Интеграции"),
     SourceDoc("api.md", "API"),
     SourceDoc("rest-api-standards.md", "API"),
@@ -89,7 +92,9 @@ SOURCE_DOCS: list[SourceDoc] = [
     SourceDoc("configuration.md", "Конфигурация"),
     SourceDoc("configuration-management.md", "Конфигурация"),
     SourceDoc("deployment.md", "Эксплуатация"),
+    SourceDoc("ci-cd-deployment.md", "Эксплуатация"),
     SourceDoc("containerization.md", "Эксплуатация"),
+    SourceDoc("staging-acceptance-runbook.md", "Эксплуатация"),
     SourceDoc("production-launch.md", "Эксплуатация"),
     SourceDoc("operations-runbook.md", "Эксплуатация"),
     SourceDoc("sop-checklists.md", "Эксплуатация"),
@@ -114,9 +119,11 @@ SOURCE_DOCS: list[SourceDoc] = [
     SourceDoc("infrastructure-dependency-management.md", "Зависимости"),
     SourceDoc("license-third-party-management.md", "Зависимости"),
     SourceDoc("migration-compatibility-plan.md", "Релизы"),
+    SourceDoc("release-candidate.md", "Релизы"),
     SourceDoc("release.md", "Релизы"),
     SourceDoc("change-acceptance-policy.md", "Релизы"),
     SourceDoc("qa-acceptance-scenarios.md", "Качество"),
+    SourceDoc("test-strategy.md", "Качество"),
     SourceDoc("acceptance-checklist.md", "Качество"),
     SourceDoc("requirements-traceability.md", "Приложения", appendix=True),
     SourceDoc("glossary-naming.md", "Приложения", appendix=True),
@@ -139,6 +146,7 @@ ABBREVIATIONS: list[tuple[str, str]] = [
     ("SOP", "Standard Operating Procedure, стандартная операционная процедура"),
     ("TLS/SSL", "Криптографическая защита транспортного соединения"),
     ("UTC", "Coordinated Universal Time"),
+    ("XTR", "Код валюты Telegram Stars в Bot API"),
 ]
 
 
@@ -153,6 +161,23 @@ def strip_md_links(text: str) -> str:
     text = re.sub(r"!\[([^\]]*)\]\([^)]+\)", r"\1", text)
     text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"\1", text)
     return text
+
+
+def rewrite_markdown_links(text: str, section_anchors: dict[str, str]) -> str:
+    def replace(match: re.Match[str]) -> str:
+        label = match.group("label")
+        target = match.group("target")
+        fragment = match.group("fragment") or ""
+        filename = Path(target).name
+        if filename in section_anchors:
+            return f"[{label}](#{section_anchors[filename]})"
+        return f"[{label}](../{target}{fragment})"
+
+    return re.sub(
+        r"\[(?P<label>[^\]]+)\]\((?P<target>[^)#]+\.md)(?P<fragment>#[^)]+)?\)",
+        replace,
+        text,
+    )
 
 
 def read_title(path: Path) -> str:
@@ -222,7 +247,11 @@ def set_table_geometry(table, column_count: int) -> None:
     table.alignment = WD_TABLE_ALIGNMENT.LEFT
     table.autofit = False
     widths = column_widths(column_count)
-    for row in table.rows:
+    for row_index, row in enumerate(table.rows):
+        tr_pr = row._tr.get_or_add_trPr()
+        tr_pr.append(OxmlElement("w:cantSplit"))
+        if row_index == 0:
+            tr_pr.append(OxmlElement("w:tblHeader"))
         for idx, cell in enumerate(row.cells):
             set_cell_width(cell, widths[idx])
             cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
@@ -236,6 +265,50 @@ def set_table_geometry(table, column_count: int) -> None:
         tbl_pr.append(tbl_w)
     tbl_w.set(qn("w:w"), "9360")
     tbl_w.set(qn("w:type"), "dxa")
+
+
+def new_numbering_instance(doc: Document, style_name: str = "List Number") -> int:
+    """Create a numbering instance that restarts an existing list style at one."""
+    style_num_pr = doc.styles[style_name]._element.pPr.numPr
+    base_num_id = int(style_num_pr.numId.val)
+    numbering = doc.part.numbering_part.element
+    base_num = next(
+        item
+        for item in numbering.findall(qn("w:num"))
+        if int(item.get(qn("w:numId"))) == base_num_id
+    )
+    abstract_num_id = base_num.find(qn("w:abstractNumId")).get(qn("w:val"))
+    new_num_id = (
+        max(
+            (int(item.get(qn("w:numId"))) for item in numbering.findall(qn("w:num"))),
+            default=0,
+        )
+        + 1
+    )
+
+    num = OxmlElement("w:num")
+    num.set(qn("w:numId"), str(new_num_id))
+    abstract = OxmlElement("w:abstractNumId")
+    abstract.set(qn("w:val"), abstract_num_id)
+    num.append(abstract)
+    level_override = OxmlElement("w:lvlOverride")
+    level_override.set(qn("w:ilvl"), "0")
+    start_override = OxmlElement("w:startOverride")
+    start_override.set(qn("w:val"), "1")
+    level_override.append(start_override)
+    num.append(level_override)
+    numbering.append(num)
+    return new_num_id
+
+
+def set_paragraph_numbering(paragraph, num_id: int) -> None:
+    num_pr = paragraph._p.get_or_add_pPr().get_or_add_numPr()
+    level = OxmlElement("w:ilvl")
+    level.set(qn("w:val"), "0")
+    number = OxmlElement("w:numId")
+    number.set(qn("w:val"), str(num_id))
+    num_pr.append(level)
+    num_pr.append(number)
 
 
 def column_widths(column_count: int) -> list[int]:
@@ -296,6 +369,9 @@ def add_header_footer(doc: Document) -> None:
         header.style = doc.styles["Header"]
         header.alignment = WD_ALIGN_PARAGRAPH.RIGHT
         footer = section.footer.paragraphs[0]
+        # Newly created sections share the same footer part by default. Clear it before
+        # writing so the page field is not appended once for every section.
+        footer.text = ""
         footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
         footer.add_run("Страница ")
         add_field(footer, "PAGE", "1")
@@ -395,6 +471,11 @@ def emit_md_front_matter() -> list[str]:
 
 
 def convert_markdown(source_docs: Iterable[SourceDoc]) -> str:
+    source_docs = tuple(source_docs)
+    section_anchors = {
+        source.path: slugify(f"{idx} {read_title(DOCS / source.path)}")
+        for idx, source in enumerate(source_docs, start=1)
+    }
     lines = emit_md_front_matter()
     for idx, source in enumerate(source_docs, start=1):
         path = DOCS / source.path
@@ -442,15 +523,17 @@ def convert_markdown(source_docs: Iterable[SourceDoc]) -> str:
                     f"#### {idx}.{h2_count}.{h3_count}.{h4_count}. {strip_md_links(line[5:].strip())}"
                 )
                 continue
-            lines.append(line)
+            lines.append(rewrite_markdown_links(line, section_anchors))
     lines.append("")
-    return "\n".join(lines)
+    return "\n".join(lines).rstrip() + "\n"
 
 
 def add_markdown_to_docx(doc: Document, markdown: str) -> None:
     code_lines: list[str] = []
     table_lines: list[list[str]] = []
     in_code = False
+    ordered_list_num_id: int | None = None
+    ordered_list_paragraph = None
 
     def flush_code() -> None:
         nonlocal code_lines
@@ -505,6 +588,11 @@ def add_markdown_to_docx(doc: Document, markdown: str) -> None:
             continue
         flush_table()
         if not line.strip():
+            ordered_list_num_id = None
+            ordered_list_paragraph = None
+            continue
+        if ordered_list_paragraph is not None and re.match(r"^\s{2,}\S", line):
+            ordered_list_paragraph.add_run(f" {strip_md_links(line.strip())}")
             continue
         if line.startswith("# "):
             title = strip_md_links(line[2:].strip())
@@ -525,14 +613,22 @@ def add_markdown_to_docx(doc: Document, markdown: str) -> None:
             run.font.color.rgb = RGBColor.from_string("1F4D78")
             continue
         if line.startswith("- "):
+            ordered_list_num_id = None
+            ordered_list_paragraph = None
             p = doc.add_paragraph(style="List Bullet")
             p.add_run(strip_md_links(line[2:].strip()))
             continue
         numbered = re.match(r"^(\d+)\.\s+(.*)$", line)
         if numbered:
+            if ordered_list_num_id is None:
+                ordered_list_num_id = new_numbering_instance(doc)
             p = doc.add_paragraph(style="List Number")
+            set_paragraph_numbering(p, ordered_list_num_id)
             p.add_run(strip_md_links(numbered.group(2)))
+            ordered_list_paragraph = p
             continue
+        ordered_list_num_id = None
+        ordered_list_paragraph = None
         if line.startswith("> "):
             p = doc.add_paragraph()
             p.paragraph_format.left_indent = Inches(0.25)
@@ -588,6 +684,16 @@ class PageNumCanvasDoc(BaseDocTemplate):
         )
         canvas.drawCentredString(LETTER[0] / 2, 0.55 * inch, f"Страница {doc.page}")
         canvas.restoreState()
+
+    def afterFlowable(self, flowable: Flowable) -> None:
+        level = getattr(flowable, "toc_level", None)
+        key = getattr(flowable, "bookmark_key", None)
+        if level is None or key is None or not isinstance(flowable, Paragraph):
+            return
+        title = flowable.getPlainText()
+        self.canv.bookmarkPage(key)
+        self.canv.addOutlineEntry(title, key, level=level, closed=False)
+        self.notify("TOCEntry", (level, title, self.page, key))
 
 
 def register_pdf_fonts() -> None:
@@ -705,7 +811,18 @@ def para(text: str, style: ParagraphStyle) -> Paragraph:
     text = strip_md_links(text)
     text = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", text)
     text = re.sub(r"`([^`]+)`", r"<font name='Courier'>\1</font>", text)
-    return Paragraph(escape(text, {"<b>": "<b>", "</b>": "</b>", "<font name='Courier'>": "<font name='Courier'>", "</font>": "</font>"}), style)
+    return Paragraph(
+        escape(
+            text,
+            {
+                "<b>": "<b>",
+                "</b>": "</b>",
+                "<font name='Courier'>": "<font name='Courier'>",
+                "</font>": "</font>",
+            },
+        ),
+        style,
+    )
 
 
 def clean_pdf_text(text: str) -> str:
@@ -724,6 +841,15 @@ def build_pdf(markdown: str, output_path: Path) -> None:
         bottomMargin=0.82 * inch,
     )
     story: list[Flowable] = []
+    heading_number = 0
+
+    def heading(text: str, style_name: str, level: int) -> Paragraph:
+        nonlocal heading_number
+        heading_number += 1
+        item = Paragraph(clean_pdf_text(text), styles[style_name])
+        item.toc_level = level
+        item.bookmark_key = f"section-{heading_number}"
+        return item
 
     story.extend(
         [
@@ -747,15 +873,49 @@ def build_pdf(markdown: str, output_path: Path) -> None:
             Paragraph("Оглавление", styles["h1"]),
         ]
     )
-    for number, source in enumerate(SOURCE_DOCS, start=1):
-        title = read_title(DOCS / source.path)
-        story.append(Paragraph(f"{number}. {clean_pdf_text(title)}", styles["toc"]))
-    story.extend([PageBreak(), Paragraph("Список сокращений и терминов", styles["h1"])])
+    toc = TableOfContents()
+    toc.levelStyles = [
+        ParagraphStyle(
+            "SpecTocLevel1",
+            fontName="ArialUnicode",
+            fontSize=8.4,
+            leading=10.5,
+            leftIndent=0,
+            firstLineIndent=0,
+            spaceBefore=2,
+        ),
+        ParagraphStyle(
+            "SpecTocLevel2",
+            fontName="ArialUnicode",
+            fontSize=8,
+            leading=10,
+            leftIndent=14,
+            firstLineIndent=0,
+        ),
+        ParagraphStyle(
+            "SpecTocLevel3",
+            fontName="ArialUnicode",
+            fontSize=7.6,
+            leading=9.5,
+            leftIndent=28,
+            firstLineIndent=0,
+        ),
+    ]
+    story.extend(
+        [
+            toc,
+            PageBreak(),
+            heading("Список сокращений и терминов", "h1", 0),
+        ]
+    )
 
     abbrev_data = [["Сокращение / термин", "Описание"], *ABBREVIATIONS]
     story.append(
         Table(
-            [[Paragraph(clean_pdf_text(str(cell)), styles["body"]) for cell in row] for row in abbrev_data],
+            [
+                [Paragraph(clean_pdf_text(str(cell)), styles["body"]) for cell in row]
+                for row in abbrev_data
+            ],
             colWidths=pdf_column_widths(2),
             repeatRows=1,
             style=TableStyle(
@@ -846,11 +1006,11 @@ def build_pdf(markdown: str, output_path: Path) -> None:
                 first_h1 = False
             else:
                 story.append(PageBreak())
-            story.append(Paragraph(clean_pdf_text(line[2:].strip()), styles["h1"]))
+            story.append(heading(line[2:].strip(), "h1", 0))
         elif line.startswith("## "):
-            story.append(Paragraph(clean_pdf_text(line[3:].strip()), styles["h2"]))
+            story.append(heading(line[3:].strip(), "h2", 1))
         elif line.startswith("### "):
-            story.append(Paragraph(clean_pdf_text(line[4:].strip()), styles["h3"]))
+            story.append(heading(line[4:].strip(), "h3", 2))
         elif line.startswith("#### "):
             story.append(Paragraph(f"<b>{clean_pdf_text(line[5:].strip())}</b>", styles["body"]))
         elif line.startswith("- "):
@@ -863,7 +1023,7 @@ def build_pdf(markdown: str, output_path: Path) -> None:
             story.append(Paragraph(clean_pdf_text(line), styles["body"]))
     flush_table()
     flush_code()
-    doc.build(story)
+    doc.multiBuild(story)
 
 
 def main() -> None:

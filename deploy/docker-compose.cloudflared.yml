@@ -1,0 +1,8 @@
+services:
+  api:
+    ports:
+      - "127.0.0.1:${API_HOST_PORT:-8081}:${APP_PORT:-8080}"
+
+  nginx:
+    profiles:
+      - nginx

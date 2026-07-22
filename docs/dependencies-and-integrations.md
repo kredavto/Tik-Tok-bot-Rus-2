@@ -26,7 +26,8 @@ Supported production integrations are:
 
 - Telegram Bot API.
 - Official TikTok Content Posting API.
-- Existing Robokassa merchant account.
+- Telegram Stars through the official Bot API.
+- Existing Robokassa merchant account for a separately approved external channel.
 
 The project must not use unofficial TikTok APIs, browser automation, credential scraping, or methods that bypass TikTok platform restrictions.
 

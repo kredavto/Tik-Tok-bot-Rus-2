@@ -41,6 +41,9 @@ For each backup, record:
 
 Failed backup jobs must be treated as operational incidents.
 
+The supported command is `ENV_FILE=.env bash deploy/backup_postgres.sh`. It creates a PostgreSQL
+custom archive, verifies it with `pg_restore --list`, and writes `.sha256` and `.meta` sidecars.
+
 ## Restore Procedure
 
 1. Identify the failure cause and affected components.
@@ -53,6 +56,10 @@ Failed backup jobs must be treated as operational incidents.
 8. Check `/health`, `/ready`, and `/metrics`.
 9. Verify key user scenarios.
 10. Document the incident and recovery actions.
+
+Use `ENV_FILE=.env bash deploy/restore_postgres.sh <archive> --confirm`. The script keeps
+application services stopped if restoration fails. Full command behavior is documented in
+[CI/CD and Deployment Automation](ci-cd-deployment.md).
 
 ## Recovery Success Criteria
 

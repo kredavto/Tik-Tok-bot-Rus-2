@@ -4,6 +4,199 @@ All notable changes to Tik_Tok_Loader are documented here.
 
 The project follows Semantic Versioning.
 
+## [Unreleased]
+
+### Added
+
+- The 30-day UNLIMIT plan at `999 XTR` with a `1999 RUB` external-channel reference price.
+- `/connect` Telegram command as an accessible alternative to the TikTok OAuth menu button.
+- `/upload` Telegram command as an accessible entry point to the video publication workflow.
+- Review-ready TikTok publication preview and literal Music Usage Confirmation / Branded Content
+  Policy declarations before the final publish action.
+- User-safe handling for TikTok creator posting caps and posting bans returned by creator-info.
+
+### Changed
+
+- Display RUB and Stars prices together on the Telegram tariff screen while preserving the
+  Telegram Stars-only checkout required for digital services purchased inside Telegram.
+- Record successful TikTok Sandbox OAuth acceptance, encrypted token persistence, replay
+  protection, Telegram notification, and official Creator Info verification on 2026-07-20.
+- Align commercial-content disclosure with TikTok Direct Post UX: the control is off by default,
+  enabled explicitly, supports own-brand and branded-content multi-selection, and displays the
+  resulting `Promotional content` or `Paid partnership` label.
+
+### Fixed
+
+- Return a reserved daily attempt exactly once when TikTok accepts an upload and later reports a
+  final processing failure, including migration of previously failed accepted publications.
+- Restrict unaudited TikTok Direct Post attempts to `SELF_ONLY` visibility in both the Telegram FSM
+  and worker validation, matching TikTok's private-viewership requirement.
+- Initialize bind-mounted video and backup directories for the unprivileged application user before
+  API, bot, and worker startup using narrowly scoped one-shot filesystem capabilities, preventing
+  permission failures during Telegram video intake.
+- Prioritize the global cancel action before state-specific text handlers so an upload can be safely
+  abandoned while entering its description or hashtags.
+- Stop unaudited Direct Post flows before confirmation when the connected TikTok account is public,
+  return a specific recovery message for that provider restriction, and clean rejected video files.
+
+## [0.2.0] - 2026-07-17
+
+### Added
+
+- Public Tik_Tok_Loader service page, Terms of Service, Privacy Policy, hardened response headers,
+  and an original 1024 x 1024 application icon for TikTok Developer review.
+- Production TikTok Developer Portal values and a Sandbox demo/review evidence checklist.
+
+- Telegram Stars (`XTR`) invoice flow with pre-checkout validation, transactional subscription
+  activation, unique charge tracking, duplicate-delivery protection, `/paysupport`, configurable
+  plan prices, and separate Stars analytics.
+- Alembic `0008_telegram_stars_payments` migration and focused Stars concurrency/security tests.
+- Alembic `0009_set_stars_plan_prices` migration setting PRO to `199 XTR` and BUSINESS to
+  `499 XTR`.
+- Audited admin operations for external-channel Robokassa checkout creation and official Telegram
+  Stars refunds.
+- A Cloudflare Tunnel Compose override that exposes only the API on a configurable loopback port and
+  leaves the bundled Nginx service disabled unless explicitly selected.
+- An audited Stars refund reconciliation endpoint for unresolved provider outcomes.
+
+### Changed
+
+- Record the successful 2026-07-17 production Telegram Stars acceptance: an audited temporary
+  `10 XTR` PRO price, one confirmed payment and subscription, official refund, automatic FREE
+  restoration, and restoration of the approved `199 XTR` price.
+- Update the unified specification to revision `0.9.4`; decouple Telegram Stars checkout from RUB
+  pricing, use single-chat invoices, persist definitive invoice rejection, keep `/terms` available,
+  register the supported Telegram command menu, and surface pending refunds in the administrator
+  payment view.
+- Update the unified specification to revision `0.9.2` with completed Robokassa provider
+  acceptance, production infrastructure status, remaining TikTok/Stars gates, and corrected
+  in-bot versus external-channel payment flows.
+- Generate the unified PDF specification with a multi-level table of contents, page numbers, and
+  clickable document outline entries.
+- In-bot paid-plan checkout now follows Telegram's digital-goods requirement and no longer exposes
+  Robokassa links as an alternative to Stars.
+- Payment records and administrator views now distinguish provider, currency, RUB amount, Stars
+  amount, and provider charge identifier.
+- SBP was removed from the approved project scope; supported payment integrations are Robokassa
+  and Telegram Stars only.
+
+### Fixed
+
+- Prevent Robokassa callback signatures and other credentials from reaching application, Uvicorn,
+  or Nginx access logs; sanitize persisted callback payloads and scrub historical JSONB records.
+- Make Telegram Stars refunds recoverable across network and database failures with a committed
+  `refund_pending` claim, duplicate-send suppression, and `refunded_payment` reconciliation.
+- Reject unapproved tracked DOCX/PDF files in the secret gate and exclude binary documents from
+  Docker build contexts.
+- Add behavioral RBAC, CSRF, audit, idempotency, and ambiguous-failure tests for payment admin
+  operations.
+- Support the Robokassa shop's configured MD5, SHA-256, or SHA-512 algorithm with constant-time
+  signature comparison, and restrict ResultURL activation by provider, currency, and payment state.
+- Ignore the local Robokassa credential document and preserve administrator-customized Stars prices
+  when downgrading the default-price migration.
+- Allow the scheduler heartbeat healthcheck enough time for Python startup on constrained hosts,
+  preventing a working scheduler from being reported as unhealthy.
+- Make inbound webhook claims atomic across API workers, separate reverse-proxied clients for
+  rate limiting, accept Robokassa payment-method aliases, preserve accepted TikTok publications
+  when quota state changes, and periodically reconcile posts still processing at TikTok.
+- Persist TikTok acceptance, publication status, and daily quota before local cache,
+  notification, queue, or file-cleanup side effects, preventing accepted posts from being
+  reclassified as failed when infrastructure is temporarily unavailable.
+- Bind each administrative API token to a server-configured Telegram principal, reject blocked or
+  unprovisioned admins, and remove client-controlled RBAC identity headers.
+- Reject delayed Stars success events after refund initiation or completion, classify definitive
+  refund rejections, and provide an audited recovery path for ambiguous outcomes.
+- Apply the Cloudflare Compose override automatically in checked preflight, deploy, and rollback
+  flows when `DEPLOY_INGRESS=cloudflared`.
+- Extract and scan text from the approved generated DOCX/PDF artifacts for high-risk secrets.
+- Exercise Robokassa ResultURL end to end over HTTP, including signature, currency, duplicate
+  delivery, subscription activation, and `OK{InvId}` response behavior.
+- Persist Robokassa payment-success notifications in a transactional PostgreSQL outbox so callback
+  acknowledgement is independent of Redis and Telegram availability.
+- Protect pending payment notifications from retention cleanup and prevent permanently rejected
+  Telegram recipients from starving newer outbox events.
+- Run all Dramatiq actor coroutines on one persistent event loop per worker process, preventing
+  asyncpg connection-pool races between Dramatiq threads.
+
+## [0.2.0-rc.1] - 2026-07-14
+
+### Added
+
+- Deterministic release-candidate manifest with version, Git, source-tree, migration, and required
+  quality-gate metadata, generated by CI and verified again during deployment.
+- Production/staging preflight covering exact callback contracts, TLS lifetime and key matching,
+  Docker/Compose readiness, clean tracked state, and minimum free disk space.
+- Explicit Telegram webhook configure/verify/delete command, drift monitor, and deployment smoke
+  verification that preserves pending updates.
+- Staging acceptance runbook with provider-backed scenarios and sanitized release evidence.
+- Comprehensive FSM, video-validation, API-contract, worker-lock, queue-lease, payment,
+  subscription, quota-concurrency, and upload-lifecycle tests.
+- CI coverage gate with XML output, OpenAPI contract validation, and application compile check.
+- Test strategy defining automated layers, concurrency guarantees, staging boundaries, and release
+  evidence.
+- Four-job GitHub Actions pipeline for quality/security, database integration, container runtime,
+  and deterministic release-candidate evidence.
+- Target-aware deployment environment validator with secret-safe diagnostics.
+- Verified PostgreSQL backup, confirmed restore, application rollback, and public smoke-test
+  scripts.
+- Nginx HTTP/HTTPS templates with TLS hardening, ACME bootstrap path, and production headers.
+- CI/CD and deployment automation guide with Termius-compatible server commands.
+- Responsive administrative console for users, tariffs, payments, publication queue, runtime
+  settings, analytics, and audit history.
+- Versioned `/api/v1/admin` endpoints for user details, FREE fallback, publication error review,
+  eligible task retry, typed settings, and audit search.
+- Alembic `0006_admin_console` migration for administrative request IP and typed setting metadata.
+- Runtime system-setting seeds and database-backed retention policy values.
+- Admin console security and retry-classification regression tests.
+- Production Telegram webhook dispatch through FastAPI with Redis-backed aiogram FSM.
+- TikTok creator-info flow with manual privacy, interaction, and commercial-content choices.
+- Official TikTok Content Posting status polling and final webhook handling.
+- Chunked TikTok file upload for videos larger than 64 MB.
+- PostgreSQL migrations for Robokassa invoice sequencing, active-subscription integrity, and
+  TikTok post options.
+- Regression tests for TikTok signatures, replay protection, chunk planning, creator info,
+  webhook configuration, localization, and bot keyboards.
+- Redis-leased scheduler with a heartbeat healthcheck.
+- Automatic paid-subscription expiry, FREE fallback, and retryable Telegram notification state.
+- Proactive TikTok token refresh with permanent OAuth error blocking.
+- Alembic maintenance-state migration and scheduler lease regression tests.
+
+### Changed
+
+- Public deployment smoke checks now cover versioned health, readiness and metrics endpoints,
+  required OpenAPI callback paths, admin security headers, and Telegram webhook state.
+- Environment templates now use canonical versioned callbacks and include webhook monitoring and
+  TikTok webhook compatibility variables.
+- Telegram user registration and daily usage initialization now use PostgreSQL upserts to preserve
+  uniqueness under concurrent requests.
+- Robokassa ResultURL processing now locks payment and user rows, rejects malformed amounts with a
+  valid payment status, and suppresses duplicate subscription activation and notification.
+- REST errors now follow the versioned error catalog with safe messages and request/correlation IDs.
+- Application containers now run with dropped capabilities, `no-new-privileges`, init handling,
+  and isolated temporary filesystems.
+- Alembic startup now uses a one-shot Compose migration gate before API, bot, worker, and
+  scheduler services, avoiding concurrent upgrades during horizontal scaling.
+- Secret scanning now blocks new findings and always rejects Telegram tokens and private keys.
+- Daily limits now use `Europe/Moscow` by default.
+- Runtime plan prices, limits, activation flags, and durations are read from PostgreSQL without
+  being overwritten at startup.
+- Paid subscription activation expires the previous active subscription transactionally.
+- TikTok webhook verification now follows the official `TikTok-Signature` timestamped HMAC format.
+- Added the explicit SQLAlchemy `greenlet` runtime dependency.
+- TikTok OAuth start now accepts only a short-lived state created by the Telegram bot.
+- Full upload jobs are no longer retried after an ambiguous failure; deterministic byte-range
+  chunk uploads retry server errors with bounded exponential backoff.
+- Docker images now include Alembic configuration and migration files required by API startup.
+
+### Security
+
+- Admin UI credentials remain in page memory and are not written to browser storage.
+- Administrative static responses use CSP, frame denial, no-sniff, and no-store headers.
+- User detail endpoints expose TikTok account metadata without OAuth token fields.
+- Local Word files containing Telegram API tokens are excluded from Git.
+- Production webhook mode fails startup without HTTPS and a Telegram webhook secret.
+- Public requests can no longer choose a Telegram user identifier during TikTok OAuth linking.
+
 ## [0.1.0] - 2026-07-12
 
 ### Added

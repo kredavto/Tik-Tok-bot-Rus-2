@@ -94,7 +94,9 @@ def upgrade() -> None:
     op.create_index(op.f("ix_subscriptions_plan_id"), "subscriptions", ["plan_id"])
     op.create_index(op.f("ix_subscriptions_status"), "subscriptions", ["status"])
     op.create_index(op.f("ix_subscriptions_user_id"), "subscriptions", ["user_id"])
-    op.create_index("ix_subscriptions_user_status_ends", "subscriptions", ["user_id", "status", "ends_at"])
+    op.create_index(
+        "ix_subscriptions_user_status_ends", "subscriptions", ["user_id", "status", "ends_at"]
+    )
 
     op.create_table(
         "payments",
@@ -160,10 +162,16 @@ def upgrade() -> None:
     )
     op.create_index(op.f("ix_upload_job_events_created_at"), "upload_job_events", ["created_at"])
     op.create_index(op.f("ix_upload_job_events_status"), "upload_job_events", ["status"])
-    op.create_index(op.f("ix_upload_job_events_upload_job_id"), "upload_job_events", ["upload_job_id"])
+    op.create_index(
+        op.f("ix_upload_job_events_upload_job_id"), "upload_job_events", ["upload_job_id"]
+    )
     op.create_index(op.f("ix_upload_job_events_user_id"), "upload_job_events", ["user_id"])
-    op.create_index("ix_upload_job_events_job_created", "upload_job_events", ["upload_job_id", "created_at"])
-    op.create_index("ix_upload_job_events_user_created", "upload_job_events", ["user_id", "created_at"])
+    op.create_index(
+        "ix_upload_job_events_job_created", "upload_job_events", ["upload_job_id", "created_at"]
+    )
+    op.create_index(
+        "ix_upload_job_events_user_created", "upload_job_events", ["user_id", "created_at"]
+    )
 
     op.create_table(
         "daily_usage",
@@ -175,7 +183,9 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["user_id"], ["users.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_daily_usage_user_date", "daily_usage", ["user_id", "usage_date"], unique=True)
+    op.create_index(
+        "ix_daily_usage_user_date", "daily_usage", ["user_id", "usage_date"], unique=True
+    )
     op.create_index(op.f("ix_daily_usage_usage_date"), "daily_usage", ["usage_date"])
     op.create_index(op.f("ix_daily_usage_user_id"), "daily_usage", ["user_id"])
 

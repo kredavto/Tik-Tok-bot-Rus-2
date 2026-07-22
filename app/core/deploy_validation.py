@@ -1,0 +1,202 @@
+from __future__ import annotations
+
+import base64
+from dataclasses import dataclass
+from pathlib import Path
+import re
+from urllib.parse import urlparse
+
+
+PLACEHOLDER_MARKERS = (
+    "replace_me",
+    "replace_with",
+    "generate_with",
+    "example.com",
+    "your-domain",
+)
+SECRET_KEYS = (
+    "TELEGRAM_BOT_TOKEN",
+    "TELEGRAM_WEBHOOK_SECRET",
+    "POSTGRES_PASSWORD",
+    "TIKTOK_CLIENT_SECRET",
+    "TIKTOK_WEBHOOK_SECRET",
+    "ROBOKASSA_PASSWORD_1",
+    "ROBOKASSA_PASSWORD_2",
+    "TOKEN_ENCRYPTION_KEY",
+    "ADMIN_API_TOKEN",
+    "ADMIN_CSRF_TOKEN",
+)
+
+
+@dataclass(frozen=True)
+class ValidationResult:
+    errors: tuple[str, ...]
+
+    @property
+    def is_valid(self) -> bool:
+        return not self.errors
+
+
+def parse_env_file(path: Path) -> dict[str, str]:
+    values: dict[str, str] = {}
+    for line_number, raw_line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[7:].lstrip()
+        if "=" not in line:
+            raise ValueError(f"line {line_number}: expected KEY=VALUE")
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if not re.fullmatch(r"[A-Z][A-Z0-9_]*", key):
+            raise ValueError(f"line {line_number}: invalid variable name")
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+            value = value[1:-1]
+        if key in values:
+            raise ValueError(f"line {line_number}: duplicate variable {key}")
+        values[key] = value
+    return values
+
+
+def is_placeholder(value: str) -> bool:
+    normalized = value.lower()
+    return not value or any(marker in normalized for marker in PLACEHOLDER_MARKERS)
+
+
+def is_true(value: str) -> bool:
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def valid_https_url(value: str) -> bool:
+    parsed = urlparse(value)
+    return parsed.scheme == "https" and bool(parsed.hostname)
+
+
+def validate_environment(values: dict[str, str], environment: str) -> ValidationResult:
+    errors: list[str] = []
+
+    def require(key: str, *, secret: bool = False, minimum: int = 1) -> str:
+        value = values.get(key, "")
+        if is_placeholder(value):
+            errors.append(f"{key}: required value is missing or is a placeholder")
+            return ""
+        elif secret and len(value) < minimum:
+            errors.append(f"{key}: secret is shorter than {minimum} characters")
+        return value
+
+    configured_environment = require("APP_ENV")
+    if configured_environment and configured_environment != environment:
+        errors.append(f"APP_ENV: must be {environment}")
+
+    public_url = require("PUBLIC_BASE_URL")
+    if public_url and not valid_https_url(public_url):
+        errors.append("PUBLIC_BASE_URL: HTTPS URL is required")
+    parsed_public_url = urlparse(public_url) if public_url else None
+    public_host = parsed_public_url.hostname if parsed_public_url else None
+    if parsed_public_url and parsed_public_url.path not in {"", "/"}:
+        errors.append("PUBLIC_BASE_URL: base URL must not contain a path")
+
+    def expected_public_url(path: str) -> str:
+        return f"{public_url.rstrip('/')}{path}" if public_url else ""
+
+    domain = require("DOMAIN")
+    if domain and public_host and domain != public_host:
+        errors.append("DOMAIN: must match PUBLIC_BASE_URL host")
+    deploy_ingress = values.get("DEPLOY_INGRESS", "nginx").strip().lower()
+    if deploy_ingress not in {"nginx", "cloudflared"}:
+        errors.append("DEPLOY_INGRESS: must be nginx or cloudflared")
+    if deploy_ingress == "nginx":
+        if values.get("NGINX_TEMPLATE") != "https.conf.template":
+            errors.append("NGINX_TEMPLATE: nginx deploy requires https.conf.template")
+        require("TLS_CERT_DIR")
+    require("APP_IMAGE")
+
+    if values.get("TELEGRAM_DELIVERY_MODE") != "webhook":
+        errors.append("TELEGRAM_DELIVERY_MODE: staging and production require webhook")
+    bot_token = require("TELEGRAM_BOT_TOKEN", secret=True, minimum=35)
+    if bot_token and not re.fullmatch(r"\d{8,12}:[A-Za-z0-9_-]{30,}", bot_token):
+        errors.append("TELEGRAM_BOT_TOKEN: invalid token format")
+    require("TELEGRAM_WEBHOOK_SECRET", secret=True, minimum=32)
+    webhook_path = values.get("TELEGRAM_WEBHOOK_PATH", "")
+    if webhook_path != "/api/v1/webhooks/telegram":
+        errors.append("TELEGRAM_WEBHOOK_PATH: must be /api/v1/webhooks/telegram")
+    try:
+        webhook_check_seconds = int(values.get("TELEGRAM_WEBHOOK_CHECK_SECONDS", "300"))
+    except ValueError:
+        webhook_check_seconds = 0
+    if webhook_check_seconds < 30:
+        errors.append("TELEGRAM_WEBHOOK_CHECK_SECONDS: must be at least 30")
+    admin_ids = require("TELEGRAM_ADMIN_IDS")
+    if admin_ids and not all(item.strip().isdigit() for item in admin_ids.split(",")):
+        errors.append("TELEGRAM_ADMIN_IDS: expected comma-separated numeric IDs")
+    admin_api_telegram_id = require("ADMIN_API_TELEGRAM_ID")
+    if admin_api_telegram_id and not admin_api_telegram_id.isdigit():
+        errors.append("ADMIN_API_TELEGRAM_ID: expected a numeric Telegram ID")
+    elif admin_api_telegram_id and admin_ids:
+        allowed_admin_ids = {item.strip() for item in admin_ids.split(",")}
+        if admin_api_telegram_id not in allowed_admin_ids:
+            errors.append("ADMIN_API_TELEGRAM_ID: must be listed in TELEGRAM_ADMIN_IDS")
+
+    database_url = require("DATABASE_URL")
+    if database_url and not database_url.startswith("postgresql+asyncpg://"):
+        errors.append("DATABASE_URL: postgresql+asyncpg URL is required")
+    require("POSTGRES_DB")
+    require("POSTGRES_USER")
+    require("POSTGRES_PASSWORD", secret=True, minimum=16)
+    redis_url = require("REDIS_URL")
+    if redis_url and not redis_url.startswith(("redis://", "rediss://")):
+        errors.append("REDIS_URL: Redis URL is required")
+
+    encryption_key = require("TOKEN_ENCRYPTION_KEY", secret=True, minimum=43)
+    if encryption_key:
+        try:
+            decoded_key = base64.urlsafe_b64decode(encryption_key.encode())
+        except (ValueError, TypeError):
+            decoded_key = b""
+        if len(decoded_key) != 32:
+            errors.append("TOKEN_ENCRYPTION_KEY: valid Fernet key is required")
+    require("ADMIN_API_TOKEN", secret=True, minimum=32)
+    require("ADMIN_CSRF_TOKEN", secret=True, minimum=32)
+
+    require("ROBOKASSA_MERCHANT_LOGIN")
+    require("ROBOKASSA_PASSWORD_1")
+    require("ROBOKASSA_PASSWORD_2")
+    hash_algorithm = values.get("ROBOKASSA_HASH_ALGORITHM", "md5").lower()
+    if hash_algorithm not in {"md5", "sha256", "sha512"}:
+        errors.append("ROBOKASSA_HASH_ALGORITHM: must be md5, sha256, or sha512")
+    robokassa_paths = {
+        "ROBOKASSA_RESULT_URL": "/api/v1/payments/robokassa/result",
+        "ROBOKASSA_SUCCESS_URL": "/api/v1/payments/robokassa/success",
+        "ROBOKASSA_FAIL_URL": "/api/v1/payments/robokassa/fail",
+    }
+    for key, path in robokassa_paths.items():
+        url = require(key)
+        if url and not valid_https_url(url):
+            errors.append(f"{key}: HTTPS URL is required")
+        elif url and url != expected_public_url(path):
+            errors.append(f"{key}: must be {expected_public_url(path)}")
+    if environment == "production" and is_true(values.get("ROBOKASSA_TEST_MODE", "true")):
+        errors.append("ROBOKASSA_TEST_MODE: production requires false")
+
+    if is_true(values.get("TIKTOK_PUBLISH_ENABLED", "false")):
+        require("TIKTOK_CLIENT_KEY")
+        require("TIKTOK_CLIENT_SECRET", secret=True, minimum=16)
+        require("TIKTOK_WEBHOOK_SECRET", secret=True, minimum=16)
+        redirect_uri = require("TIKTOK_REDIRECT_URI")
+        if redirect_uri and not valid_https_url(redirect_uri):
+            errors.append("TIKTOK_REDIRECT_URI: HTTPS URL is required")
+        elif redirect_uri and redirect_uri != expected_public_url("/api/v1/oauth/tiktok/callback"):
+            errors.append(
+                "TIKTOK_REDIRECT_URI: must be "
+                f"{expected_public_url('/api/v1/oauth/tiktok/callback')}"
+            )
+
+    populated_secrets = [
+        values[key] for key in SECRET_KEYS if values.get(key) and not is_placeholder(values[key])
+    ]
+    if len(populated_secrets) != len(set(populated_secrets)):
+        errors.append("SECRET_VALUES: each configured secret must be unique")
+
+    return ValidationResult(tuple(dict.fromkeys(errors)))

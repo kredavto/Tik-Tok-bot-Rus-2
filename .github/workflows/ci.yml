@@ -4,8 +4,46 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
+  quality:
+    name: Quality and security
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Format check
+        run: ruff format --check .
+      - name: Lint
+        run: ruff check .
+      - name: Type check
+        run: mypy app
+      - name: Validate OpenAPI contract
+        run: python tools/check_openapi.py
+      - name: Compile application
+        run: python -m compileall -q app
+      - name: Shell validation
+        run: |
+          find deploy -type f -name '*.sh' -print0 | xargs -0 -n1 bash -n
+          shellcheck -x deploy/*.sh
+      - name: Secret scan
+        run: python tools/check_secrets.py
+
+  integration:
+    name: Migrations and tests
     runs-on: ubuntu-24.04
     services:
       postgres:
@@ -13,11 +51,11 @@ jobs:
         env:
           POSTGRES_DB: tiktok_loader
           POSTGRES_USER: tiktok
-          POSTGRES_PASSWORD: tiktok
+          POSTGRES_PASSWORD: ci_database_only
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U tiktok -d tiktok_loader"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -25,36 +63,72 @@ jobs:
         image: redis:7-alpine
         ports:
           - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql+asyncpg://tiktok:ci_database_only@localhost:5432/tiktok_loader
+      REDIS_URL: redis://localhost:6379/0
+      BOT_TOKEN: test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
       - name: Install FFmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Install dependencies
         run: pip install -e ".[dev]"
-      - name: Format check
-        run: ruff format --check .
-      - name: Lint
-        run: ruff check .
-      - name: Type check
-        run: mypy app
-      - name: Check migrations
-        env:
-          DATABASE_URL: postgresql+asyncpg://tiktok:tiktok@localhost:5432/tiktok_loader
-          REDIS_URL: redis://localhost:6379/0
-          BOT_TOKEN: test
-          TOKEN_ENCRYPTION_KEY: 9W1mZtdJKTcB1nngTse05IiRsfD91qAHBDAa4pRJU-o=
-        run: alembic upgrade head
-      - name: Test
-        env:
-          DATABASE_URL: postgresql+asyncpg://tiktok:tiktok@localhost:5432/tiktok_loader
-          REDIS_URL: redis://localhost:6379/0
-          BOT_TOKEN: test
-          TOKEN_ENCRYPTION_KEY: 9W1mZtdJKTcB1nngTse05IiRsfD91qAHBDAa4pRJU-o=
-        run: pytest
-      - name: Docker build
-        run: docker compose build
-      - name: Secret scan
-        run: detect-secrets scan --all-files --exclude-files '\.git/.*|\.env\.example'
+      - name: Generate test encryption key
+        run: >-
+          python -c 'from cryptography.fernet import Fernet;
+          print("TOKEN_ENCRYPTION_KEY=" + Fernet.generate_key().decode())'
+          >> "$GITHUB_ENV"
+      - name: Verify migration lifecycle
+        run: |
+          alembic upgrade head
+          alembic check
+          alembic downgrade base
+          alembic upgrade head
+      - name: Run tests
+        run: pytest --cov=app --cov-report=term-missing --cov-report=xml --cov-fail-under=45
+
+  container:
+    name: Container build
+    runs-on: ubuntu-24.04
+    needs: [quality, integration]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare Compose environment
+        run: cp deploy/env.development.example .env
+      - name: Validate Compose model
+        run: docker compose config --quiet
+      - name: Build application image
+        run: docker compose build api
+      - name: Verify non-root runtime
+        run: |
+          image="$(docker compose config --images | grep '^tik-tok-loader:' | head -n1)"
+          test -n "$image"
+          test "$(docker image inspect "$image" --format '{{.Config.User}}')" = "appuser"
+
+  release-candidate:
+    name: Release candidate manifest
+    runs-on: ubuntu-24.04
+    needs: [quality, integration, container]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build deterministic manifest
+        run: python tools/build_release_candidate.py
+      - name: Upload manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-candidate-manifest
+          path: dist/release/*.json
+          if-no-files-found: error
+          retention-days: 30
